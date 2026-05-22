@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Megaphone, FileDown, ChevronRight, Phone, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Property } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "입주민 서비스",

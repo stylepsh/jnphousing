@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Target, Heart, ShieldCheck } from "lucide-react";
+import { Building2, Target, Heart, ShieldCheck, Award, MapPin, Hammer } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "회사소개",
-  description: "JNP주택관리의 인사말, 연혁, 핵심 가치를 소개합니다.",
+  description: `${COMPANY.brand} (${COMPANY.groupName}) — ${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 부동산 관리 전문기업의 인사말과 핵심 가치.`,
 };
 
 const VALUES = [
@@ -26,9 +27,11 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { year: "2024", text: "JNP주택관리 설립" },
-  { year: "2025", text: "위탁임대관리 서비스 본격 개시" },
-  { year: "2026", text: "관리현장 ___ 건물 / 200세대 돌파" },
+  { year: "1999", text: "부동산 관리업 시작 — 부천 일대 주택관리" },
+  { year: "2010s", text: "이한종합건설 설립 — 시공·건축 사업 확장" },
+  { year: "2020", text: "제이앤피 주택관리·이한종합건설 그룹 체계 구축" },
+  { year: "2024", text: "지점 2 (심곡동 유진빌딩) 개설" },
+  { year: "2026", text: `${COMPANY.yearsOfExperience}년차 — ${COMPANY.serviceArea} 전 지역 서비스` },
 ];
 
 export default function AboutPage() {
@@ -40,8 +43,71 @@ export default function AboutPage() {
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">회사소개</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
             건물의 가치를 지키는 일, 입주민의 일상을 지키는 일.
-            JNP주택관리는 두 가지를 동시에 잘 해내기 위해 만들어진 회사입니다.
+            <br />
+            제이앤피주택관리·이한종합건설 그룹이 {COMPANY.yearsOfExperience}년간 {COMPANY.serviceArea}에서 해온 일입니다.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm">
+              <Award className="h-4 w-4 text-blue-300" />
+              <span className="font-semibold">{COMPANY.yearsOfExperience}년차</span>
+            </div>
+            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-blue-300" />
+              <span>{COMPANY.serviceArea}</span>
+            </div>
+            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm">
+              <Building2 className="h-4 w-4 text-blue-300" />
+              <span>부천 본점·심곡 2지점</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 그룹 구조 강조 */}
+      <section className="bg-slate-50 py-16">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Group Structure</p>
+            <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">그룹 구성</h2>
+            <p className="mt-3 text-muted-foreground">
+              관리와 시공, 그룹 내 두 법인이 함께 책임집니다.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <Card className="border-primary/20">
+              <CardContent className="pt-8 pb-7">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-12 w-12 rounded-lg bg-primary text-white flex items-center justify-center">
+                    <Building2 className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">제이앤피 주택관리</h3>
+                    <p className="text-xs text-muted-foreground">부동산 관리·임대·분양</p>
+                  </div>
+                </div>
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  주택·오피스텔·상가 관리, 위탁임대 운영, 부동산 분양·판매 업무를 담당합니다.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-300/40">
+              <CardContent className="pt-8 pb-7">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-12 w-12 rounded-lg bg-amber-600 text-white flex items-center justify-center">
+                    <Hammer className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">이한종합건설</h3>
+                    <p className="text-xs text-muted-foreground">건축·시공·리모델링</p>
+                  </div>
+                </div>
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  건축공사·주택건설공사·건물건설업을 담당합니다.
+                  큰 수선·리모델링이 발생하면 외주 없이 그룹 내에서 즉시 시공합니다.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
@@ -107,19 +173,31 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 조직 */}
+      {/* 지점 위치 */}
       <section className="bg-slate-50 py-20">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold tracking-tight">조직 구성</h2>
-            <p className="mt-3 text-muted-foreground">현장 운영부터 회계까지, 전문 인력으로 구성</p>
+            <h2 className="text-3xl font-bold tracking-tight">사무실 위치</h2>
+            <p className="mt-3 text-muted-foreground">부천 본점과 심곡점, 가까운 곳으로 방문 가능합니다.</p>
           </div>
-          <Card className="border-dashed">
-            <CardContent className="py-16 text-center text-muted-foreground">
-              <Building2 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">조직도 이미지는 추후 등록됩니다.</p>
-            </CardContent>
-          </Card>
+          <div className="grid md:grid-cols-2 gap-5">
+            {COMPANY.branches.map((b) => (
+              <Card key={b.label}>
+                <CardContent className="pt-7 pb-7">
+                  <div className="flex items-start gap-4">
+                    <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wide">{b.label}</p>
+                      <h3 className="mt-1 text-lg font-bold">{b.detail}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">{b.address}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
     </>

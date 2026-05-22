@@ -36,9 +36,16 @@ export function Header() {
       )}
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <Building2 className="h-6 w-6 text-primary" />
-          <span className="text-primary">JNP주택관리</span>
+        <Link href="/" className="flex items-center gap-2.5 font-bold text-lg group">
+          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+          <div className="leading-tight">
+            <div className="text-primary text-base sm:text-lg">JNP주택관리</div>
+            <div className="text-[10px] text-muted-foreground font-normal -mt-0.5 hidden sm:block">
+              제이앤피 주택관리 · 이한종합건설
+            </div>
+          </div>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">

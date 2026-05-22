@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { KakaoChatFloat } from "@/components/shared/KakaoChatFloat";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans">
         {children}
+        <KakaoChatFloat />
         <Toaster richColors position="top-center" />
       </body>
     </html>

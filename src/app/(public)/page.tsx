@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText } from "lucide-react";
+import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { COMPANY } from "@/lib/company";
 import type { Property } from "@/types/database";
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = {
@@ -40,16 +41,16 @@ export default async function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Badge variant="secondary" className="mb-6 bg-white/10 text-white border-white/20 hover:bg-white/15">
-                신뢰받는 주택관리 전문기업
+                <Award className="h-3 w-3 mr-1" />
+                {COMPANY.yearsOfExperience}년차 부동산 관리 전문기업
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
                 신뢰로 관리하는<br />
                 <span className="text-blue-300">주거공간</span>, JNP주택관리
               </h1>
               <p className="mt-6 text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed">
-                주택관리부터 위탁임대관리까지,
-                <br className="hidden md:block" />
-                합리적이고 투명한 전문 서비스를 제공합니다.
+                {COMPANY.parts.join(" + ")} 그룹이 운영하는<br className="hidden md:block" />
+                {COMPANY.serviceArea} 부동산 관리 전문 서비스
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="bg-white text-primary hover:bg-blue-50">
@@ -70,16 +71,16 @@ export default async function HomePage() {
                 </div>
                 <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-3">
                   <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">200+</div>
-                    <div className="text-xs text-blue-200">관리 세대</div>
+                    <div className="text-2xl font-bold">{COMPANY.yearsOfExperience}년차</div>
+                    <div className="text-xs text-blue-200">업력</div>
                   </div>
                   <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">98%</div>
-                    <div className="text-xs text-blue-200">민원 처리율</div>
+                    <div className="text-2xl font-bold">2지점</div>
+                    <div className="text-xs text-blue-200">부천 본점·심곡</div>
                   </div>
                   <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">24/7</div>
-                    <div className="text-xs text-blue-200">대응 체계</div>
+                    <div className="text-2xl font-bold">3개시</div>
+                    <div className="text-xs text-blue-200">{COMPANY.serviceArea.replace(/ · /g, "·")}</div>
                   </div>
                 </div>
               </div>
@@ -280,20 +281,72 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ 회사 한줄 소개 ============ */}
-      <section className="bg-background py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-            건물주와 입주민, 모두에게 신뢰받는 관리회사
-          </h2>
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            JNP주택관리는 단순한 시설 유지를 넘어, 건물의 가치를 함께 키워가는 파트너입니다.
-            <br />
-            합리적인 비용, 투명한 회계, 빠른 응대로 관리를 다시 정의합니다.
-          </p>
-          <Button asChild variant="outline" size="lg" className="mt-8">
-            <Link href="/about">회사소개 더보기 <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
+      {/* ============ 그룹 구조 (차별점) ============ */}
+      <section className="bg-background py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+              그룹 시너지
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              신축·시공·관리, 한 그룹에서 완결
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+              {COMPANY.groupName}은 주택관리 회사와 종합건설 회사가
+              <br className="hidden sm:block" />
+              하나의 그룹으로 협력하는 흔치 않은 구조입니다.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-8 pb-8">
+                <div className="h-14 w-14 rounded-xl bg-primary text-white flex items-center justify-center mb-5">
+                  <Building2 className="h-7 w-7" />
+                </div>
+                <h3 className="text-2xl font-bold">제이앤피 주택관리</h3>
+                <p className="text-sm text-primary font-semibold mt-1">건물 운영 · 임대 관리</p>
+                <ul className="mt-5 space-y-2 text-sm text-foreground/80">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 주택·오피스텔·상가 종합 관리</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 위탁임대관리 (임대료 수납·정산)</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 부동산 분양·판매</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-amber-300/40 bg-amber-50/50">
+              <CardContent className="pt-8 pb-8">
+                <div className="h-14 w-14 rounded-xl bg-amber-600 text-white flex items-center justify-center mb-5">
+                  <Hammer className="h-7 w-7" />
+                </div>
+                <h3 className="text-2xl font-bold">이한종합건설</h3>
+                <p className="text-sm text-amber-700 font-semibold mt-1">건축 · 시공 · 리모델링</p>
+                <ul className="mt-5 space-y-2 text-sm text-foreground/80">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 건축공사 · 주택건설공사</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 건물건설업</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 대수선·리모델링 즉시 대응</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-10 rounded-2xl bg-primary/5 border border-primary/15 p-6 sm:p-8 text-center">
+            <p className="text-base md:text-lg text-foreground/85 leading-relaxed">
+              <strong className="text-primary">건물에서 큰 수선이 필요한 순간</strong>, 외주 업체를 찾아 헤매지 마세요.
+              <br className="hidden sm:block" />
+              관리회사가 직접 견적을 내고, 그룹 내 건설사가 시공합니다.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>{COMPANY.serviceArea} 전 지역 출동 가능 — {COMPANY.yearsOfExperience}년 노하우</span>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Button asChild variant="outline" size="lg">
+              <Link href="/about">회사소개 더보기 <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
         </div>
       </section>
     </>

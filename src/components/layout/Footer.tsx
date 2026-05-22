@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Building2, Phone, MapPin, Mail, MessageCircle } from "lucide-react";
+import { Building2, Phone, MapPin, Mail, MessageCircle, Users } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 
 export function Footer() {
   return (
@@ -7,27 +8,40 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-6 w-6 text-blue-400" />
-              <span className="font-bold text-lg text-white">JNP주택관리</span>
+              <span className="font-bold text-lg text-white">{COMPANY.brand}</span>
+              <span className="text-xs text-slate-500 ml-1">({COMPANY.groupName})</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              주택관리부터 위탁임대관리까지, 합리적이고 투명한 전문 서비스.
+              {COMPANY.parts.join(" + ")} · 27년차 부동산 관리 전문기업
+              <br />
+              {COMPANY.serviceArea} 전 지역 서비스
             </p>
-            <div className="mt-6 space-y-2 text-sm text-slate-400">
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>서울특별시 ___ (사업장 주소)</span>
+
+            {/* 지점 정보 */}
+            <div className="mt-6 space-y-4 text-sm">
+              {COMPANY.branches.map((b) => (
+                <div key={b.label} className="flex items-start gap-2 text-slate-400">
+                  <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-blue-400" />
+                  <div>
+                    <div className="text-xs font-semibold text-slate-300 mb-0.5">{b.label}</div>
+                    <div>{b.address}</div>
+                    <div className="text-xs text-slate-500">{b.detail}</div>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 text-slate-400">
+                <Phone className="h-4 w-4 shrink-0 text-blue-400" />
+                <span>{COMPANY.contact.phone}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0" />
-                <span>02-____-____</span>
+              <div className="flex items-center gap-2 text-slate-400">
+                <Mail className="h-4 w-4 shrink-0 text-blue-400" />
+                <span>{COMPANY.contact.email}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0" />
-                <span>info@jnp-housing.com</span>
+              <div className="text-xs text-slate-500 pt-1">
+                사업자등록번호: {COMPANY.legal.registrationNumber}
               </div>
-              <div className="text-xs text-slate-500 pt-2">사업자등록번호: ___-__-_____</div>
             </div>
           </div>
 
@@ -42,7 +56,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold text-white mb-4">입주민/파트너</h3>
+            <h3 className="font-semibold text-white mb-4">입주민·파트너</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/tenant/complaint" className="text-slate-400 hover:text-white">민원/AS 접수</Link></li>
               <li><Link href="/tenant/notice" className="text-slate-400 hover:text-white">공지사항</Link></li>
@@ -50,18 +64,24 @@ export function Footer() {
               <li><Link href="/agency/signup" className="text-slate-400 hover:text-white">부동산 가입</Link></li>
               <li>
                 <a
-                  href="#"
-                  className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white"
+                  href={COMPANY.contact.kakaoOpenChat}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-yellow-300 hover:text-yellow-200 font-medium"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" /> 카카오톡 채널
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  카카오톡 그룹채팅
                 </a>
+                <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5 ml-5">
+                  <Users className="h-2.5 w-2.5" /> 민원·제휴·문의 통합방
+                </div>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} JNP주택관리. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {COMPANY.brand}. All rights reserved.</p>
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-slate-300">개인정보처리방침</Link>
             <Link href="/terms" className="hover:text-slate-300">이용약관</Link>
