@@ -21,6 +21,7 @@ import {
   UserSquare,
   Users,
   Wallet,
+  Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
       { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badge: true },
       { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion },
+      { href: "/admin/notifications", label: "알림 이력", icon: Bell },
     ],
   },
   {
