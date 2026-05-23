@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Megaphone, FileDown, ChevronRight, Phone, Search } from "lucide-react";
+import { MessageCircle, Megaphone, FileDown, ChevronRight, Phone, Search, KeyRound, FileSignature, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getTenantSession } from "@/lib/tenant-session";
 
 export const metadata: Metadata = {
   title: "입주민 서비스",
@@ -32,6 +33,7 @@ export default async function TenantHome({
   const { b } = await searchParams;
   const buildingName = await fetchPropertyName(b);
   const buildingSuffix = b ? `?b=${b}` : "";
+  const session = await getTenantSession();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 md:py-12">
@@ -46,6 +48,47 @@ export default async function TenantHome({
           아래 카드를 눌러 원하시는 서비스를 선택하세요.
         </p>
       </div>
+
+      {/* 본인 인증 카드 */}
+      {session ? (
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <Link href="/tenant/my-lease" className="block">
+            <Card className="hover:shadow-lg transition-all bg-primary text-white">
+              <CardContent className="py-5 px-5 flex items-center gap-3">
+                <FileSignature className="h-6 w-6 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm">내 계약</h3>
+                  <p className="text-xs opacity-80 mt-0.5">보증금·월세 확인</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/tenant/my-rent" className="block">
+            <Card className="hover:shadow-lg transition-all bg-primary text-white">
+              <CardContent className="py-5 px-5 flex items-center gap-3">
+                <Receipt className="h-6 w-6 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm">청구·납부</h3>
+                  <p className="text-xs opacity-80 mt-0.5">미납 잔액·이자</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      ) : (
+        <Link href="/tenant/login" className="block mb-4">
+          <Card className="hover:shadow-lg hover:border-primary/30 transition-all border-2 border-dashed">
+            <CardContent className="py-5 px-5 flex items-center gap-3">
+              <KeyRound className="h-6 w-6 text-primary shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-bold text-sm">본인 인증</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">계약·청구 내역을 확인하려면 인증</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       <div className="space-y-3">
         <Link href={`/tenant/complaint${buildingSuffix}`} className="block">

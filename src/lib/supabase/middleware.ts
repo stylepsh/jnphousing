@@ -85,5 +85,16 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // /tenant/my-* → tenant session 쿠키 필요
+  if (pathname.startsWith("/tenant/my-")) {
+    const tenantToken = request.cookies.get("tenant_session")?.value;
+    if (!tenantToken) {
+      const url = new URL("/tenant/login", request.url);
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+    // 실제 JWT 검증은 페이지의 server component 에서 (edge runtime 호환).
+  }
+
   return supabaseResponse;
 }
