@@ -1,18 +1,32 @@
 # JNP주택관리 사이트
 
-제이앤피 주택관리 + 이한종합건설 그룹의 통합 관리 사이트.
+제이앤피 주택관리 + 이한종합건설 그룹의 통합 관리 플랫폼.
 
-- 공개 페이지 (회사소개·서비스·관리현장·관리문의)
-- 세입자존 (QR 진입 민원 접수·공지·서류 다운로드)
-- 부동산존 (가입·로그인·공실 매물)
-- 관리자 페이지 (민원/문의/공실/회원/현장/공지/서류/QR 관리)
+**영역**
+- 공개 페이지 (회사소개·서비스·관리현장·관리문의·JSON-LD SEO)
+- 세입자존 (QR 진입 민원 접수·공지·서류 다운로드, JWT 세션 my-lease/my-rent)
+- 부동산존 (가입·로그인·공실 매물 열람)
+- 관리자 패널 (민원·문의·계약·월세·위탁수수료·임대인·임차인·관리현장·공지·서류·QR·알림·운영도구·감사로그)
+
+**핵심 비즈니스 기능** (P0~P9 풀 구현)
+- 위탁수수료 percent/fixed 분기 + 수금주의 자동 정산
+- 장기·단기 임대 분기 + 월/주/일 주기 청구 스케줄 + 첫 달 일할 계산
+- 입금 매칭 (수기 + cascade 자동 충당)
+- 연체 갱신 (연이율 단리 일할) + D+1/7/15/30 알림 트리거
+- 해지 보증금 정산 시뮬레이션, 갱신 계약 생성
+- PDF 영수증/정산서 (한글 폰트), presigned 다운로드
+- 알림 시스템 (kakao/sms/console adapter + 13개 한국어 템플릿)
+- Cron (Vercel) — daily/monthly + 감사 로그
 
 ## 기술 스택
 
 - **프레임워크**: Next.js 15 (App Router) + React 19
 - **UI**: Tailwind CSS 4 + shadcn/ui (base-ui 기반)
-- **DB/Auth/Storage**: Supabase
-- **폼**: react-hook-form + zod
+- **DB/Auth/Storage**: Supabase (RLS 강제)
+- **폼/검증**: react-hook-form + zod
+- **인증**: Supabase Auth (admin/agency) + jose JWT (tenant)
+- **PDF**: @react-pdf/renderer + jspdf
+- **테스트**: vitest (46개 단위테스트, billing 엔진)
 - **타이포그래피**: Pretendard Variable
 - **배포**: Vercel + (선택) Cloudflare Registrar
 
@@ -27,9 +41,17 @@ npm install
 ### 2) Supabase 프로젝트 준비
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) 에서 새 프로젝트 생성
-2. **SQL Editor** 에서 `supabase/migrations/001_init.sql` 전체 복붙 후 실행
-   - 8개 테이블 + RLS + Storage 버킷 + 정책이 한 번에 생성됨
-3. (선택) `supabase/seed.sql` 실행해 샘플 데이터 추가
+2. **SQL Editor** 에서 마이그레이션 순서대로 실행:
+   - `supabase/migrations/001_init.sql` — 8개 테이블 (공개·민원·매물 등) + RLS + Storage 버킷
+   - `supabase/migrations/002_lease_and_billing.sql` — 11개 테이블 (계약·월세·위탁수수료·알림로그)
+   - `supabase/migrations/003_audit_and_ops.sql` — audit_logs + 운영 정책 추가
+3. (선택) `supabase/seed.sql` — 샘플 임대인/임차인/계약/관리현장
+
+### 테스트 실행
+```bash
+npm run test           # 한 번 실행 (46개 단위테스트)
+npm run test:watch     # 변경 감지
+```
 
 ### 3) 환경변수
 
