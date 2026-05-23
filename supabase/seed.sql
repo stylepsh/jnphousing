@@ -31,6 +31,49 @@ values
 on conflict do nothing;
 
 -- ============================================================================
+-- Phase 2 시드: landlord/tenant/unit/lease 샘플
+-- ============================================================================
+-- 샘플 임대인
+insert into public.landlords (name, phone, account_holder, account_bank, email)
+values
+  ('홍길동 임대인', '010-1111-2222', '홍길동', '국민은행', 'hong@example.com'),
+  ('김부장 임대인', '010-3333-4444', '김부장', '신한은행', 'kim@example.com')
+on conflict do nothing;
+
+-- 샘플 임차인
+insert into public.tenants (name, phone, emergency_contact, move_in_date)
+values
+  ('이임차 임차인', '010-9999-0001', '010-9999-9999', current_date - interval '90 days'),
+  ('박단기 임차인', '010-9999-0002', null, current_date - interval '15 days')
+on conflict do nothing;
+
+-- 샘플 호실 (샘플 오피스텔 A 의 502호)
+insert into public.properties_units (property_id, unit_no, floor, area_pyeong, room_count, bathroom_count, deposit_default, rent_default, management_fee_default)
+select p.id, '502', 5, 12.5, 1, 1, 5000000, 500000, 70000
+from public.properties p
+where p.name = '샘플 오피스텔 A'
+on conflict (property_id, unit_no) do nothing;
+
+-- 계약 1건: long_term, percent 10%
+insert into public.leases (
+  lease_type, unit_id, landlord_id, tenant_id,
+  status, start_date, end_date, deposit, rent_amount,
+  rent_cycle, rent_day, management_fee, vat_included,
+  fee_type, fee_percent, fee_fixed
+)
+select 'long_term', u.id, l.id, t.id,
+  'active', current_date - interval '90 days', current_date + interval '275 days',
+  5000000, 500000,
+  'monthly', 25, 70000, false,
+  'percent', 10.00, null
+from public.properties_units u, public.landlords l, public.tenants t
+where u.unit_no = '502'
+  and l.name = '홍길동 임대인'
+  and t.name = '이임차 임차인'
+limit 1
+on conflict do nothing;
+
+-- ============================================================================
 -- 관리자 계정 등록 가이드
 -- ============================================================================
 -- 1. Supabase Dashboard → Authentication → Users → Add User 로 이메일/패스워드 생성
