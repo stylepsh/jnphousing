@@ -63,15 +63,15 @@ export function vatOf(supplyAmount: number): number {
 
 /**
  * 부가세 포함 합계에서 공급가액과 부가세 분리.
- * 합계 = 공급가액 + 공급가액 × 0.1 → 공급가액 = 합계 / 1.1
- * 분할 후 합산이 원본과 어긋나지 않도록 부가세는 차감 방식.
+ * 합계 = 공급가액 × 1.1 → 공급가액 = 합계 × 10 / 11 (정수 연산으로 정확).
+ * 분할 후 합산은 항상 원본과 같음 (vat 는 차감 방식).
  */
 export function splitVatInclusive(totalAmount: number): {
   supply: number;
   vat: number;
 } {
   const total = asWon(totalAmount);
-  const supply = Math.floor(total / 1.1);
+  const supply = Math.floor((total * 10) / 11);
   const vat = total - supply;
   return { supply, vat };
 }
