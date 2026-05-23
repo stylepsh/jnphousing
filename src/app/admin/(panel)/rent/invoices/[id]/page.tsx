@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatWonSuffix } from "@/lib/money";
 import { formatKoreanDate, formatKoreanDateWithDay } from "@/lib/dates";
@@ -49,9 +49,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl">
-      <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2">
-        <Link href="/admin/rent"><ArrowLeft className="h-4 w-4 mr-1" /> 월세 현황</Link>
-      </Button>
+      <div className="flex items-center justify-between mb-4">
+        <Button asChild variant="ghost" size="sm" className="-ml-2">
+          <Link href="/admin/rent"><ArrowLeft className="h-4 w-4 mr-1" /> 월세 현황</Link>
+        </Button>
+        {invoice.paid_total > 0 && (
+          <Button asChild variant="outline" size="sm">
+            <a href={`/admin/rent/invoices/${invoice.id}/receipt`} target="_blank" rel="noopener noreferrer">
+              <Download className="h-4 w-4 mr-1.5" /> 영수증 PDF
+            </a>
+          </Button>
+        )}
+      </div>
 
       <div className="mb-6">
         <Badge className={`${cfg.c} hover:${cfg.c} mb-2`}>{cfg.l}</Badge>
