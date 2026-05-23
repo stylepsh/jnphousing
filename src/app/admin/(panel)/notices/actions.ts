@@ -1,6 +1,8 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
+import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -14,32 +16,50 @@ const schema = z.object({
 
 export async function upsertNotice(id: string | null, formData: FormData) {
   try {
+    await requireAdmin();
+    if (id && !z.string().uuid().safeParse(id).success) {
+      return { ok: false as const, error: "잘못된 ID" };
+    }
     const raw = Object.fromEntries(formData.entries());
-    const parsed = schema.parse({
+    const parsed = schema.safeParse({
       ...raw,
       is_pinned: raw.is_pinned === "on" || raw.is_pinned === "true",
       is_published: raw.is_published === "on" || raw.is_published === "true",
     });
+    if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
+
     const supabase = createServiceClient();
-    if (id) {
-      const { error } = await supabase.from("notices").update(parsed).eq("id", id);
-      if (error) return { ok: false, error: error.message };
-    } else {
-      const { error } = await supabase.from("notices").insert(parsed);
-      if (error) return { ok: false, error: error.message };
+    const { error } = id
+      ? await supabase.from("notices").update(parsed.data).eq("id", id)
+      : await supabase.from("notices").insert(parsed.data);
+    if (error) {
+      console.error("[upsertNotice]", error);
+      return { ok: false as const, error: "저장 실패" };
     }
     revalidatePath("/admin/notices");
     revalidatePath("/tenant/notice");
-    return { ok: true };
+    return { ok: true as const };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "오류" };
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    console.error("[upsertNotice] unhandled", e);
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
   }
 }
 
 export async function deleteNotice(id: string) {
-  const supabase = createServiceClient();
-  const { error } = await supabase.from("notices").delete().eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/notices");
-  return { ok: true };
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("notices").delete().eq("id", id);
+    if (error) {
+      console.error("[deleteNotice]", error);
+      return { ok: false as const, error: "삭제 실패" };
+    }
+    revalidatePath("/admin/notices");
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
 }

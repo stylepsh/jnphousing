@@ -1,6 +1,8 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
+import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -23,34 +25,64 @@ const vacancySchema = z.object({
 
 export async function createVacancy(formData: FormData) {
   try {
+    await requireAdmin();
     const raw = Object.fromEntries(formData.entries());
-    const parsed = vacancySchema.parse({
+    const parsed = vacancySchema.safeParse({
       ...raw,
       is_published: raw.is_published === "on" || raw.is_published === "true",
     });
+    if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
+
     const supabase = createServiceClient();
-    const { error } = await supabase.from("vacancies").insert(parsed);
-    if (error) return { ok: false, error: error.message };
+    const { error } = await supabase.from("vacancies").insert(parsed.data);
+    if (error) {
+      console.error("[createVacancy]", error);
+      return { ok: false as const, error: "등록 실패" };
+    }
     revalidatePath("/admin/vacancies");
-    return { ok: true };
+    return { ok: true as const };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "알 수 없는 오류";
-    return { ok: false, error: msg };
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    console.error("[createVacancy] unhandled", e);
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
   }
 }
 
 export async function updateVacancyStatus(id: string, status: "available" | "reserved" | "contracted") {
-  const supabase = createServiceClient();
-  const { error } = await supabase.from("vacancies").update({ status }).eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/vacancies");
-  return { ok: true };
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    if (!z.enum(["available", "reserved", "contracted"]).safeParse(status).success) {
+      return { ok: false as const, error: "잘못된 상태 값" };
+    }
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("vacancies").update({ status }).eq("id", id);
+    if (error) {
+      console.error("[updateVacancyStatus]", error);
+      return { ok: false as const, error: "상태 변경 실패" };
+    }
+    revalidatePath("/admin/vacancies");
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
 }
 
 export async function deleteVacancy(id: string) {
-  const supabase = createServiceClient();
-  const { error } = await supabase.from("vacancies").delete().eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/vacancies");
-  return { ok: true };
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("vacancies").delete().eq("id", id);
+    if (error) {
+      console.error("[deleteVacancy]", error);
+      return { ok: false as const, error: "삭제 실패" };
+    }
+    revalidatePath("/admin/vacancies");
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
 }

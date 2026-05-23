@@ -1,6 +1,8 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
+import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,31 +19,48 @@ const schema = z.object({
 
 export async function upsertProperty(id: string | null, formData: FormData) {
   try {
+    await requireAdmin();
+    if (id && !z.string().uuid().safeParse(id).success) {
+      return { ok: false as const, error: "잘못된 ID" };
+    }
     const raw = Object.fromEntries(formData.entries());
-    const parsed = schema.parse({
+    const parsed = schema.safeParse({
       ...raw,
       is_published: raw.is_published === "on" || raw.is_published === "true",
     });
+    if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
+
     const supabase = createServiceClient();
-    if (id) {
-      const { error } = await supabase.from("properties").update(parsed).eq("id", id);
-      if (error) return { ok: false, error: error.message };
-    } else {
-      const { error } = await supabase.from("properties").insert(parsed);
-      if (error) return { ok: false, error: error.message };
+    const { error } = id
+      ? await supabase.from("properties").update(parsed.data).eq("id", id)
+      : await supabase.from("properties").insert(parsed.data);
+    if (error) {
+      console.error("[upsertProperty]", error);
+      return { ok: false as const, error: "저장 실패" };
     }
     revalidatePath("/admin/properties");
-    return { ok: true };
+    return { ok: true as const };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "오류";
-    return { ok: false, error: msg };
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    console.error("[upsertProperty] unhandled", e);
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
   }
 }
 
 export async function deleteProperty(id: string) {
-  const supabase = createServiceClient();
-  const { error } = await supabase.from("properties").delete().eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/properties");
-  return { ok: true };
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("properties").delete().eq("id", id);
+    if (error) {
+      console.error("[deleteProperty]", error);
+      return { ok: false as const, error: "삭제 실패" };
+    }
+    revalidatePath("/admin/properties");
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
 }

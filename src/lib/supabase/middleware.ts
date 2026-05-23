@@ -75,5 +75,15 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // /agency/pending, /agency/rejected → 로그인만 요구 (본인 데이터 표시용)
+  if (
+    pathname === "/agency/pending"
+    || pathname === "/agency/rejected"
+  ) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/agency/login", request.url));
+    }
+  }
+
   return supabaseResponse;
 }
