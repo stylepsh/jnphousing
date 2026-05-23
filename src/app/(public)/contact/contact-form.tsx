@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { submitContact } from "./actions";
 
 const schema = z.object({
   company_name: z.string().max(80).optional().or(z.literal("")),
@@ -70,22 +70,14 @@ export function ContactForm() {
 
   async function onSubmit(values: FormValues) {
     const parsed = schema.parse(values);
-    const supabase = createClient();
-    const { error } = await supabase.from("inquiries").insert({
-      company_name: parsed.company_name || null,
-      contact_name: parsed.contact_name,
-      phone: parsed.phone,
-      email: parsed.email || null,
-      building_address: parsed.building_address,
-      building_type: parsed.building_type || null,
-      total_units: parsed.total_units ?? null,
-      message: parsed.message,
+    const fd = new FormData();
+    Object.entries(parsed).forEach(([k, v]) => {
+      if (v != null) fd.set(k, String(v));
     });
 
-    if (error) {
-      toast.error("문의 접수 중 오류가 발생했습니다.", {
-        description: error.message,
-      });
+    const r = await submitContact(fd);
+    if (!r.ok) {
+      toast.error("문의 접수 중 오류가 발생했습니다.", { description: r.error });
       return;
     }
 

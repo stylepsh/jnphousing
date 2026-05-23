@@ -18,23 +18,35 @@ const PROPERTY_TYPE_LABEL: Record<string, string> = {
   commercial: "상가",
 };
 
-async function fetchProperties(): Promise<Property[]> {
+async function fetchProperties(filters: { type?: string; q?: string }): Promise<Property[]> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase
+    let q = supabase
       .from("properties")
       .select("*")
       .eq("is_published", true)
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
+    if (filters.type && filters.type !== "all") {
+      q = q.eq("type", filters.type);
+    }
+    if (filters.q) {
+      q = q.or(`name.ilike.%${filters.q}%,address.ilike.%${filters.q}%`);
+    }
+    const { data } = await q;
     return (data ?? []) as Property[];
   } catch {
     return [];
   }
 }
 
-export default async function PropertiesPage() {
-  const properties = await fetchProperties();
+export default async function PropertiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string; q?: string }>;
+}) {
+  const sp = await searchParams;
+  const properties = await fetchProperties(sp);
 
   return (
     <>
@@ -50,6 +62,40 @@ export default async function PropertiesPage() {
 
       <section className="bg-background py-16">
         <div className="mx-auto max-w-7xl px-6">
+          {/* 필터 */}
+          <form className="mb-8 flex flex-wrap gap-2" action="/properties" method="get">
+            <input
+              name="q"
+              defaultValue={sp.q ?? ""}
+              placeholder="이름·주소 검색"
+              className="h-10 px-3 rounded-lg border border-border bg-white text-sm flex-1 min-w-[200px] max-w-md"
+            />
+            {[
+              { v: "all", l: "전체" },
+              { v: "officetel", l: "오피스텔" },
+              { v: "apartment", l: "아파트" },
+              { v: "villa", l: "빌라" },
+              { v: "commercial", l: "상가" },
+            ].map((t) => {
+              const params = new URLSearchParams();
+              if (sp.q) params.set("q", sp.q);
+              if (t.v !== "all") params.set("type", t.v);
+              const active = (sp.type ?? "all") === t.v;
+              return (
+                <a
+                  key={t.v}
+                  href={`/properties?${params.toString()}`}
+                  className={`px-3 h-10 inline-flex items-center rounded-lg border text-sm transition ${
+                    active ? "bg-primary text-white border-primary" : "bg-white text-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {t.l}
+                </a>
+              );
+            })}
+            <button type="submit" className="h-10 px-4 rounded-lg bg-primary text-white text-sm">검색</button>
+          </form>
+
           {properties.length === 0 ? (
             <Card className="border-dashed max-w-2xl mx-auto">
               <CardContent className="py-20 text-center text-muted-foreground">

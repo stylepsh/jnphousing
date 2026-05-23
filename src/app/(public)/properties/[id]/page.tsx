@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, MapPin, Home, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { PropertyJsonLd } from "@/components/shared/JsonLd";
 import type { Property } from "@/types/database";
+
+const TYPE_KO: Record<string, string> = { officetel: "오피스텔", apartment: "아파트", villa: "빌라", commercial: "상가" };
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = {
   officetel: "오피스텔",
@@ -72,6 +75,12 @@ export default async function PropertyDetailPage({
 
   return (
     <>
+      <PropertyJsonLd
+        name={property.name}
+        address={property.address}
+        units={property.total_units}
+        type={TYPE_KO[property.type] ?? property.type}
+      />
       {/* 헤더 이미지 */}
       <section className="relative bg-muted">
         <div className="aspect-[21/9] md:aspect-[3/1] w-full bg-muted overflow-hidden">
