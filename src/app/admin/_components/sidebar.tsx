@@ -22,6 +22,8 @@ import {
   Users,
   Wallet,
   Bell,
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -62,6 +64,13 @@ const NAV: NavGroup[] = [
       { href: "/admin/notices", label: "공지사항", icon: Megaphone },
       { href: "/admin/downloads", label: "서류 관리", icon: FileText },
       { href: "/admin/qr", label: "QR 생성", icon: QrCode },
+    ],
+  },
+  {
+    group: "시스템",
+    items: [
+      { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
+      { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
     ],
   },
 ];
