@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download, ShieldCheck } from "lucide-react";
 import { AdminToolsButtons } from "./buttons";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,7 +52,34 @@ export default async function AdminToolsPage() {
         ))}
       </div>
 
-      <Card className="mt-6">
+      {/* 엑셀 백업 — 최우선 노출 */}
+      <Card className="mt-6 border-primary/30 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            데이터 엑셀 백업 (수시 다운로드 권장)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-foreground/80">
+            모든 운영 데이터를 한 개의 엑셀 파일(시트 18개)로 다운로드합니다.
+            <br />
+            <span className="text-xs text-muted-foreground">건물·호실·임대인·임차인·계약·청구·입금·수수료·민원·문의·회원·매물·공지·서류·이벤트·알림·감사 로그</span>
+          </p>
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <a href="/api/admin/backup/excel" download>
+              <Download className="h-4 w-4 mr-2" />
+              지금 엑셀 백업 받기
+            </a>
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            팁: 매일/매주 다운로드 후 별도 저장소(개인 PC + 외장하드 + 클라우드 드라이브 등)에 분산 보관하세요.
+            다운로드 시각은 감사 로그(/admin/audit)에 기록됩니다.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">수동 cron 트리거</CardTitle>
         </CardHeader>
