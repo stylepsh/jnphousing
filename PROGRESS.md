@@ -29,7 +29,8 @@
 | P20-6 | 애니메이션 토큰 @theme 등록 (fadeIn/slideUp/scaleIn/slideDown/slideInRight) | 2026-05-24 | `a69af8b` |
 | P20-7 | focus-visible 정밀화 + skip-to-content 링크 (키보드 a11y) | 2026-05-24 | `94d4b00` |
 | P20-8 | 다크모드 next-themes + ThemeToggle (light/dark/system 3-cycle) | 2026-05-24 | `bd245be` |
-| P20-9 | Logo 변형 4종 (default/mono/white + size: small/default/large/hero) | 2026-05-24 | _pending_ |
+| P20-9 | Logo 변형 4종 (default/mono/white + size: small/default/large/hero) | 2026-05-24 | `edc17b5` |
+| P20-10 | 부동산 도메인 아이콘 set (`lib/icons.ts` — 150+ 별칭 매핑) | 2026-05-24 | _pending_ |
 
 ---
 
