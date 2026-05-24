@@ -114,7 +114,7 @@ export default async function HomePage() {
                 <Award className="h-3 w-3 mr-1" />
                 <CountUp end={COMPANY_STATS.yearsAsTeam} className="tabular-nums" />년차 부동산 관리 전문기업
               </Badge>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+              <h1 className="font-bold tracking-tight leading-[1.1]" style={{ fontSize: "clamp(28px, 6vw, 56px)" }}>
                 위기 자산을 <span className="text-blue-300">정상화</span>하는<br />
                 위탁임대 전문가
               </h1>
@@ -659,6 +659,92 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ============ 프로세스 5단계 Flow (P21-22) ============ */}
+      <section className="bg-slate-50 py-20 md:py-24 border-t border-border/60">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Our Process</p>
+            <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">
+              위탁관리 5단계 진행 절차
+            </h2>
+          </div>
+          <div className="relative">
+            {/* 데스크톱: 가로 5단계 + 화살표 */}
+            <div className="hidden md:grid grid-cols-5 gap-2 items-start relative">
+              {[
+                { step: "1", title: "문의 접수", desc: "전화·카톡·온라인 폼으로 상황 청취", icon: "📞" },
+                { step: "2", title: "현장 실사", desc: "건물·세대·임차인 상태 종합 점검", icon: "🔍" },
+                { step: "3", title: "위탁 계약", desc: "수수료·범위·기간 명문화", icon: "📝" },
+                { step: "4", title: "관리 운영", desc: "수금·민원·공실·분쟁 일괄 대응", icon: "⚙️" },
+                { step: "5", title: "월 정산", desc: "수익·지출·진행상황 보고서 발송", icon: "💰" },
+              ].map((s, idx, arr) => (
+                <div key={s.step} className="relative">
+                  <div className="bg-white rounded-2xl p-5 border border-border/60 hover:shadow-lg hover:-translate-y-1 transition-all">
+                    <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center font-bold mb-3 text-sm">
+                      {s.step}
+                    </div>
+                    <h3 className="font-bold mb-1">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-snug">{s.desc}</p>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <svg className="hidden lg:block absolute -right-1 top-12 w-5 h-5 text-muted-foreground/40" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M7 5l5 5-5 5V5z" />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* 모바일: 세로 5단계 + 좌측 연결선 */}
+            <div className="md:hidden space-y-3">
+              {[
+                { step: "1", title: "문의 접수", desc: "전화·카톡·온라인 폼으로 상황 청취" },
+                { step: "2", title: "현장 실사", desc: "건물·세대·임차인 상태 종합 점검" },
+                { step: "3", title: "위탁 계약", desc: "수수료·범위·기간 명문화" },
+                { step: "4", title: "관리 운영", desc: "수금·민원·공실·분쟁 일괄 대응" },
+                { step: "5", title: "월 정산", desc: "수익·지출·진행상황 보고서 발송" },
+              ].map((s) => (
+                <div key={s.step} className="flex gap-4">
+                  <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {s.step}
+                  </div>
+                  <div className="flex-1 pb-1">
+                    <h3 className="font-bold">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ 인증·신뢰 (P21-21) ============ */}
+      <section className="bg-background py-16 border-t border-border/60">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-8">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Trust & Certification</p>
+            <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">공식 등록 · 인증</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "사업자등록", value: COMPANY.legal.registrationNumber, sub: "부천세무서" },
+              { label: "법적 형태", value: COMPANY.legal.taxType, sub: COMPANY.business.category },
+              { label: "운영 경력", value: `${COMPANY_STATS.yearsAsTeam}년`, sub: "1999년 시작" },
+              { label: "관리 자산", value: `${COMPANY_STATS.operatedBuildings}+ 동`, sub: `${COMPANY_STATS.managedUnits}+ 세대` },
+            ].map((c) => (
+              <div key={c.label} className="rounded-xl border border-border/60 bg-white p-5 text-center">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{c.label}</p>
+                <p className="mt-1.5 text-lg font-bold text-primary">{c.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-xs text-muted-foreground">
+            * HUG 협력업체 인증 · 부동산 협회 등록증 등 추가 인증서는 <Link href="/about" className="underline">회사소개</Link> 페이지 참조
+          </p>
         </div>
       </section>
 
