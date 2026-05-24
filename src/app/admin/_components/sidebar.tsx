@@ -24,6 +24,7 @@ import {
   Bell,
   Settings,
   ShieldCheck,
+  Award,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -67,6 +68,8 @@ const NAV: NavGroup[] = [
       { href: "/admin/notices", label: "임차인 공지", icon: Megaphone },
       { href: "/admin/cms/news", label: "공지 게시판", icon: Megaphone },
       { href: "/admin/cms/faq", label: "FAQ 관리", icon: FileQuestion },
+      { href: "/admin/cms/milestones", label: "회사 연혁", icon: Award },
+      { href: "/admin/cms/certs", label: "인증서·자격증", icon: ShieldCheck },
       { href: "/admin/downloads", label: "서류 관리", icon: FileText },
       { href: "/admin/qr", label: "QR 생성", icon: QrCode },
     ],
