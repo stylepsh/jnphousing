@@ -27,8 +27,10 @@ import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCirc
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
+import { CaseCarousel } from "@/components/shared/CaseCarousel";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
+import { CASE_STUDIES } from "@/lib/data/cases";
 import type { Property } from "@/types/database";
 
 interface RecentNotice {
@@ -521,6 +523,26 @@ export default async function HomePage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ============ 고객 사례·성공 사례 (P21-19) ============ */}
+      <section className="bg-slate-50 py-20 md:py-24 border-y border-border/60">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-10 flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold text-primary uppercase tracking-wide">Case Studies</p>
+              <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">실제 해결 사례</h2>
+              <p className="mt-3 text-muted-foreground max-w-xl">
+                JNP가 처리한 위탁임대 사건들 중 일부.
+                개인정보 보호를 위해 가명·요약 처리되었습니다.
+              </p>
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              총 {CASE_STUDIES.length}건 (대표 사례 발췌)
+            </Badge>
+          </div>
+          <CaseCarousel cases={CASE_STUDIES} />
         </div>
       </section>
 
