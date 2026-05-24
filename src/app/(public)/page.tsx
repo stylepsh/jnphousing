@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer } from "lucide-react";
+import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer, HomeIcon, ShieldCheck, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
+import { CountUp } from "@/components/shared/CountUp";
 import type { Property } from "@/types/database";
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = {
@@ -86,6 +87,59 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ============ 핵심 통계 ============ */}
+      <section className="bg-white border-y border-border/60 py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">우리의 발자취</p>
+            <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">
+              숫자로 보는 {COMPANY.brand}
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 stagger-children">
+            <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/15 p-6 md:p-7 text-center animate-fade-in">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
+                <CountUp end={COMPANY.stats.operatedBuildings} suffix="+" />
+              </div>
+              <p className="mt-1 text-xs md:text-sm text-muted-foreground">운영 건물</p>
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/15 p-6 md:p-7 text-center animate-fade-in">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                <HomeIcon className="h-5 w-5" />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
+                <CountUp end={COMPANY.stats.managedUnits} suffix="+" />
+              </div>
+              <p className="mt-1 text-xs md:text-sm text-muted-foreground">관리 세대</p>
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/15 p-6 md:p-7 text-center animate-fade-in">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
+                <CountUp end={COMPANY.stats.resolvedDisputes} suffix="+" />
+              </div>
+              <p className="mt-1 text-xs md:text-sm text-muted-foreground">해결 분쟁</p>
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/15 p-6 md:p-7 text-center animate-fade-in">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
+                <CountUp end={COMPANY.stats.yearsAsTeam} suffix="년" />
+              </div>
+              <p className="mt-1 text-xs md:text-sm text-muted-foreground">누적 운영 경력</p>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            * 누적 기준 추정치. 자세한 사례는 회사소개 페이지에서 확인하세요.
+          </p>
         </div>
       </section>
 

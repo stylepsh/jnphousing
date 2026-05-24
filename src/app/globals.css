@@ -81,6 +81,14 @@
   --chart-4: #93c5fd;
   --chart-5: #cbd5e1;
   --radius: 0.625rem;
+
+  /* Status colors — 직접 사용용 */
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
   --sidebar: #1c3a5e;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #2563eb;
@@ -138,5 +146,77 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* a11y: keyboard focus ring (mouse 사용 시는 제외) */
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) * 0.4);
+  }
+
+  /* 타이포그래피 스케일 (h1-h6 공통 베이스) */
+  h1 { letter-spacing: -0.025em; }
+  h2 { letter-spacing: -0.02em; }
+  h3 { letter-spacing: -0.015em; }
+}
+
+/* ============ 애니메이션 유틸리티 ============ */
+@keyframes jnp-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jnp-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jnp-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes jnp-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes jnp-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes jnp-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+.animate-fade-in     { animation: jnp-fade-in 0.5s ease-out both; }
+.animate-slide-up    { animation: jnp-slide-up 0.6s ease-out both; }
+.animate-scale-in    { animation: jnp-scale-in 0.4s ease-out both; }
+.animate-gradient    {
+  background-size: 200% 200%;
+  animation: jnp-gradient-shift 12s ease infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: jnp-shimmer 2s linear infinite;
+}
+.animate-pulse-soft  { animation: jnp-pulse-soft 2.5s ease-in-out infinite; }
+
+/* Stagger 지원: 자식에 차례로 delay 적용 */
+.stagger-children > *           { animation-delay: 0ms; }
+.stagger-children > *:nth-child(1) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 480ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in,
+  .animate-gradient,
+  .animate-shimmer,
+  .animate-pulse-soft {
+    animation: none !important;
   }
 }

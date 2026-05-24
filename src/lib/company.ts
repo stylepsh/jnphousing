@@ -11,6 +11,13 @@ export const COMPANY = {
   yearsOfExperience: 27,
   serviceArea: "경기 · 서울 · 인천",
 
+  stats: {
+    operatedBuildings: 30,
+    managedUnits: 500,
+    resolvedDisputes: 100,
+    yearsAsTeam: 27,
+  },
+
   business: {
     category: "부동산업",
     item: "부동산 관리업",
