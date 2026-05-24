@@ -314,8 +314,18 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3 stagger-children">
-            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
-              <CardHeader>
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none opacity-[0.03] text-primary">
+                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <defs>
+                    <pattern id="svc-grid-1" width="24" height="24" patternUnits="userSpaceOnUse">
+                      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#svc-grid-1)" />
+                </svg>
+              </div>
+              <CardHeader className="relative">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
@@ -326,8 +336,18 @@ export default async function HomePage() {
                 <p>전문 인력이 상주하여 건물의 가치를 유지합니다. 시설 점검, 정기 청소, 보안 관리까지 일괄 처리.</p>
               </CardContent>
             </Card>
-            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
-              <CardHeader>
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none opacity-[0.03] text-primary">
+                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <defs>
+                    <pattern id="svc-grid-1" width="24" height="24" patternUnits="userSpaceOnUse">
+                      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#svc-grid-1)" />
+                </svg>
+              </div>
+              <CardHeader className="relative">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Wrench className="h-6 w-6 text-primary" />
                 </div>
@@ -338,8 +358,18 @@ export default async function HomePage() {
                 <p>임대료 수납, 공실 마케팅, 임차인 응대까지. 소유주는 정산서만 받아보시면 됩니다.</p>
               </CardContent>
             </Card>
-            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
-              <CardHeader>
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none opacity-[0.03] text-primary">
+                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <defs>
+                    <pattern id="svc-grid-1" width="24" height="24" patternUnits="userSpaceOnUse">
+                      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#svc-grid-1)" />
+                </svg>
+              </div>
+              <CardHeader className="relative">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Users className="h-6 w-6 text-primary" />
                 </div>

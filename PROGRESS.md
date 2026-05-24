@@ -35,7 +35,8 @@
 | P20-12 | Card transition + interactive prop (hover lift + shadow + ring) | 2026-05-24 | `2da531f` |
 | S-2 | canonical 도메인 .co.kr 통일 + vercel.json 301 redirect + lib/constants/stats.ts | 2026-05-24 | `b99d817` |
 | P21-13 | BuildingCluster SVG illustration 컴포넌트 분리 + GridPattern | 2026-05-24 | `4d80c2d` |
-| P21-14 | Hero 배경 animate-gradient slow drift (3-layer radial) | 2026-05-24 | _pending_ |
+| P21-14 | Hero 배경 animate-gradient slow drift (3-layer radial) | 2026-05-24 | `d227117` |
+| P21-15 | 핵심 서비스 3카드 배경 grid pattern (opacity 0.03 primary) | 2026-05-24 | _pending_ |
 
 ---
 
