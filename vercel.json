@@ -2,7 +2,8 @@
   "crons": [
     { "path": "/api/cron/daily",        "schedule": "0 0 * * *" },
     { "path": "/api/cron/monthly",      "schedule": "0 1 1 * *" },
-    { "path": "/api/cron/lease-expiry", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/lease-expiry", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/landlord-monthly-report", "schedule": "0 3 1 * *" }
   ],
   "redirects": [
     {
