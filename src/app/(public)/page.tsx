@@ -446,12 +446,51 @@ export default async function HomePage() {
           </div>
 
           {properties.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-16 text-center text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">관리현장 데이터가 곧 등록됩니다.</p>
-              </CardContent>
-            </Card>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
+              {[
+                { name: "부천 중동 오피스텔",  type: "officetel",  units: 84, hue: 215 },
+                { name: "서울 양천구 빌라",   type: "villa",      units: 12, hue: 140 },
+                { name: "인천 부평 아파트",   type: "apartment",  units: 56, hue: 30 },
+                { name: "부천 상동 오피스텔", type: "officetel",  units: 96, hue: 260 },
+                { name: "서울 구로 빌라",     type: "villa",      units: 8,  hue: 350 },
+                { name: "부천 송내 상가",     type: "commercial", units: 6,  hue: 190 },
+              ].map((p, idx) => (
+                <Card key={idx} className="overflow-hidden border-border/60 h-full animate-fade-in">
+                  <div className="aspect-[16/10] relative overflow-hidden">
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: `linear-gradient(135deg, hsl(${p.hue}, 60%, 35%) 0%, hsl(${p.hue}, 50%, 25%) 100%)`,
+                      }}
+                    />
+                    <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                      <rect x="60" y="50" width="80" height="130" fill="white" fillOpacity="0.3" rx="2" />
+                      {[...Array(5)].map((_, row) => [...Array(3)].map((_, col) => (
+                        <rect key={`r${row}-c${col}`} x={68 + col * 22} y={60 + row * 22} width="14" height="14" fill="#FBBF24" fillOpacity={((row + col) % 3) ? 0.5 : 0.15} rx="1" />
+                      )))}
+                      <rect x="160" y="80" width="70" height="100" fill="white" fillOpacity="0.25" rx="2" />
+                      {[...Array(4)].map((_, row) => [...Array(2)].map((_, col) => (
+                        <rect key={`r2-${row}-c${col}`} x={168 + col * 24} y={88 + row * 22} width="14" height="14" fill="#FBBF24" fillOpacity={((row * 2 + col) % 3) ? 0.6 : 0.2} rx="1" />
+                      )))}
+                      <rect x="0" y="180" width="320" height="20" fill="white" fillOpacity="0.1" />
+                    </svg>
+                    <Badge className="absolute top-3 left-3 bg-white/95 text-primary hover:bg-white">
+                      {PROPERTY_TYPE_LABEL[p.type] ?? p.type}
+                    </Badge>
+                    <div className="absolute bottom-3 right-3 text-white/80 text-[10px] font-semibold uppercase tracking-wide bg-black/30 backdrop-blur px-2 py-1 rounded">
+                      샘플 이미지
+                    </div>
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{p.name}</CardTitle>
+                    <CardDescription className="line-clamp-1">관리현장 정보 등록 예정</CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground">
+                    총 {p.units}세대
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {properties.map((p) => (
