@@ -98,6 +98,11 @@
 | P30-99 | lib/rate-limit.ts (Upstash + memory fallback + 4종 RATE_POLICIES) | 2026-05-24 | (이 commit) |
 | P30-100 | mv_dashboard_stats + refresh_dashboard_stats() 함수 | 2026-05-24 | (이 commit) |
 | P42 | blog_posts/notices_board pg_trgm GIN 인덱스 (검색 인프라) | 2026-05-24 | (이 commit) |
+| P26-67b | /api/cron/lease-expiry route (60/30/7일 + vercel.json 등록) | 2026-05-24 | `df7024d` |
+| P27-73 | LeaseExpiryBanner 컴포넌트 (60일 전 안내) | 2026-05-24 | (df7024d) |
+| P27-74 | UnpaidBanner 컴포넌트 (미납·연체 알림 3단계) | 2026-05-24 | (df7024d) |
+| P25-50 | KpiTrend 컴포넌트 (전월 대비 +Δ TrendingUp/Down) | 2026-05-24 | (df7024d) |
+| P29-87 | VacancyTrendChart (recharts LineChart 12개월) | 2026-05-24 | (df7024d) |
 
 ---
 
@@ -117,12 +122,12 @@
 | P22 회사·서비스 확장 | 8 | 8 |
 | P23 게시판 CMS | 10 | 10 |
 | P24 SEO | 6 | 6 |
-| P25 관리자 대시보드 | 5 | 10 |
-| P26 운영 자동화 | 6 | 12 |
-| P27 임차인 포털 | 2 | 8 |
+| P25 관리자 대시보드 | 6 | 10 |
+| P26 운영 자동화 | 7 | 12 |
+| P27 임차인 포털 | 4 | 8 |
 | P28 부동산 포털 ⭐ | 7 | 8 |
-| P29 임대인 포털 | 1 | 7 |
+| P29 임대인 포털 | 2 | 7 |
 | P30 인프라/보안 | 6 | 7 |
-| **합계** | **86** | **104** |
+| **합계** | **91** | **104** |
 
 > 합계가 104인 이유: 100개 본 항목 + 사전 정비 4개. 본 항목 완료율은 `완료/100` 으로 계산.

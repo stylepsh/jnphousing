@@ -62,4 +62,24 @@
 ### [B-105] 블로그 글 콘텐츠 (P23-35)
 - **필요 시점**: /blog 페이지 실 노출 시
 - **박성혁 액션**: 본인 콘텐츠 1~3편 직접 작성
-- **현재**: 페이지 미구현
+- **현재**: 3편 더미 작성 완료 (HUG/전세사기/공실 전략) — 실 콘텐츠 교체 시 lib/data/blog-posts.ts 수정 또는 DB 등록
+
+### [B-106] 외부 서비스 인증·API 키 (P30 인프라 활성화)
+- **필요 시점**: 실 발송·모니터링 활성
+- **박성혁 액션 (선택적):**
+  - 카카오 비즈메시지: `KAKAO_BIZ_API_KEY` / `KAKAO_BIZ_SENDER` (B-101 발신프로필 필수)
+  - NCP SENS SMS: `NCP_SENS_ACCESS_KEY` / `_SECRET_KEY` / `_SERVICE_ID` / `_FROM`
+  - Sentry: `npm install @sentry/nextjs` + `NEXT_PUBLIC_SENTRY_DSN`
+  - Upstash Redis: `UPSTASH_REDIS_REST_URL` / `_TOKEN` (분산 rate limit)
+  - PostHog: `NEXT_PUBLIC_POSTHOG_KEY` (이벤트 추적)
+  - PII 암호화: `PII_ENCRYPTION_KEY` (32 bytes hex, openssl rand -hex 32)
+  - 카카오맵 SDK: `NEXT_PUBLIC_KAKAO_MAP_KEY` (현재는 외부 링크 + placeholder)
+  - 구글/네이버 사이트 인증: `GOOGLE_SITE_VERIFICATION` / `NAVER_SITE_VERIFICATION`
+- **현재**: 모든 lib 이 env 없으면 mock fallback (빌드·실행 안 깨짐)
+
+### [B-107] Supabase SQL 추가 마이그레이션 실행
+- **필요 시점**: BUNDLE 6/7/8 기능 활성화
+- **박성혁 액션**:
+  - Supabase SQL Editor 에서 `007_operations_and_security.sql` 실행
+  - (확인) `006_content_cms.sql` 이미 실행되어 있는지 점검
+- **현재**: 마이그레이션 파일은 git 에 push 완료. 실행만 박성혁이 수동 진행.
