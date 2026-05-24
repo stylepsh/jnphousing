@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { formatKoreanDate } from "@/lib/dates";
+import { AuditFilters } from "./filters";
 
 interface AuditRow {
   id: string;
@@ -18,31 +19,59 @@ interface AuditRow {
   created_at: string;
 }
 
-async function fetchLogs(): Promise<AuditRow[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("audit_logs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(500);
-  return (data ?? []) as AuditRow[];
+interface AuditPageProps {
+  searchParams: Promise<{ action?: string; q?: string; from?: string; to?: string }>;
+}
+
+async function fetchLogs(filters: { action?: string; q?: string; from?: string; to?: string }): Promise<AuditRow[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase.from("audit_logs").select("*");
+    if (filters.action && filters.action !== "all") query = query.eq("action", filters.action);
+    if (filters.from) query = query.gte("created_at", filters.from);
+    if (filters.to) query = query.lte("created_at", filters.to + "T23:59:59");
+    if (filters.q) {
+      query = query.or(`resource_type.ilike.%${filters.q}%,ip.ilike.%${filters.q}%,actor_role.ilike.%${filters.q}%`);
+    }
+    const { data } = await query.order("created_at", { ascending: false }).limit(500);
+    return (data ?? []) as AuditRow[];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchActions(): Promise<string[]> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("audit_logs").select("action").limit(2000);
+    const set = new Set<string>();
+    for (const r of (data ?? []) as { action: string }[]) set.add(r.action);
+    return Array.from(set).sort();
+  } catch {
+    return [];
+  }
 }
 
 export const metadata = { title: "감사 로그" };
+export const dynamic = "force-dynamic";
 
-export default async function AuditPage() {
-  const logs = await fetchLogs();
+export default async function AuditPage({ searchParams }: AuditPageProps) {
+  const params = await searchParams;
+  const [logs, actions] = await Promise.all([fetchLogs(params), fetchActions()]);
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">감사 로그</h1>
-        <p className="mt-1 text-sm text-muted-foreground">민감 작업 이력 · 최근 {logs.length}건 (불변 로그)</p>
+        <p className="mt-1 text-sm text-muted-foreground">민감 작업 이력 · {logs.length}건 표시 (불변 로그, 최대 500건)</p>
       </div>
+
+      <AuditFilters actions={actions} />
 
       <Card>
         <CardContent className="p-0">
           {logs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-16">기록된 감사 로그가 없습니다.</p>
+            <p className="text-sm text-muted-foreground text-center py-16">조건에 맞는 감사 로그가 없습니다.</p>
           ) : (
             <Table>
               <TableHeader>

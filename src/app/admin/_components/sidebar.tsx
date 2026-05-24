@@ -77,6 +77,7 @@ const NAV: NavGroup[] = [
   {
     group: "시스템",
     items: [
+      { href: "/admin/favorites", label: "즐겨찾기", icon: LayoutDashboard },
       { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
       { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
     ],
