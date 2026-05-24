@@ -85,6 +85,23 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // /landlord/* (login 제외) → Supabase 세션 + landlord_users 매핑 필요
+  if (pathname.startsWith("/landlord") && !pathname.startsWith("/landlord/login")) {
+    if (!user) {
+      const url = new URL("/landlord/login", request.url);
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+    const { data: row } = await supabase
+      .from("landlord_users")
+      .select("landlord_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!row) {
+      return NextResponse.redirect(new URL("/landlord/login?error=not_landlord", request.url));
+    }
+  }
+
   // /tenant/my-* → tenant session 쿠키 필요
   if (pathname.startsWith("/tenant/my-")) {
     const tenantToken = request.cookies.get("tenant_session")?.value;

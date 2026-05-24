@@ -28,6 +28,11 @@ export interface ApprovedAgencyContext {
   agency: { id: string; company_name: string; status: "approved" };
 }
 
+export interface LandlordContext {
+  user: { id: string; email: string | null };
+  landlord: { id: string; name: string };
+}
+
 /** 관리자(admin_users) 권한 강제. 없으면 throw. */
 export async function requireAdmin(): Promise<AdminContext> {
   const supabase = await createClient();
@@ -85,6 +90,30 @@ export async function requireApprovedAgency(): Promise<ApprovedAgencyContext> {
   return {
     user: { id: user.id, email: user.email ?? null },
     agency: { id: agency.id, company_name: agency.company_name, status: "approved" },
+  };
+}
+
+/** 임대인 (landlord_users 매핑된 사용자) 강제. */
+export async function requireLandlord(): Promise<LandlordContext> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new AppError("UNAUTHORIZED", "로그인이 필요합니다.");
+  }
+
+  const { data } = await supabase
+    .from("landlord_users")
+    .select("landlord_id, landlord:landlords(id, name)")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const row = data as unknown as { landlord_id: string; landlord: { id: string; name: string } | null } | null;
+  if (!row || !row.landlord) {
+    throw new AppError("FORBIDDEN", "임대인 계정이 아닙니다. 관리자에게 문의 주세요.");
+  }
+
+  return {
+    user: { id: user.id, email: user.email ?? null },
+    landlord: { id: row.landlord.id, name: row.landlord.name },
   };
 }
 

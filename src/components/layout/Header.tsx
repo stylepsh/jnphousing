@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/properties", label: "관리현장" },
   { href: "/tenant", label: "세입자존" },
   { href: "/agency/vacancies", label: "부동산존" },
+  { href: "/landlord/dashboard", label: "임대인존" },
   { href: "/contact", label: "관리문의" },
 ];
 
