@@ -48,9 +48,12 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/leases", label: "계약", icon: FileSignature, badgeKey: "expiring", badgeColor: "amber" },
       { href: "/admin/rent", label: "월세 현황", icon: Receipt, badgeKey: "overdue", badgeColor: "red" },
+      { href: "/admin/rent/bulk", label: "청구 일괄작업", icon: Receipt },
+      { href: "/admin/rent/match", label: "은행입금 매칭", icon: Wallet },
       { href: "/admin/commissions", label: "위탁수수료", icon: Wallet },
       { href: "/admin/landlords", label: "임대인", icon: UserSquare },
       { href: "/admin/tenants", label: "임차인", icon: Users },
+      { href: "/admin/tenants/import", label: "임차인 CSV 등록", icon: Users },
     ],
   },
   {
@@ -60,6 +63,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
       { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
+      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
     ],
   },
   {
