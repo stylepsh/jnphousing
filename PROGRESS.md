@@ -31,7 +31,8 @@
 | P20-8 | 다크모드 next-themes + ThemeToggle (light/dark/system 3-cycle) | 2026-05-24 | `bd245be` |
 | P20-9 | Logo 변형 4종 (default/mono/white + size: small/default/large/hero) | 2026-05-24 | `edc17b5` |
 | P20-10 | 부동산 도메인 아이콘 set (`lib/icons.ts` — 150+ 별칭 매핑) | 2026-05-24 | `c1f9120` |
-| P20-11 | 페이지 전환 fade-in (framer-motion + LazyMotion + AnimatePresence) | 2026-05-24 | _pending_ |
+| P20-11 | 페이지 전환 fade-in (framer-motion + LazyMotion + AnimatePresence) | 2026-05-24 | `274b96d` |
+| P20-12 | Card transition + interactive prop (hover lift + shadow + ring) | 2026-05-24 | _pending_ |
 
 ---
 
@@ -45,8 +46,8 @@
 
 | Phase | 완료 | 합계 |
 |---|---|---|
-| 사전 정비 (S) | 0 | 4 |
-| P20 디자인 시스템 | 0 | 12 |
+| 사전 정비 (S) | 1 | 4 |
+| P20 디자인 시스템 | 12 | 12 |
 | P21 공개 페이지 시각 | 0 | 12 |
 | P22 회사·서비스 확장 | 0 | 8 |
 | P23 게시판 CMS | 0 | 10 |
@@ -57,6 +58,6 @@
 | P28 부동산 포털 ⭐ | 0 | 8 |
 | P29 임대인 포털 | 0 | 7 |
 | P30 인프라/보안 | 0 | 7 |
-| **합계** | **0** | **104** |
+| **합계** | **13** | **104** |
 
 > 합계가 104인 이유: 100개 본 항목 + 사전 정비 4개. 본 항목 완료율은 `완료/100` 으로 계산.
