@@ -54,6 +54,7 @@ const NAV: NavGroup[] = [
     group: "매물·관리현장",
     items: [
       { href: "/admin/vacancies", label: "공실 매물", icon: Home },
+      { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
       { href: "/admin/agencies", label: "부동산 회원", icon: Handshake },
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
     ],

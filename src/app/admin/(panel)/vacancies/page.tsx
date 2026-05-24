@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VacancyAddDialog } from "./vacancy-add-dialog";
@@ -60,8 +61,10 @@ export default async function VacanciesAdminPage() {
                   return (
                     <TableRow key={v.id}>
                       <TableCell className="text-sm">
-                        <div className="font-medium">{p?.name ?? "-"} · {v.unit_number}호</div>
-                        <div className="text-xs text-muted-foreground">{p?.address}</div>
+                        <Link href={`/admin/vacancies/${v.id}`} className="hover:underline">
+                          <div className="font-medium">{p?.name ?? "-"} · {v.unit_number}호</div>
+                          <div className="text-xs text-muted-foreground">{p?.address}</div>
+                        </Link>
                       </TableCell>
                       <TableCell className="text-sm">{v.area_pyeong ? `${v.area_pyeong}평` : "-"}</TableCell>
                       <TableCell className="text-sm">
