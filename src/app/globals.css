@@ -332,6 +332,10 @@
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.7; }
 }
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
 
 /* animate-gradient / animate-shimmer 는 background-size 설정 필요 → utility 보조 */
 .animate-gradient {
