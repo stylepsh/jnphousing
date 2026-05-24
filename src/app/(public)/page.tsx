@@ -28,9 +28,11 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { CaseCarousel } from "@/components/shared/CaseCarousel";
+import { BeforeAfterCard } from "@/components/shared/BeforeAfterCard";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
 import { CASE_STUDIES } from "@/lib/data/cases";
+import { TRANSFORMATIONS } from "@/lib/data/transformations";
 import type { Property } from "@/types/database";
 
 interface RecentNotice {
@@ -523,6 +525,28 @@ export default async function HomePage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ============ 부실 건물 정상화 Before/After (P21-20) ============ */}
+      <section className="bg-background py-20 md:py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Before / After</p>
+            <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">
+              위기 건물의 정상화 결과
+            </h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+              실제 운영 데이터로 확인된 변화. 공실률·수금률·민원 처리속도 등 핵심 지표 개선.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+            {TRANSFORMATIONS.map(t => (
+              <div key={t.id} className="animate-fade-in">
+                <BeforeAfterCard t={t} />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

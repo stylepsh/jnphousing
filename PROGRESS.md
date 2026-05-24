@@ -40,7 +40,8 @@
 | P21-16 | Hero "27년차" CountUp + 통계 상수 COMPANY_STATS 일원화 | 2026-05-24 | `a0fd309` |
 | P21-17 | 관리현장 placeholder 6장 카드 (HSL gradient + SVG building) | 2026-05-24 | `a8697b0` |
 | P21-18 | 메인 핵심 통계 섹션 (32+/480+/67+/27년) — 어제 작업분 + COMPANY_STATS 일원화 | 2026-05-24 | (P21-16 포함) |
-| P21-19 | 고객 사례 캐러셀 (embla + CaseCarousel + cases.ts 5건) | 2026-05-24 | _pending_ |
+| P21-19 | 고객 사례 캐러셀 (embla + CaseCarousel + cases.ts 5건) | 2026-05-24 | `a06687b` |
+| P21-20 | Before/After 카드 3건 (HSL gradient + SVG + metrics) + transformations.ts | 2026-05-24 | _pending_ |
 
 ---
 
