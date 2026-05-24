@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -62,7 +63,8 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle />
           <Button asChild variant="outline" size="sm">
             <Link href="/login">로그인</Link>
           </Button>
@@ -71,13 +73,16 @@ export function Header() {
           </Button>
         </div>
 
-        <button
-          className="lg:hidden p-2 -mr-2"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="메뉴 열기"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="lg:hidden flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            className="p-2 -mr-2"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="메뉴 열기"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* 모바일 메뉴 */}
