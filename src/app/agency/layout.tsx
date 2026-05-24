@@ -1,20 +1,39 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NotConfiguredBanner } from "@/components/shared/NotConfiguredBanner";
-import { isSupabaseConfigured } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { AgencyNav } from "./_components/agency-nav";
 
-// agency 영역 전체 동적 렌더링 — 세션·DB 의존
 export const dynamic = "force-dynamic";
 
-export default function AgencyLayout({
+async function isApprovedAgency() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { data } = await supabase
+      .from("agencies")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    return (data as { status?: string } | null)?.status === "approved";
+  } catch {
+    return false;
+  }
+}
+
+export default async function AgencyLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const configured = isSupabaseConfigured();
+  const approved = configured ? await isApprovedAgency() : false;
+
   return (
     <>
       <Header />
+      {approved && <AgencyNav />}
       <main className="min-h-[calc(100vh-4rem)] bg-slate-50">
         {configured ? children : (
           <NotConfiguredBanner
