@@ -46,6 +46,8 @@
 | P21-22 | 위탁관리 5단계 Flow 다이어그램 (데스크톱 가로 + 모바일 세로) | 2026-05-24 | (이 commit) |
 | P21-23 | 모바일 Hero 텍스트 clamp(28px, 6vw, 56px) | 2026-05-24 | (이 commit) |
 | P21-24 | 모바일 푸터 accordion (어제 작업 — Phase 9) | 2026-05-24 | (Phase 9 commit) |
+| P24-43 | 메인 metadata 키워드 강화 (부천 위탁임대/HUG/전세사기) + alternates.canonical | 2026-05-24 | _pending_ |
+| P24-48 | 네이버·구글 site-verification env (GOOGLE_SITE_VERIFICATION, NAVER_SITE_VERIFICATION) | 2026-05-24 | (이 commit) |
 
 ---
 

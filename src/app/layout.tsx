@@ -30,6 +30,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: {
+      "naver-site-verification": process.env.NAVER_SITE_VERIFICATION ?? "",
+    },
+  },
 };
 
 export default function RootLayout({

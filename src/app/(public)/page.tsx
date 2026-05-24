@@ -5,22 +5,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
-  title: "JNP주택관리 - 위기 자산을 정상화하는 위탁임대 전문가",
+  title: "부천 위탁임대 전문 JNP주택관리 - HUG 대위변제·전세사기 27년 해결",
   description:
-    "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결. 부천 본점, 경기·서울·인천 전 지역 위탁임대 관리. 010-7508-6916",
+    "부천·경기·서울·인천 위탁임대관리 27년. HUG 대위변제, 전세사기, 부실 건물 정상화, 세입자 분쟁까지 전문 해결. 운영 32+ 건물 / 관리 480+ 세대. 무료 상담 010-7508-6916",
+  keywords: [
+    "부천 위탁임대", "부천 주택관리", "위탁임대관리",
+    "HUG 대위변제", "전세사기", "보증사고",
+    "임대료 수금", "부실 건물 정상화", "공실 관리",
+    "세입자 분쟁", "임차인 명도", "임대인 정산",
+    "오피스텔 위탁", "빌라 관리", "JNP주택관리",
+    "제이앤피", "경기 임대관리",
+  ],
   openGraph: {
-    title: "JNP주택관리 · 위탁임대 전문기업",
+    title: "JNP주택관리 · 위탁임대 27년 전문가",
     description:
-      "위기 자산을 정상화하는 27년차 위탁임대 전문가. HUG 대위변제·부실 건물·세입자 분쟁 끝까지 해결.",
-    url: "https://jnphousing.com",
+      "부천 본점 / HUG 대위변제·전세사기·부실 건물 정상화 / 운영 32+ 건물 · 관리 480+ 세대 / 해결 분쟁 67+",
+    url: "https://jnphousing.co.kr",
     siteName: "JNP주택관리",
     locale: "ko_KR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "JNP주택관리 · 위탁임대 전문기업",
-    description: "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결",
+    title: "JNP주택관리 · 위탁임대 27년 전문가",
+    description: "부천 위탁임대 / HUG 대위변제 · 전세사기 · 부실 건물 정상화 해결 전문",
+  },
+  alternates: {
+    canonical: "https://jnphousing.co.kr",
   },
 };
 import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer, HomeIcon, ShieldCheck, TrendingUp, Megaphone, Pin, Calendar } from "lucide-react";
