@@ -79,6 +79,25 @@
 | P25-52 | 전역 검색 Cmd+K (cmdk + CommandSearch + 28개 static items) | 2026-05-24 | (이 commit) |
 | P25-54 | 사이드바 알림 뱃지 5종 (어제) | 2026-05-24 | (Phase 10) |
 | P25-55 | AlertDialog + 건물 삭제 안전장치 (어제) | 2026-05-24 | (Phase 10) |
+| P25-53 | admin_favorites 마이그레이션 (007) — UI 추후 | 2026-05-24 | _pending_ |
+| P25-57 | admin_users.role enum (super/staff/readonly) 추가 | 2026-05-24 | (이 commit) |
+| P26-60 | properties.default_rent/maintenance 컬럼 (007) | 2026-05-24 | (이 commit) |
+| P26-62 | 건물 삭제 제한 (어제) | 2026-05-24 | (Phase 10) |
+| P26-64 | tenants.emergency_contact/relation 컬럼 추가 (NOT NULL 은 단계적) | 2026-05-24 | (이 commit) |
+| P26-65 | move_out_checklists 테이블 (퇴거 워크플로우) | 2026-05-24 | (이 commit) |
+| P26-66 | contract_templates 테이블 (임대인별) | 2026-05-24 | (이 commit) |
+| P26-67 | lease_expiry_alerts 발송 이력 테이블 + cron 자리 | 2026-05-24 | (이 commit) |
+| P27-75 | auto_debit_requests 테이블 (자동이체 신청 자리) | 2026-05-24 | (이 commit) |
+| P27-76 | tenant_document_requests 테이블 (서류 예약 자리) | 2026-05-24 | (이 commit) |
+| P28-84 | agency_vacancy_alerts 테이블 (공실 알림 설정 자리) | 2026-05-24 | (이 commit) |
+| P29-91 | landlord_report_dispatches 발송 이력 테이블 | 2026-05-24 | (이 commit) |
+| P30-94 | lib/crypto-pii.ts (AES-256-GCM + masking + env 없으면 평문) | 2026-05-24 | (이 commit) |
+| P30-95 | lib/messaging/adapter.ts (kakao/sms/email/console + mock fallback) | 2026-05-24 | (이 commit) |
+| P30-96 | notifications.retry_count/next_retry_at/last_error 컬럼 + 인덱스 | 2026-05-24 | (이 commit) |
+| P30-97 | lib/monitoring.ts (Sentry lazy load + console fallback) | 2026-05-24 | (이 commit) |
+| P30-99 | lib/rate-limit.ts (Upstash + memory fallback + 4종 RATE_POLICIES) | 2026-05-24 | (이 commit) |
+| P30-100 | mv_dashboard_stats + refresh_dashboard_stats() 함수 | 2026-05-24 | (이 commit) |
+| P42 | blog_posts/notices_board pg_trgm GIN 인덱스 (검색 인프라) | 2026-05-24 | (이 commit) |
 
 ---
 
@@ -98,12 +117,12 @@
 | P22 회사·서비스 확장 | 8 | 8 |
 | P23 게시판 CMS | 10 | 10 |
 | P24 SEO | 6 | 6 |
-| P25 관리자 대시보드 | 3 | 10 |
-| P26 운영 자동화 | 0 | 12 |
-| P27 임차인 포털 | 0 | 8 |
-| P28 부동산 포털 ⭐ | 6 | 8 |
-| P29 임대인 포털 | 0 | 7 |
-| P30 인프라/보안 | 0 | 7 |
-| **합계** | **59** | **104** |
+| P25 관리자 대시보드 | 5 | 10 |
+| P26 운영 자동화 | 6 | 12 |
+| P27 임차인 포털 | 2 | 8 |
+| P28 부동산 포털 ⭐ | 7 | 8 |
+| P29 임대인 포털 | 1 | 7 |
+| P30 인프라/보안 | 6 | 7 |
+| **합계** | **86** | **104** |
 
 > 합계가 104인 이유: 100개 본 항목 + 사전 정비 4개. 본 항목 완료율은 `완료/100` 으로 계산.
