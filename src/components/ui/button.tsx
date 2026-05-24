@@ -2,6 +2,7 @@ import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -18,7 +19,11 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/30",
+        success:
+          "bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-success/30",
+        warning:
+          "bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-warning/30",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -43,6 +48,12 @@ type ButtonOwnProps = VariantProps<typeof buttonVariants> & {
   asChild?: boolean;
   className?: string;
   children?: React.ReactNode;
+  /** 로딩 중: spinner 표시 + 자동 disabled + aria-busy */
+  loading?: boolean;
+  /** 로딩 시 spinner 옆에 표시할 텍스트 (기본: children) */
+  loadingText?: React.ReactNode;
+  /** 에러 상태: aria-invalid + 시각적 border ring (form validation 실패) */
+  error?: boolean;
 };
 
 type ButtonProps = ButtonOwnProps & Omit<React.ComponentProps<"button">, keyof ButtonOwnProps>;
@@ -52,23 +63,53 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  loading = false,
+  loadingText,
+  error = false,
+  children,
+  disabled,
   ...props
 }: ButtonProps) {
+  const isDisabled = disabled || loading;
+  const ariaProps = {
+    "aria-busy": loading || undefined,
+    "aria-invalid": error || undefined,
+  };
+
+  const content = loading ? (
+    <>
+      <Loader2 className="animate-spin" aria-hidden="true" />
+      <span>{loadingText ?? children}</span>
+    </>
+  ) : children;
+
   if (asChild) {
+    // asChild 모드: loading/error 상태도 표시 (Slot 으로 패스)
     return (
       <Slot
         data-slot="button"
+        data-loading={loading || undefined}
+        data-error={error || undefined}
         className={cn(buttonVariants({ variant, size, className }))}
+        {...ariaProps}
         {...(props as React.ComponentProps<typeof Slot>)}
-      />
+      >
+        {content as React.ReactElement}
+      </Slot>
     );
   }
   return (
     <ButtonPrimitive
       data-slot="button"
+      data-loading={loading || undefined}
+      data-error={error || undefined}
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={isDisabled}
+      {...ariaProps}
       {...(props as React.ComponentProps<typeof ButtonPrimitive>)}
-    />
+    >
+      {content}
+    </ButtonPrimitive>
   );
 }
 
