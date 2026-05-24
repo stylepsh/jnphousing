@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquareWarning, Wrench, FileQuestion, Home, ArrowRight, Wallet, CheckCircle2, AlertTriangle, FileSignature } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ko } from "date-fns/locale";
 import { formatWonMan } from "@/lib/money";
@@ -21,7 +21,22 @@ const STATUS_LABEL: Record<string, string> = {
   received: "접수", in_progress: "처리중", resolved: "완료", closed: "종결",
 };
 
+function emptyDashboard() {
+  return {
+    received: 0, inProgress: 0, newInquiries: 0, vacant: 0,
+    billingTotal: 0, billingPaid: 0, collectionRate: 0,
+    overdueOutstanding: 0, pendingComm: 0,
+    expiringLeases: [] as Pick<Lease, "id" | "end_date" | "lease_type" | "unit_id">[],
+    recentComplaints: [] as Complaint[],
+    recentInquiries: [] as Inquiry[],
+    billingTrend: [] as BillingPoint[],
+    occupancy: { occupied: 0, vacant: 0, expiring: 0 },
+    channelStats: [] as ChannelPoint[],
+  };
+}
+
 async function getDashboardData() {
+  if (!isSupabaseConfigured()) return emptyDashboard();
   const supabase = await createClient();
   const now = new Date();
   const { start, end } = monthRange(now);

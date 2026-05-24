@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { PropertyDialog } from "./property-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Property } from "@/types/database";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -22,6 +22,9 @@ interface UnitStat {
 }
 
 async function fetchData() {
+  if (!isSupabaseConfigured()) {
+    return { properties: [] as Property[], stats: new Map<string, UnitStat>() };
+  }
   const supabase = await createClient();
   const [pRes, uRes, lRes] = await Promise.all([
     supabase.from("properties").select("*").order("display_order", { ascending: true }).order("created_at", { ascending: false }),
