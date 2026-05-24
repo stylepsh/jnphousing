@@ -62,7 +62,8 @@ const NAV: NavGroup[] = [
   {
     group: "콘텐츠",
     items: [
-      { href: "/admin/notices", label: "공지사항", icon: Megaphone },
+      { href: "/admin/notices", label: "임차인 공지", icon: Megaphone },
+      { href: "/admin/cms/news", label: "공지 게시판", icon: Megaphone },
       { href: "/admin/downloads", label: "서류 관리", icon: FileText },
       { href: "/admin/qr", label: "QR 생성", icon: QrCode },
     ],
