@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { KakaoChatFloat } from "@/components/shared/KakaoChatFloat";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { PageTransition } from "@/components/providers/page-transition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -50,7 +51,8 @@ export default function RootLayout({
           <a href="#main-content" className="skip-to-content">
             본문으로 바로가기
           </a>
-          {children}
+          {/* P20-11 페이지 전환 fade-in */}
+          <PageTransition>{children}</PageTransition>
           <KakaoChatFloat />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
