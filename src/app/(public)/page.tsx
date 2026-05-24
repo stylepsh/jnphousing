@@ -45,12 +45,12 @@ export default async function HomePage() {
                 {COMPANY.yearsOfExperience}년차 부동산 관리 전문기업
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
-                신뢰로 관리하는<br />
-                <span className="text-blue-300">주거공간</span>, JNP주택관리
+                위기 자산을 <span className="text-blue-300">정상화</span>하는<br />
+                위탁임대 전문가
               </h1>
               <p className="mt-6 text-lg md:text-xl text-blue-100 max-w-xl leading-relaxed">
-                {COMPANY.parts.join(" + ")} 그룹이 운영하는<br className="hidden md:block" />
-                {COMPANY.serviceArea} 부동산 관리 전문 서비스
+                HUG 대위변제 · 부실 건물 · 세입자 분쟁까지<br className="hidden md:block" />
+                27년 노하우로 끝까지 해결하는 {COMPANY.brand}
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="bg-white text-primary hover:bg-blue-50">
@@ -281,64 +281,105 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ 그룹 구조 (차별점) ============ */}
+      {/* ============ 위탁임대 — 위기 자산 회복 ============ */}
       <section className="bg-background py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
-              그룹 시너지
+              위탁임대 전문 영역
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              신축·시공·관리, 한 그룹에서 완결
+              혼자 감당이 어려운 자산,<br className="sm:hidden" /> 끝까지 책임집니다
             </h2>
             <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-              {COMPANY.groupName}은 주택관리 회사와 종합건설 회사가
+              일반 관리회사가 손대지 않는 위기 상황도 {COMPANY.yearsOfExperience}년 노하우로 직접 해결합니다.
               <br className="hidden sm:block" />
-              하나의 그룹으로 협력하는 흔치 않은 구조입니다.
+              관리 → 분쟁 대응 → 법무·실무 조언까지 한 곳에서.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <Card className="border-primary/30 bg-primary/5">
-              <CardContent className="pt-8 pb-8">
-                <div className="h-14 w-14 rounded-xl bg-primary text-white flex items-center justify-center mb-5">
-                  <Building2 className="h-7 w-7" />
-                </div>
-                <h3 className="text-2xl font-bold">제이앤피 주택관리</h3>
-                <p className="text-sm text-primary font-semibold mt-1">건물 운영 · 임대 관리</p>
-                <ul className="mt-5 space-y-2 text-sm text-foreground/80">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 주택·오피스텔·상가 종합 관리</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 위탁임대관리 (임대료 수납·정산)</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> 부동산 분양·판매</li>
-                </ul>
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-red-100 text-red-700 hover:bg-red-100">긴급</Badge>
+                <h3 className="text-xl font-bold">HUG 대위변제 발생</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  보증보험 사고 이후 막막한 임대인을 위해,
+                  자산 정리와 임차인 정리, 후속 절차까지 동행합니다.
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="border-amber-300/40 bg-amber-50/50">
-              <CardContent className="pt-8 pb-8">
-                <div className="h-14 w-14 rounded-xl bg-amber-600 text-white flex items-center justify-center mb-5">
-                  <Hammer className="h-7 w-7" />
-                </div>
-                <h3 className="text-2xl font-bold">이한종합건설</h3>
-                <p className="text-sm text-amber-700 font-semibold mt-1">건축 · 시공 · 리모델링</p>
-                <ul className="mt-5 space-y-2 text-sm text-foreground/80">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 건축공사 · 주택건설공사</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 건물건설업</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" /> 대수선·리모델링 즉시 대응</li>
-                </ul>
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-amber-100 text-amber-800 hover:bg-amber-100">정상화</Badge>
+                <h3 className="text-xl font-bold">부실 건물 정상화</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  수익이 안 나오는 빈 건물·반쪽짜리 건물을
+                  단계적 수선과 임차인 매칭으로 다시 굴러가게 합니다.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-blue-100 text-blue-800 hover:bg-blue-100">중재</Badge>
+                <h3 className="text-xl font-bold">세입자 분쟁 해결</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  이러지도 저러지도 못하는 임차인 갈등을
+                  현장 중재·법적 절차 안내로 정리합니다.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-green-100 text-green-800 hover:bg-green-100">현금흐름</Badge>
+                <h3 className="text-xl font-bold">임차 굴림으로 생활비 확보</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  소유권은 있지만 운영이 막힌 자산을
+                  안정적 임대 수익으로 전환 — 가족 생활비·고정비 흐름을 만듭니다.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-purple-100 text-purple-800 hover:bg-purple-100">동행</Badge>
+                <h3 className="text-xl font-bold">변호사·법무 자문 연결</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  변호사비·법무 비용 부담 없이 시작할 수 있도록
+                  실제 자문 네트워크를 함께 동원합니다.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-7 pb-7">
+                <Badge className="mb-3 bg-slate-100 text-slate-700 hover:bg-slate-100">경험</Badge>
+                <h3 className="text-xl font-bold">{COMPANY.yearsOfExperience}년 실전 조언</h3>
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
+                  교과서가 아닌 현장에서 쌓은 노하우로,
+                  케이스별 최적의 다음 한 수를 알려드립니다.
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="mt-10 rounded-2xl bg-primary/5 border border-primary/15 p-6 sm:p-8 text-center">
-            <p className="text-base md:text-lg text-foreground/85 leading-relaxed">
-              <strong className="text-primary">건물에서 큰 수선이 필요한 순간</strong>, 외주 업체를 찾아 헤매지 마세요.
+          <div className="mt-10 rounded-2xl bg-primary text-white p-6 sm:p-8 text-center">
+            <p className="text-base md:text-lg leading-relaxed">
+              <strong>지금 자산 운영이 막혀 있다면</strong>, 망설이지 마세요.
               <br className="hidden sm:block" />
-              관리회사가 직접 견적을 내고, 그룹 내 건설사가 시공합니다.
+              상황만 들려주셔도 가능한 시나리오를 알려드립니다.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 text-primary" />
-              <span>{COMPANY.serviceArea} 전 지역 출동 가능 — {COMPANY.yearsOfExperience}년 노하우</span>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-blue-300" />
+              <span>{COMPANY.serviceArea} 전 지역 출동 가능</span>
+            </div>
+            <div className="mt-5">
+              <Button asChild size="lg" className="bg-white text-primary hover:bg-blue-50">
+                <a href={COMPANY.contact.phoneHref}>📞 {COMPANY.contact.phone} 상담</a>
+              </Button>
             </div>
           </div>
 

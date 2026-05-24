@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Target, Heart, ShieldCheck, Award, MapPin, Hammer } from "lucide-react";
+import { Building2, Target, Heart, ShieldCheck, Award, MapPin, FileText, Phone } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "회사소개",
-  description: `${COMPANY.brand} (${COMPANY.groupName}) — ${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 부동산 관리 전문기업의 인사말과 핵심 가치.`,
+  description: `${COMPANY.brand} (${COMPANY.legalName}) — ${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 위탁임대 전문기업의 인사말과 핵심 가치.`,
 };
 
 const VALUES = [
@@ -28,10 +28,9 @@ const VALUES = [
 
 const TIMELINE = [
   { year: "1999", text: "부동산 관리업 시작 — 부천 일대 주택관리" },
-  { year: "2010s", text: "이한종합건설 설립 — 시공·건축 사업 확장" },
-  { year: "2020", text: "제이앤피 주택관리·이한종합건설 그룹 체계 구축" },
-  { year: "2024", text: "지점 2 (심곡동 유진빌딩) 개설" },
-  { year: "2026", text: `${COMPANY.yearsOfExperience}년차 — ${COMPANY.serviceArea} 전 지역 서비스` },
+  { year: "2010s", text: "위탁임대관리 본격 확장 — HUG 대위변제·부실 건물 정상화 케이스 축적" },
+  { year: "2020", text: "분쟁·법무 자문 네트워크 구축" },
+  { year: "2026", text: `${COMPANY.legalName} 사업자 등록 (부천세무서) — ${COMPANY.legal.registrationNumber}` },
 ];
 
 export default function AboutPage() {
@@ -42,9 +41,9 @@ export default function AboutPage() {
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">About Us</p>
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">회사소개</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
-            건물의 가치를 지키는 일, 입주민의 일상을 지키는 일.
+            건물의 가치를 지키는 일, 임대인의 자산을 지키는 일.
             <br />
-            제이앤피주택관리·이한종합건설 그룹이 {COMPANY.yearsOfExperience}년간 {COMPANY.serviceArea}에서 해온 일입니다.
+            {COMPANY.legalName}이 {COMPANY.yearsOfExperience}년간 {COMPANY.serviceArea}에서 해온 일입니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm">
@@ -57,57 +56,34 @@ export default function AboutPage() {
             </div>
             <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4 text-blue-300" />
-              <span>부천 본점·심곡 2지점</span>
+              <span>위탁임대 · 분쟁 대응 전문</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 그룹 구조 강조 */}
+      {/* 사업자 정보 */}
       <section className="bg-slate-50 py-16">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-center mb-10">
-            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Group Structure</p>
-            <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">그룹 구성</h2>
-            <p className="mt-3 text-muted-foreground">
-              관리와 시공, 그룹 내 두 법인이 함께 책임집니다.
-            </p>
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="text-center mb-8">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wide">Business Info</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight">사업자 정보</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-5">
-            <Card className="border-primary/20">
-              <CardContent className="pt-8 pb-7">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-12 w-12 rounded-lg bg-primary text-white flex items-center justify-center">
-                    <Building2 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">제이앤피 주택관리</h3>
-                    <p className="text-xs text-muted-foreground">부동산 관리·임대·분양</p>
-                  </div>
+          <Card className="border-primary/20">
+            <CardContent className="pt-7 pb-7">
+              <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                <InfoRow icon={Building2} label="상호" value={COMPANY.legalName} />
+                <InfoRow icon={Award} label="대표" value={COMPANY.representative} />
+                <InfoRow icon={FileText} label="사업자등록번호" value={COMPANY.legal.registrationNumber} />
+                <InfoRow icon={ShieldCheck} label="과세 유형" value={COMPANY.legal.taxType} />
+                <InfoRow icon={Target} label="업태 / 종목" value={`${COMPANY.business.category} / ${COMPANY.business.item}`} />
+                <InfoRow icon={Phone} label={COMPANY.contact.phoneLabel} value={COMPANY.contact.phone} />
+                <div className="sm:col-span-2">
+                  <InfoRow icon={MapPin} label="본점" value={`${COMPANY.branches[0].address}, ${COMPANY.branches[0].detail}`} />
                 </div>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  주택·오피스텔·상가 관리, 위탁임대 운영, 부동산 분양·판매 업무를 담당합니다.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-amber-300/40">
-              <CardContent className="pt-8 pb-7">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-12 w-12 rounded-lg bg-amber-600 text-white flex items-center justify-center">
-                    <Hammer className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">이한종합건설</h3>
-                    <p className="text-xs text-muted-foreground">건축·시공·리모델링</p>
-                  </div>
-                </div>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  건축공사·주택건설공사·건물건설업을 담당합니다.
-                  큰 수선·리모델링이 발생하면 외주 없이 그룹 내에서 즉시 시공합니다.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -173,14 +149,14 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 지점 위치 */}
+      {/* 사무실 위치 */}
       <section className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-3xl px-6">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight">사무실 위치</h2>
-            <p className="mt-3 text-muted-foreground">부천 본점과 심곡점, 가까운 곳으로 방문 가능합니다.</p>
+            <p className="mt-3 text-muted-foreground">방문 상담 가능 · 사전 예약 권장</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid gap-5">
             {COMPANY.branches.map((b) => (
               <Card key={b.label}>
                 <CardContent className="pt-7 pb-7">
@@ -201,5 +177,17 @@ export default function AboutPage() {
         </div>
       </section>
     </>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="font-medium">{value}</p>
+      </div>
+    </div>
   );
 }

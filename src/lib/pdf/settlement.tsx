@@ -48,7 +48,7 @@ export function SettlementPdf({ data }: { data: SettlementData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>임대차 해지 정산서</Text>
-          <Text style={styles.subtitle}>{COMPANY.brand} · {COMPANY.parts.join(" + ")}</Text>
+          <Text style={styles.subtitle}>{COMPANY.brand} · {COMPANY.legalName}</Text>
         </View>
         <View style={styles.hr} />
 

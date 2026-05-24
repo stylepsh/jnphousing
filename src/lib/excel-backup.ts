@@ -83,7 +83,7 @@ export async function buildBackupWorkbook(): Promise<Buffer> {
     { header: "값", key: "v", width: 60 },
   ];
   meta.addRow({ k: "백업 일시", v: new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC" });
-  meta.addRow({ k: "회사명", v: "JNP주택관리 (제이앤피주택관리 + 이한종합건설)" });
+  meta.addRow({ k: "회사명", v: "JNP주택관리 (제이앤피 주택관리) · 대표 박재흥 · 사업자등록번호 361-27-02026" });
   meta.addRow({ k: "시스템 버전", v: "v1.0" });
   meta.addRow({ k: "포함 시트", v: "건물·호실·임대인·임차인·계약·청구·입금·수수료·민원·문의·회원·매물·공지·서류·이벤트·알림·감사" });
   applyHeaderStyle(meta);

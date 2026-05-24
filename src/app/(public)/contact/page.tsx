@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ContactForm } from "./contact-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, MessageCircle, Clock } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "관리문의",
@@ -39,17 +40,21 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                     <Phone className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold">대표 전화</p>
-                      <p className="text-base font-bold mt-0.5">02-____-____</p>
-                      <p className="text-xs text-muted-foreground mt-1">평일 09:00 ~ 18:00</p>
+                      <p className="text-sm font-semibold">{COMPANY.contact.phoneLabel}</p>
+                      <a href={COMPANY.contact.phoneHref} className="text-lg font-bold mt-0.5 text-primary block hover:underline">
+                        {COMPANY.contact.phone}
+                      </a>
+                      <p className="text-xs text-muted-foreground mt-1">평일 09:00 ~ 18:00 · 대표 {COMPANY.representative}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-semibold">카카오톡 상담</p>
-                      <p className="text-base mt-0.5">@JNP주택관리</p>
-                      <p className="text-xs text-muted-foreground mt-1">상담 채널로 빠른 문의</p>
+                      <a href={COMPANY.contact.kakaoOpenChat} target="_blank" rel="noopener noreferrer" className="text-sm mt-0.5 text-primary hover:underline">
+                        오픈채팅으로 바로가기
+                      </a>
+                      <p className="text-xs text-muted-foreground mt-1">민원·제휴·신규 문의 통합 상담방</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -66,12 +71,14 @@ export default function ContactPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-3">이런 분들께 추천드립니다</h3>
+                  <h3 className="font-semibold mb-3">이런 분들께 꼭 필요합니다</h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• HUG 대위변제 발생 후 대처가 막막한 임대인</li>
+                    <li>• 부실 건물·빈 건물 정상화가 필요한 소유주</li>
+                    <li>• 세입자 분쟁이 끊이지 않는 임대인</li>
+                    <li>• 임차 굴림으로 가족 생활비를 확보해야 하는 분</li>
+                    <li>• 변호사비·법무 자문 부담이 크신 분</li>
                     <li>• 신축·구축 건물의 관리회사 교체를 검토 중</li>
-                    <li>• 직접 임대 관리에 한계를 느끼는 소유주</li>
-                    <li>• 현재 관리에 불만족이신 건물주</li>
-                    <li>• 비용 절감과 투명한 회계를 원하는 분</li>
                   </ul>
                 </CardContent>
               </Card>

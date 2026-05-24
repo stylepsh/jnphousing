@@ -43,7 +43,7 @@ export function Header() {
           <div className="leading-tight">
             <div className="text-primary text-base sm:text-lg">JNP주택관리</div>
             <div className="text-[10px] text-muted-foreground font-normal -mt-0.5 hidden sm:block">
-              제이앤피 주택관리 · 이한종합건설
+              제이앤피 주택관리 · 위탁임대 전문
             </div>
           </div>
         </Link>

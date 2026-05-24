@@ -51,7 +51,7 @@ export function ReceiptPdf({ data }: { data: ReceiptData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>영 수 증</Text>
-          <Text style={styles.subtitle}>{COMPANY.brand} · {COMPANY.parts.join(" + ")}</Text>
+          <Text style={styles.subtitle}>{COMPANY.brand} · {COMPANY.legalName}</Text>
         </View>
         <View style={styles.hr} />
 

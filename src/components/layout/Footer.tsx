@@ -11,10 +11,10 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-6 w-6 text-blue-400" />
               <span className="font-bold text-lg text-white">{COMPANY.brand}</span>
-              <span className="text-xs text-slate-500 ml-1">({COMPANY.groupName})</span>
+              <span className="text-xs text-slate-500 ml-1">({COMPANY.legalName})</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              {COMPANY.parts.join(" + ")} · 27년차 부동산 관리 전문기업
+              {COMPANY.business.summary} · {COMPANY.yearsOfExperience}년 노하우
               <br />
               {COMPANY.serviceArea} 전 지역 서비스
             </p>
@@ -33,14 +33,15 @@ export function Footer() {
               ))}
               <div className="flex items-center gap-2 text-slate-400">
                 <Phone className="h-4 w-4 shrink-0 text-blue-400" />
-                <span>{COMPANY.contact.phone}</span>
+                <a href={COMPANY.contact.phoneHref} className="hover:text-white">{COMPANY.contact.phone}</a>
+                <span className="text-xs text-slate-500">({COMPANY.contact.phoneLabel})</span>
               </div>
               <div className="flex items-center gap-2 text-slate-400">
                 <Mail className="h-4 w-4 shrink-0 text-blue-400" />
                 <span>{COMPANY.contact.email}</span>
               </div>
               <div className="text-xs text-slate-500 pt-1">
-                사업자등록번호: {COMPANY.legal.registrationNumber}
+                대표 {COMPANY.representative} · 사업자등록번호 {COMPANY.legal.registrationNumber} · {COMPANY.legal.taxType}
               </div>
             </div>
           </div>

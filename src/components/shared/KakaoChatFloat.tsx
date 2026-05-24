@@ -50,10 +50,10 @@ export function KakaoChatFloat({ variant = "default" }: Props) {
                 <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-[#FEE500]" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-sm">{COMPANY.groupName} 채팅</div>
+                <div className="font-bold text-sm">{COMPANY.brand} 채팅</div>
                 <div className="flex items-center gap-1 text-xs opacity-80">
                   <Users className="h-3 w-3" />
-                  <span>{COMPANY.parts.join(" + ")}</span>
+                  <span>{COMPANY.legalName} · 위탁임대 전문</span>
                 </div>
               </div>
             </div>

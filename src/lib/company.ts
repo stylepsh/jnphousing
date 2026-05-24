@@ -1,47 +1,47 @@
 /**
- * JNP주택관리 회사 정보 — 한 곳에서 관리.
+ * 제이앤피 주택관리 회사 정보 — 한 곳에서 관리.
+ * 사업자등록증 (2026-05-08 발급) 기준.
  */
 
 export const COMPANY = {
-  groupName: "제이앤피 그룹",
-  parts: ["제이앤피 주택관리", "이한종합건설"] as const,
+  legalName: "제이앤피 주택관리",
   brand: "JNP주택관리",
+  representative: "박재흥",
 
   yearsOfExperience: 27,
   serviceArea: "경기 · 서울 · 인천",
 
   business: {
-    summary: "부동산 관리 / 건축·주택건설 / 부동산 분양·판매",
+    category: "부동산업",
+    item: "부동산 관리업",
+    summary: "주택 위탁임대관리 · 주택관리 · 부동산 관리 전문",
     items: [
-      "부동산 관리업",
-      "건축공사 · 주택건설공사",
+      "주택 위탁임대관리 (HUG 대위변제·부실 건물·분쟁 사건 포함)",
+      "주택관리 (오피스텔·아파트·빌라·상가)",
       "부동산 분양 · 판매",
-      "건물건설업",
+      "임대 관련 법무·실무 조언",
     ],
   },
 
   branches: [
     {
-      label: "지점 1 (본점)",
-      address: "경기도 부천시 원미구 장말로 216번길 3",
-      detail: "중동 팰리스카운티",
-    },
-    {
-      label: "지점 2",
-      address: "경기도 부천시 원미구 장말로 273, 7층",
-      detail: "심곡동 유진빌딩",
+      label: "본점",
+      address: "경기도 부천시 원미구 장말로216번길 3",
+      detail: "푸르지오상가동 202-S8호 (중동, 팰리스카운티)",
     },
   ],
 
   contact: {
-    phone: "0507-1340-XXXX", // TODO: 부장님께 실제 번호 받기
-    phoneHref: "tel:050713400000",
+    phone: "010-7508-6916",
+    phoneHref: "tel:01075086916",
+    phoneLabel: "신규 위탁운영 관리 문의",
     email: "info@jnp-housing.com",
     kakaoOpenChat: "https://open.kakao.com/o/scZWs5vi",
   },
 
-  // 부장님께 받을 정보들
   legal: {
-    registrationNumber: "___-__-_____", // 사업자등록번호
+    registrationNumber: "361-27-02026",
+    taxType: "간이과세자",
+    openDate: "2026-05-08",
   },
 } as const;

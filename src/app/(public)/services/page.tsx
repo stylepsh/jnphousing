@@ -118,7 +118,8 @@ export default function ServicesPage() {
                   <h2 className="text-3xl md:text-4xl font-bold tracking-tight">위탁임대관리</h2>
                   <p className="mt-4 text-muted-foreground leading-relaxed">
                     소유주를 대신해 임대 운영의 모든 과정을 책임집니다.
-                    공실 마케팅, 임차인 응대, 임대료 수납과 정산까지 한 번에.
+                    공실 마케팅·임차인 응대·임대료 수납·정산은 기본,
+                    <strong className="text-foreground"> 위기 자산 정상화와 분쟁 대응까지</strong> 함께 합니다.
                   </p>
                 </div>
                 <Card className="border-border/60 bg-primary/5">
@@ -139,8 +140,42 @@ export default function ServicesPage() {
                       <BadgeCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <span>임차인 민원·트러블 직접 대응</span>
                     </div>
+                    <div className="flex items-start gap-2">
+                      <BadgeCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <span>HUG 대위변제·부실 건물 정상화 노하우</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <BadgeCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <span>변호사·법무 자문 네트워크 동행</span>
+                    </div>
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* 위기 대응 영역 — 주 고객층 */}
+              <div className="rounded-2xl bg-primary/5 border border-primary/15 p-6 sm:p-8">
+                <h3 className="text-xl md:text-2xl font-bold tracking-tight">
+                  특히 이런 분께 강합니다
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  다른 관리회사가 손을 못 대는 영역. 27년 현장 경험으로 케이스별 동행합니다.
+                </p>
+                <div className="mt-6 grid sm:grid-cols-2 gap-3">
+                  {[
+                    { tag: "긴급", title: "HUG 대위변제 후속 처리", desc: "보증보험 사고 이후 임차인 정리·자산 정리·후속 절차 동행" },
+                    { tag: "정상화", title: "부실·공실 누적 건물 회복", desc: "수익 안 나오는 건물에 단계적 수선 + 임차인 매칭 계획" },
+                    { tag: "중재", title: "장기 분쟁 임차인 해결", desc: "퇴거 거부·민원 누적 케이스 현장 중재 및 법적 절차 안내" },
+                    { tag: "현금흐름", title: "임차 굴림 → 가족 생활비", desc: "소유권 있는 자산을 안정 수익으로 전환, 매월 고정 현금흐름 구축" },
+                    { tag: "동행", title: "변호사·법무 자문 연결", desc: "변호사비·법무 비용 부담 없이 시작 가능, 실 자문 네트워크 동원" },
+                    { tag: "조언", title: "실전 케이스별 경험 조언", desc: "교과서 아닌 27년 현장 노하우로 다음 한 수 가이드" },
+                  ].map((item) => (
+                    <div key={item.title} className="rounded-lg bg-white border border-border p-4">
+                      <span className="inline-block text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{item.tag}</span>
+                      <h4 className="mt-2 font-bold text-sm">{item.title}</h4>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div>

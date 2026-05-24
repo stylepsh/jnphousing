@@ -10,7 +10,7 @@ export function OrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     name: COMPANY.brand,
-    legalName: COMPANY.parts.join(", "),
+    legalName: COMPANY.legalName,
     description: `${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 부동산 관리 전문기업`,
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnp-housing.com",
     telephone: COMPANY.contact.phone,
