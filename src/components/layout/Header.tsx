@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X, Building2 } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -37,12 +38,10 @@ export function Header() {
       )}
     >
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 font-bold text-lg group">
-          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <Building2 className="h-5 w-5 text-white" />
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <Logo className="h-9 w-9 shrink-0" />
           <div className="leading-tight">
-            <div className="text-primary text-base sm:text-lg">JNP주택관리</div>
+            <div className="text-primary text-base sm:text-lg font-bold">JNP주택관리</div>
             <div className="text-[10px] text-muted-foreground font-normal -mt-0.5 hidden sm:block">
               제이앤피 주택관리 · 위탁임대 전문
             </div>

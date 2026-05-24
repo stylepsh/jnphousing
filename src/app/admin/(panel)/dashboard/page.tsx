@@ -4,10 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquareWarning, Wrench, FileQuestion, Home, ArrowRight, Wallet, CheckCircle2, AlertTriangle, FileSignature } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ko } from "date-fns/locale";
 import { formatWonMan } from "@/lib/money";
 import { formatKoreanDate, monthRange } from "@/lib/dates";
+import { BillingTrendChart, type BillingPoint } from "@/components/charts/BillingTrendChart";
+import { OccupancyDonutChart } from "@/components/charts/OccupancyDonutChart";
+import { ChannelBarChart, type ChannelPoint } from "@/components/charts/ChannelBarChart";
 import type { Complaint, Inquiry } from "@/types/database";
 import type { RentInvoice, AgencyCommission, Lease } from "@/types/lease";
 
@@ -26,12 +29,19 @@ async function getDashboardData() {
   const endIso = end.toISOString().slice(0, 10);
   const exp60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+  // 최근 6개월 트렌드 범위
+  const sixMonthsAgo = startOfMonth(subMonths(now, 5));
+  const trendStartIso = sixMonthsAgo.toISOString().slice(0, 10);
+  const trendEndIso = endOfMonth(now).toISOString().slice(0, 10);
+
   const [
     receivedRes, inProgressRes, newInquiriesRes, vacantRes,
     invThisMonthRes, overdueRes,
     pendingCommissionsRes,
     expiringLeasesRes,
     recentComplaintsRes, recentInquiriesRes,
+    trendInvRes, unitsRes, activeLeasesRes,
+    channelStatsRes, channelsRes,
   ] = await Promise.all([
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
@@ -43,6 +53,11 @@ async function getDashboardData() {
     supabase.from("leases").select("id, end_date, lease_type, unit_id").in("status", ["active", "expiring"]).lte("end_date", exp60).order("end_date").limit(10),
     supabase.from("complaints").select("*").order("created_at", { ascending: false }).limit(5),
     supabase.from("inquiries").select("*").order("created_at", { ascending: false }).limit(5),
+    supabase.from("rent_invoices").select("amount_total, paid_total, due_date").gte("due_date", trendStartIso).lte("due_date", trendEndIso),
+    supabase.from("properties_units").select("id"),
+    supabase.from("leases").select("unit_id, end_date").in("status", ["active", "expiring"]),
+    supabase.from("vacancy_ad_listings").select("channel_id, inquiry_count, status"),
+    supabase.from("ad_channels").select("id, name").eq("is_active", true).order("display_order"),
   ]);
 
   const invs = (invThisMonthRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "status">[];
@@ -52,6 +67,53 @@ async function getDashboardData() {
   const overdues = (overdueRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total">[];
   const overdueOutstanding = overdues.reduce((s, i) => s + Math.max(0, i.amount_total - i.paid_total), 0);
   const pendingComm = ((pendingCommissionsRes.data ?? []) as Pick<AgencyCommission, "commission_amount">[]).reduce((s, c) => s + c.commission_amount, 0);
+
+  // ====== 6개월 트렌드 ======
+  const trendInvs = (trendInvRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "due_date">[];
+  const trendMap = new Map<string, { billing: number; paid: number }>();
+  for (let m = 5; m >= 0; m--) {
+    const d = subMonths(now, m);
+    const key = format(d, "yyyy-MM");
+    trendMap.set(key, { billing: 0, paid: 0 });
+  }
+  for (const inv of trendInvs) {
+    const key = inv.due_date.slice(0, 7);
+    const entry = trendMap.get(key);
+    if (entry) {
+      entry.billing += inv.amount_total;
+      entry.paid += inv.paid_total;
+    }
+  }
+  const billingTrend: BillingPoint[] = Array.from(trendMap.entries()).map(([k, v]) => ({
+    label: k.slice(5) + "월",
+    billing: v.billing,
+    paid: v.paid,
+  }));
+
+  // ====== 점유율 ======
+  const units = ((unitsRes.data ?? []) as { id: string }[]).map((u) => u.id);
+  const activeLeases = (activeLeasesRes.data ?? []) as { unit_id: string; end_date: string }[];
+  const occupiedSet = new Set(activeLeases.map((l) => l.unit_id));
+  const expiringSet = new Set(
+    activeLeases
+      .filter((l) => new Date(l.end_date) <= new Date(exp60))
+      .map((l) => l.unit_id),
+  );
+  const occupiedCount = units.filter((id) => occupiedSet.has(id) && !expiringSet.has(id)).length;
+  const expiringCount = units.filter((id) => expiringSet.has(id)).length;
+  const vacantCount = units.filter((id) => !occupiedSet.has(id)).length;
+
+  // ====== 채널별 ======
+  const channels = (channelsRes.data ?? []) as { id: string; name: string }[];
+  const channelListings = (channelStatsRes.data ?? []) as { channel_id: string; inquiry_count: number; status: string }[];
+  const channelStats: ChannelPoint[] = channels.map((ch) => {
+    const items = channelListings.filter((l) => l.channel_id === ch.id);
+    return {
+      channel: ch.name.length > 6 ? ch.name.slice(0, 6) : ch.name,
+      inquiries: items.reduce((s, i) => s + i.inquiry_count, 0),
+      contracted: items.filter((i) => i.status === "contracted").length,
+    };
+  }).filter((c) => c.inquiries > 0 || c.contracted > 0);
 
   return {
     received: receivedRes.count ?? 0,
@@ -66,6 +128,9 @@ async function getDashboardData() {
     expiringLeases: (expiringLeasesRes.data ?? []) as Pick<Lease, "id" | "end_date" | "lease_type" | "unit_id">[],
     recentComplaints: (recentComplaintsRes.data ?? []) as Complaint[],
     recentInquiries: (recentInquiriesRes.data ?? []) as Inquiry[],
+    billingTrend,
+    occupancy: { occupied: occupiedCount, vacant: vacantCount, expiring: expiringCount },
+    channelStats,
   };
 }
 
@@ -97,6 +162,37 @@ export default async function DashboardPage() {
           <KpiCard label="연체 미수" value={formatWonMan(d.overdueOutstanding)} icon={AlertTriangle} color="text-red-600 bg-red-50" href="/admin/rent" />
           <KpiCard label="수수료 정산대기" value={formatWonMan(d.pendingComm)} icon={Wallet} color="text-blue-600 bg-blue-50" href="/admin/commissions" />
         </div>
+      </div>
+
+      {/* 그래프 — 6개월 트렌드 + 점유율 + 채널 */}
+      <div className="mt-8 grid gap-5 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">📈 월별 청구·수금 추이 (최근 6개월)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BillingTrendChart data={d.billingTrend} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">🏘️ 호실 점유율</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OccupancyDonutChart occupied={d.occupancy.occupied} vacant={d.occupancy.vacant} expiring={d.occupancy.expiring} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-5">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">📢 광고 채널별 문의·계약 (피터팬·삼삼엠투·직방 등)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChannelBarChart data={d.channelStats} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* 만료 임박 + 최근 활동 */}

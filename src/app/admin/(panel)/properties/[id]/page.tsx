@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatWonMan } from "@/lib/money";
 import { formatKoreanDate, isExpiringSoon } from "@/lib/dates";
 import { UnitDialog } from "./unit-dialog";
+import { BulkUnitDialog } from "./bulk-unit-dialog";
 import type { Property } from "@/types/database";
 import type { PropertyUnit, Lease, Tenant } from "@/types/lease";
 
@@ -103,7 +104,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">호실 목록 ({units.length})</CardTitle>
-          <UnitDialog mode="create" propertyId={property.id} />
+          <div className="flex gap-2">
+            <BulkUnitDialog propertyId={property.id} />
+            <UnitDialog mode="create" propertyId={property.id} />
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {units.length === 0 ? (

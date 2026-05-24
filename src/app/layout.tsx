@@ -5,12 +5,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "JNP주택관리 - 신뢰로 관리하는 주거공간",
+    default: "JNP주택관리 - 위기 자산을 정상화하는 위탁임대 전문가",
     template: "%s | JNP주택관리",
   },
   description:
-    "주택관리부터 위탁임대관리까지, 합리적이고 투명한 전문 서비스. 신규 건물 관리문의, 입주민 민원접수, 부동산 공실매물 조회까지.",
+    "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결하는 위탁임대 전문기업. 제이앤피 주택관리, 경기·서울·인천.",
   metadataBase: new URL("https://jnp-housing.com"),
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/favicon.svg" }],
+  },
 };
 
 export default function RootLayout({
