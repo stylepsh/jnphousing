@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { KakaoChatFloat } from "@/components/shared/KakaoChatFloat";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { PageTransition } from "@/components/providers/page-transition";
+import { CommandSearch } from "@/components/CommandSearch";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -59,6 +60,8 @@ export default function RootLayout({
           </a>
           {/* P20-11 페이지 전환 fade-in */}
           <PageTransition>{children}</PageTransition>
+          {/* P25-52 전역 검색 Cmd/Ctrl + K */}
+          <CommandSearch />
           <KakaoChatFloat />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
