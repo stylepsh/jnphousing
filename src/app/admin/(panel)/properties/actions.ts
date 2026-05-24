@@ -52,10 +52,36 @@ export async function deleteProperty(id: string) {
     await requireAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
+
+    // 안전장치 1: 호실 존재 시 차단
+    const { count: unitCount } = await supabase
+      .from("properties_units")
+      .select("*", { count: "exact", head: true })
+      .eq("property_id", id);
+    if ((unitCount ?? 0) > 0) {
+      return {
+        ok: false as const,
+        error: `호실 ${unitCount}개가 등록되어 있어 삭제할 수 없습니다. 먼저 호실을 모두 삭제하거나 다른 건물로 이전해 주세요.`,
+      };
+    }
+
+    // 안전장치 2: 공실 매물 존재 시 차단
+    const { count: vacancyCount } = await supabase
+      .from("vacancies")
+      .select("*", { count: "exact", head: true })
+      .eq("property_id", id);
+    if ((vacancyCount ?? 0) > 0) {
+      return {
+        ok: false as const,
+        error: `등록된 공실 매물 ${vacancyCount}건이 있어 삭제할 수 없습니다. 먼저 공실 매물을 정리해 주세요.`,
+      };
+    }
+
+    // 안전장치 3: 공지사항 존재 시 경고만 — 삭제 시 자동 해제됨 (ON DELETE SET NULL)
     const { error } = await supabase.from("properties").delete().eq("id", id);
     if (error) {
       console.error("[deleteProperty]", error);
-      return { ok: false as const, error: "삭제 실패" };
+      return { ok: false as const, error: "삭제 실패: " + error.message };
     }
     revalidatePath("/admin/properties");
     return { ok: true as const };

@@ -28,23 +28,25 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-type NavGroup = { group: string; items: { href: string; label: string; icon: typeof LayoutDashboard; badge?: boolean }[] };
+type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries";
+
+type NavGroup = { group: string; items: { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue" }[] };
 
 const NAV: NavGroup[] = [
   {
     group: "운영",
     items: [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
-      { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badge: true },
-      { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion },
+      { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
+      { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
       { href: "/admin/notifications", label: "알림 이력", icon: Bell },
     ],
   },
   {
     group: "계약·월세",
     items: [
-      { href: "/admin/leases", label: "계약", icon: FileSignature },
-      { href: "/admin/rent", label: "월세 현황", icon: Receipt },
+      { href: "/admin/leases", label: "계약", icon: FileSignature, badgeKey: "expiring", badgeColor: "amber" },
+      { href: "/admin/rent", label: "월세 현황", icon: Receipt, badgeKey: "overdue", badgeColor: "red" },
       { href: "/admin/commissions", label: "위탁수수료", icon: Wallet },
       { href: "/admin/landlords", label: "임대인", icon: UserSquare },
       { href: "/admin/tenants", label: "임차인", icon: Users },
@@ -55,7 +57,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/vacancies", label: "공실 매물", icon: Home },
       { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
-      { href: "/admin/agencies", label: "부동산 회원", icon: Handshake },
+      { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
     ],
   },
@@ -77,7 +79,21 @@ const NAV: NavGroup[] = [
   },
 ];
 
-export function AdminSidebar({ pendingComplaints, adminName }: { pendingComplaints: number; adminName: string }) {
+interface BadgeCounts {
+  complaints: number;
+  overdue: number;
+  expiring: number;
+  pendingAgencies: number;
+  newInquiries: number;
+}
+
+const BADGE_BG: Record<"red" | "amber" | "blue", string> = {
+  red: "bg-red-500",
+  amber: "bg-amber-500",
+  blue: "bg-blue-500",
+};
+
+export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; adminName: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -131,6 +147,8 @@ export function AdminSidebar({ pendingComplaints, adminName }: { pendingComplain
                 {g.items.map((item) => {
                   const Icon = item.icon;
                   const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+                  const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0;
+                  const badgeBg = BADGE_BG[item.badgeColor ?? "red"];
                   return (
                     <Link
                       key={item.href}
@@ -145,9 +163,9 @@ export function AdminSidebar({ pendingComplaints, adminName }: { pendingComplain
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="flex-1">{item.label}</span>
-                      {item.badge && pendingComplaints > 0 && (
-                        <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                          {pendingComplaints}
+                      {badgeValue > 0 && (
+                        <span className={cn("text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", badgeBg)}>
+                          {badgeValue > 99 ? "99+" : badgeValue}
                         </span>
                       )}
                     </Link>

@@ -11,7 +11,13 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const configured = isSupabaseConfigured();
-  let badgeCount = 0;
+  const counts = {
+    complaints: 0,
+    overdue: 0,
+    expiring: 0,
+    pendingAgencies: 0,
+    newInquiries: 0,
+  };
   let adminName = "관리자";
 
   if (configured) {
@@ -26,11 +32,23 @@ export default async function AdminLayout({
           .maybeSingle();
         adminName = ((admin as { name: string } | null)?.name) ?? "관리자";
 
-        const { count } = await supabase
-          .from("complaints")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "received");
-        badgeCount = count ?? 0;
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() + 60);
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const expiryISO = sixtyDaysAgo.toISOString().slice(0, 10);
+
+        const [c1, c2, c3, c4, c5] = await Promise.all([
+          supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
+          supabase.from("rent_invoices").select("*", { count: "exact", head: true }).in("status", ["overdue", "unpaid"]).lt("due_date", todayISO),
+          supabase.from("leases").select("*", { count: "exact", head: true }).eq("status", "active").lte("end_date", expiryISO).gte("end_date", todayISO),
+          supabase.from("agencies").select("*", { count: "exact", head: true }).eq("status", "pending"),
+          supabase.from("inquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
+        ]);
+        counts.complaints = c1.count ?? 0;
+        counts.overdue = c2.count ?? 0;
+        counts.expiring = c3.count ?? 0;
+        counts.pendingAgencies = c4.count ?? 0;
+        counts.newInquiries = c5.count ?? 0;
       }
     } catch {
       // ignore
@@ -39,7 +57,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <AdminSidebar pendingComplaints={badgeCount} adminName={adminName} />
+      <AdminSidebar counts={counts} adminName={adminName} />
       <div className="flex-1 lg:ml-64">
         {configured ? children : (
           <NotConfiguredBanner
