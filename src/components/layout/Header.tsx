@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/about", label: "회사소개" },
   { href: "/services", label: "서비스" },
   { href: "/properties", label: "관리현장" },
+  { href: "/news", label: "공지사항" },
   { href: "/tenant", label: "세입자존" },
   { href: "/agency/vacancies", label: "부동산존" },
   { href: "/landlord/dashboard", label: "임대인존" },
@@ -62,7 +63,7 @@ export function Header() {
 
         <div className="hidden lg:flex items-center gap-3">
           <Button asChild variant="outline" size="sm">
-            <Link href="/agency/login">부동산 로그인</Link>
+            <Link href="/login">로그인</Link>
           </Button>
           <Button asChild size="sm">
             <Link href="/contact">관리문의</Link>
@@ -94,8 +95,8 @@ export function Header() {
             ))}
             <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-border">
               <Button asChild variant="outline">
-                <Link href="/agency/login" onClick={() => setMobileOpen(false)}>
-                  부동산 로그인
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  로그인
                 </Link>
               </Button>
               <Button asChild>

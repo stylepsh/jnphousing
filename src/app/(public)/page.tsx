@@ -2,11 +2,48 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer, HomeIcon, ShieldCheck, TrendingUp } from "lucide-react";
+import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer, HomeIcon, ShieldCheck, TrendingUp, Megaphone, Pin, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import type { Property } from "@/types/database";
+
+interface RecentNotice {
+  id: string;
+  title: string;
+  slug: string | null;
+  category: string;
+  excerpt: string | null;
+  is_pinned: boolean;
+  published_at: string | null;
+  created_at: string;
+}
+
+const NEWS_CATEGORY: Record<string, string> = {
+  general:   "일반",
+  press:     "보도",
+  update:    "업데이트",
+  holiday:   "휴무",
+  important: "중요",
+};
+
+async function fetchRecentNotices(): Promise<RecentNotice[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("notices_board")
+      .select("id, title, slug, category, excerpt, is_pinned, published_at, created_at")
+      .eq("is_published", true)
+      .order("is_pinned", { ascending: false })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(3);
+    if (error) return [];
+    return (data ?? []) as RecentNotice[];
+  } catch {
+    return [];
+  }
+}
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = {
   officetel: "오피스텔",
@@ -31,7 +68,10 @@ async function fetchTopProperties(): Promise<Property[]> {
 }
 
 export default async function HomePage() {
-  const properties = await fetchTopProperties();
+  const [properties, recentNotices] = await Promise.all([
+    fetchTopProperties(),
+    fetchRecentNotices(),
+  ]);
 
   return (
     <>
@@ -296,6 +336,60 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* ============ 최근 공지사항 (데이터 있을 때만) ============ */}
+      {recentNotices.length > 0 && (
+        <section className="bg-slate-50 py-16 md:py-20 border-y border-border/60">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+              <div>
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide">
+                  <Megaphone className="h-4 w-4" /> 공지사항
+                </div>
+                <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">
+                  최신 소식
+                </h2>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/news">전체 보기 <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4 stagger-children">
+              {recentNotices.map((n) => {
+                const dateStr = (n.published_at ?? n.created_at).slice(0, 10).replace(/-/g, ".");
+                const href = `/news/${n.slug ?? n.id}`;
+                return (
+                  <Link key={n.id} href={href} className="block">
+                    <Card className="h-full hover:shadow-md hover:-translate-y-0.5 transition-all animate-fade-in border-border/60">
+                      <CardContent className="p-5">
+                        <div className="flex items-center gap-2 mb-3">
+                          {n.is_pinned && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">
+                              <Pin className="h-2.5 w-2.5 mr-0.5" /> 고정
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {NEWS_CATEGORY[n.category] ?? n.category}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-auto">
+                            <Calendar className="h-2.5 w-2.5" /> {dateStr}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-base line-clamp-2">{n.title}</h3>
+                        {n.excerpt && (
+                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                            {n.excerpt}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ============ 부동산 파트너 CTA ============ */}
       <section className="bg-slate-900 text-white py-20">
