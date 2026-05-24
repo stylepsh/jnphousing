@@ -22,7 +22,8 @@
 |---|------|---------|--------|
 | S-1 | PROGRESS/BLOCKERS 빈 템플릿 | 2026-05-24 | `7c8e16a` |
 | P20-1 | 타이포그래피 스케일 (h1~h6 + body + caption/overline) | 2026-05-24 | `90fe1cd` |
-| P20-2 | 색상 팔레트 확장 (status colors + navy/blue 토큰 #1C2B4A/#3182F6) | 2026-05-24 | _pending_ |
+| P20-2 | 색상 팔레트 확장 (status colors + navy/blue 토큰 #1C2B4A/#3182F6) | 2026-05-24 | `ef10f6b` |
+| P20-3 | 간격 시스템 문서화 (`docs/design-tokens.md` — 색/간격/타이포/반경/모션) | 2026-05-24 | _pending_ |
 
 ---
 
