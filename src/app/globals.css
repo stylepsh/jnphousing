@@ -7,6 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Status colors — Tailwind class 인식 (.bg-success, .text-warning 등) */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-heading: var(--font-sans);
@@ -52,10 +61,10 @@
 }
 
 :root {
-  /* JNP brand tokens — Primary navy #1C3A5E, Accent blue #2563EB */
-  --brand: #1c3a5e;
+  /* JNP brand tokens — Primary navy #1C2B4A, Accent blue #3182F6 (BLOCKERS B-003) */
+  --brand: #1c2b4a;
   --brand-foreground: #ffffff;
-  --brand-accent: #2563eb;
+  --brand-accent: #3182f6;
 
   --background: #f8fafc;
   --foreground: #0f1a2e;
@@ -63,46 +72,60 @@
   --card-foreground: #0f1a2e;
   --popover: #ffffff;
   --popover-foreground: #0f1a2e;
-  --primary: #1c3a5e;
+  --primary: #1c2b4a;
   --primary-foreground: #ffffff;
   --secondary: #eef2f7;
-  --secondary-foreground: #1c3a5e;
+  --secondary-foreground: #1c2b4a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --accent: #e0e7ff;
-  --accent-foreground: #1c3a5e;
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent-foreground: #1c2b4a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #2563eb;
-  --chart-1: #1c3a5e;
-  --chart-2: #2563eb;
+  --ring: #3182f6;
+  --chart-1: #1c2b4a;
+  --chart-2: #3182f6;
   --chart-3: #60a5fa;
   --chart-4: #93c5fd;
   --chart-5: #cbd5e1;
   --radius: 0.625rem;
 
-  /* Status colors — 직접 사용용 */
-  --success: #10b981;
+  /* Status colors (P20-2) — success/warning/error/info */
+  --success: #10b981;             /* 정상·승인·완료 */
   --success-foreground: #ffffff;
-  --warning: #f59e0b;
+  --success-bg: #d1fae5;          /* 옅은 배경 (배지·알림) */
+  --success-border: #6ee7b7;
+
+  --warning: #f59e0b;             /* 만료 임박·주의 */
   --warning-foreground: #ffffff;
-  --info: #3b82f6;
+  --warning-bg: #fef3c7;
+  --warning-border: #fcd34d;
+
+  --error: #dc2626;               /* 연체·오류·실패 */
+  --error-foreground: #ffffff;
+  --error-bg: #fee2e2;
+  --error-border: #fca5a5;
+
+  --info: #3182f6;                /* 안내·신규 */
   --info-foreground: #ffffff;
-  --sidebar: #1c3a5e;
+  --info-bg: #dbeafe;
+  --info-border: #93c5fd;
+  --sidebar: #1c2b4a;
   --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #2563eb;
+  --sidebar-primary: #3182f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a4a72;
+  --sidebar-accent: #2a3d63;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a4a72;
-  --sidebar-ring: #2563eb;
+  --sidebar-border: #2a3d63;
+  --sidebar-ring: #3182f6;
 }
 
 .dark {
-  --brand: #2a4a72;
+  --brand: #2a3d63;
   --brand-foreground: #ffffff;
-  --brand-accent: #3b82f6;
+  --brand-accent: #3182f6;
 
   --background: #0f1a2e;
   --foreground: #f1f5f9;
