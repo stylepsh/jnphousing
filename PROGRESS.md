@@ -32,7 +32,8 @@
 | P20-9 | Logo 변형 4종 (default/mono/white + size: small/default/large/hero) | 2026-05-24 | `edc17b5` |
 | P20-10 | 부동산 도메인 아이콘 set (`lib/icons.ts` — 150+ 별칭 매핑) | 2026-05-24 | `c1f9120` |
 | P20-11 | 페이지 전환 fade-in (framer-motion + LazyMotion + AnimatePresence) | 2026-05-24 | `274b96d` |
-| P20-12 | Card transition + interactive prop (hover lift + shadow + ring) | 2026-05-24 | _pending_ |
+| P20-12 | Card transition + interactive prop (hover lift + shadow + ring) | 2026-05-24 | `2da531f` |
+| S-2 | canonical 도메인 .co.kr 통일 + vercel.json 301 redirect + lib/constants/stats.ts | 2026-05-24 | _pending_ |
 
 ---
 

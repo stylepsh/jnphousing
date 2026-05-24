@@ -11,10 +11,11 @@ export const COMPANY = {
   yearsOfExperience: 27,
   serviceArea: "경기 · 서울 · 인천",
 
+  /** @deprecated lib/constants/stats.ts (COMPANY_STATS) 사용. */
   stats: {
-    operatedBuildings: 30,
-    managedUnits: 500,
-    resolvedDisputes: 100,
+    operatedBuildings: 32,
+    managedUnits: 480,
+    resolvedDisputes: 67,
     yearsAsTeam: 27,
   },
 

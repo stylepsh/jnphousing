@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.co.kr";
 
 const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${BASE}/`,           changeFrequency: "weekly",  priority: 1.0 },
