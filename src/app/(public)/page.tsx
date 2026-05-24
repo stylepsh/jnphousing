@@ -99,8 +99,9 @@ export default async function HomePage() {
     <>
       <LocalBusinessJsonLd />
       {/* ============ HERO ============ */}
-      <section className="relative bg-gradient-to-br from-primary via-primary to-slate-800 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(37,99,235,0.25),transparent_60%)]" />
+      <section className="relative bg-gradient-to-br from-primary via-primary to-slate-800 text-white overflow-hidden animate-gradient">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(49,130,246,0.28),transparent_60%)] animate-gradient" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(49,130,246,0.15),transparent_50%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-24 md:py-32 lg:py-40">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
