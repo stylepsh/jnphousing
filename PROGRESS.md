@@ -25,7 +25,8 @@
 | P20-2 | 색상 팔레트 확장 (status colors + navy/blue 토큰 #1C2B4A/#3182F6) | 2026-05-24 | `ef10f6b` |
 | P20-3 | 간격 시스템 문서화 (`docs/design-tokens.md` — 색/간격/타이포/반경/모션) | 2026-05-24 | `b354837` |
 | P20-4 | Button loading/error 상태 + success/warning variants | 2026-05-24 | `2dbbbaa` |
-| P20-5 | FormError + Field 래퍼 (aria-invalid·aria-describedby 자동) | 2026-05-24 | _pending_ |
+| P20-5 | FormError + Field 래퍼 (aria-invalid·aria-describedby 자동) | 2026-05-24 | `8a493dd` |
+| P20-6 | 애니메이션 토큰 @theme 등록 (fadeIn/slideUp/scaleIn/slideDown/slideInRight) | 2026-05-24 | _pending_ |
 
 ---
 

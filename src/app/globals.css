@@ -58,6 +58,16 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Animation tokens (P20-6) — Tailwind utility 인식 (.animate-fade-in 등) */
+  --animate-fade-in: jnp-fade-in 0.5s ease-out both;
+  --animate-slide-up: jnp-slide-up 0.6s ease-out both;
+  --animate-scale-in: jnp-scale-in 0.4s ease-out both;
+  --animate-slide-down: jnp-slide-down 0.4s ease-out both;
+  --animate-slide-in-right: jnp-slide-in-right 0.4s ease-out both;
+  --animate-pulse-soft: jnp-pulse-soft 2.5s ease-in-out infinite;
+  --animate-shimmer: jnp-shimmer 2s linear infinite;
+  --animate-gradient: jnp-gradient-shift 12s ease infinite;
 }
 
 :root {
@@ -249,7 +259,10 @@
   font-weight: 600;
 }
 
-/* ============ 애니메이션 유틸리티 ============ */
+/* ============ 애니메이션 keyframes (P20-6) ============
+ * @theme 의 --animate-* 토큰이 .animate-XXX utility 클래스를 자동 생성.
+ * 여기서는 keyframes 만 정의.
+ */
 @keyframes jnp-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -257,6 +270,14 @@
 @keyframes jnp-slide-up {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jnp-slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jnp-slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes jnp-scale-in {
   from { opacity: 0; transform: scale(0.96); }
@@ -275,19 +296,14 @@
   50%      { opacity: 0.7; }
 }
 
-.animate-fade-in     { animation: jnp-fade-in 0.5s ease-out both; }
-.animate-slide-up    { animation: jnp-slide-up 0.6s ease-out both; }
-.animate-scale-in    { animation: jnp-scale-in 0.4s ease-out both; }
-.animate-gradient    {
+/* animate-gradient / animate-shimmer 는 background-size 설정 필요 → utility 보조 */
+.animate-gradient {
   background-size: 200% 200%;
-  animation: jnp-gradient-shift 12s ease infinite;
 }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
   background-size: 200% 100%;
-  animation: jnp-shimmer 2s linear infinite;
 }
-.animate-pulse-soft  { animation: jnp-pulse-soft 2.5s ease-in-out infinite; }
 
 /* Stagger 지원: 자식에 차례로 delay 적용 */
 .stagger-children > *           { animation-delay: 0ms; }
