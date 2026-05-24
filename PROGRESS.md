@@ -26,7 +26,8 @@
 | P20-3 | 간격 시스템 문서화 (`docs/design-tokens.md` — 색/간격/타이포/반경/모션) | 2026-05-24 | `b354837` |
 | P20-4 | Button loading/error 상태 + success/warning variants | 2026-05-24 | `2dbbbaa` |
 | P20-5 | FormError + Field 래퍼 (aria-invalid·aria-describedby 자동) | 2026-05-24 | `8a493dd` |
-| P20-6 | 애니메이션 토큰 @theme 등록 (fadeIn/slideUp/scaleIn/slideDown/slideInRight) | 2026-05-24 | _pending_ |
+| P20-6 | 애니메이션 토큰 @theme 등록 (fadeIn/slideUp/scaleIn/slideDown/slideInRight) | 2026-05-24 | `a69af8b` |
+| P20-7 | focus-visible 정밀화 + skip-to-content 링크 (키보드 a11y) | 2026-05-24 | _pending_ |
 
 ---
 

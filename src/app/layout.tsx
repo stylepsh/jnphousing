@@ -44,6 +44,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased font-sans">
+        {/* P20-7 a11y skip link: 키보드 사용자가 Tab 시 첫 번째로 나타남 */}
+        <a href="#main-content" className="skip-to-content">
+          본문으로 바로가기
+        </a>
         {children}
         <KakaoChatFloat />
         <Toaster richColors position="top-center" />

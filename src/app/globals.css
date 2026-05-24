@@ -181,11 +181,48 @@
     @apply font-sans;
   }
 
-  /* a11y: keyboard focus ring (mouse 사용 시는 제외) */
+  /* ============ a11y: keyboard focus ring (P20-7) ============
+   * mouse 클릭 시는 표시 안 됨 (focus-visible 표준)
+   * 브라우저 기본 dotted outline 제거 후 일관된 ring 적용
+   */
+  *:focus { outline: none; }                                    /* 기본 outline 제거 */
   *:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: calc(var(--radius) * 0.4);
+  }
+  /* input/textarea 는 focus 시 border 색 변경도 함께 */
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline-offset: 1px;
+  }
+  /* a, button 은 focus 시 약간 위로 (시각적 강조) */
+  a:focus-visible, button:focus-visible {
+    outline-offset: 3px;
+  }
+  /* focus-within: 컨테이너 안에 focus 가 있을 때 (Card 호버 등) */
+  .focus-ring-within:focus-within {
+    box-shadow: 0 0 0 3px var(--ring), 0 0 0 1px var(--background);
+  }
+
+  /* Skip link (키보드 사용자 a11y): Tab 누르면 화면 좌상단에 나타남 */
+  .skip-to-content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    padding: 0.75rem 1.25rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom-right-radius: 0.5rem;
+    transform: translateY(-110%);
+    transition: transform 0.2s ease-out;
+  }
+  .skip-to-content:focus-visible,
+  .skip-to-content:focus {
+    transform: translateY(0);
+    outline-offset: -2px;
   }
 
   /* ============ 타이포그래피 스케일 (P20-1) ============
