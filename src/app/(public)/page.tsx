@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
+import { COMPANY_STATS } from "@/lib/constants/stats";
 import type { Property } from "@/types/database";
 
 interface RecentNotice {
@@ -107,7 +108,7 @@ export default async function HomePage() {
             <div>
               <Badge variant="secondary" className="mb-6 bg-white/10 text-white border-white/20 hover:bg-white/15">
                 <Award className="h-3 w-3 mr-1" />
-                {COMPANY.yearsOfExperience}년차 부동산 관리 전문기업
+                <CountUp end={COMPANY_STATS.yearsAsTeam} className="tabular-nums" />년차 부동산 관리 전문기업
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
                 위기 자산을 <span className="text-blue-300">정상화</span>하는<br />
@@ -262,7 +263,7 @@ export default async function HomePage() {
                 <Building2 className="h-5 w-5" />
               </div>
               <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.operatedBuildings} suffix="+" />
+                <CountUp end={COMPANY_STATS.operatedBuildings} suffix="+" />
               </div>
               <p className="mt-1 text-xs md:text-sm text-muted-foreground">운영 건물</p>
             </div>
@@ -271,7 +272,7 @@ export default async function HomePage() {
                 <HomeIcon className="h-5 w-5" />
               </div>
               <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.managedUnits} suffix="+" />
+                <CountUp end={COMPANY_STATS.managedUnits} suffix="+" />
               </div>
               <p className="mt-1 text-xs md:text-sm text-muted-foreground">관리 세대</p>
             </div>
@@ -280,7 +281,7 @@ export default async function HomePage() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.resolvedDisputes} suffix="+" />
+                <CountUp end={COMPANY_STATS.resolvedDisputes} suffix="+" />
               </div>
               <p className="mt-1 text-xs md:text-sm text-muted-foreground">해결 분쟁</p>
             </div>
@@ -289,7 +290,7 @@ export default async function HomePage() {
                 <TrendingUp className="h-5 w-5" />
               </div>
               <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.yearsAsTeam} suffix="년" />
+                <CountUp end={COMPANY_STATS.yearsAsTeam} suffix="년" />
               </div>
               <p className="mt-1 text-xs md:text-sm text-muted-foreground">누적 운영 경력</p>
             </div>

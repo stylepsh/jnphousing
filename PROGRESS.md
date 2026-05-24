@@ -36,7 +36,8 @@
 | S-2 | canonical 도메인 .co.kr 통일 + vercel.json 301 redirect + lib/constants/stats.ts | 2026-05-24 | `b99d817` |
 | P21-13 | BuildingCluster SVG illustration 컴포넌트 분리 + GridPattern | 2026-05-24 | `4d80c2d` |
 | P21-14 | Hero 배경 animate-gradient slow drift (3-layer radial) | 2026-05-24 | `d227117` |
-| P21-15 | 핵심 서비스 3카드 배경 grid pattern (opacity 0.03 primary) | 2026-05-24 | _pending_ |
+| P21-15 | 핵심 서비스 3카드 배경 grid pattern (opacity 0.03 primary) | 2026-05-24 | `b2a66b2` |
+| P21-16 | Hero "27년차" CountUp + 통계 상수 COMPANY_STATS 일원화 | 2026-05-24 | _pending_ |
 
 ---
 
