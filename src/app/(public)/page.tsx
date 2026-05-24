@@ -1,7 +1,28 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+  title: "JNP주택관리 - 위기 자산을 정상화하는 위탁임대 전문가",
+  description:
+    "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결. 부천 본점, 경기·서울·인천 전 지역 위탁임대 관리. 010-7508-6916",
+  openGraph: {
+    title: "JNP주택관리 · 위탁임대 전문기업",
+    description:
+      "위기 자산을 정상화하는 27년차 위탁임대 전문가. HUG 대위변제·부실 건물·세입자 분쟁 끝까지 해결.",
+    url: "https://jnphousing.com",
+    siteName: "JNP주택관리",
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JNP주택관리 · 위탁임대 전문기업",
+    description: "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결",
+  },
+};
 import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCircle, FileText, MapPin, Award, Hammer, HomeIcon, ShieldCheck, TrendingUp, Megaphone, Pin, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
@@ -105,23 +126,116 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="hidden lg:block">
-              <div className="relative aspect-[4/3] rounded-2xl bg-white/5 border border-white/10 backdrop-blur overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Building2 className="h-32 w-32 text-white/20" />
+            <div className="hidden lg:block animate-fade-in">
+              <div className="relative aspect-[4/3] rounded-2xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/15 backdrop-blur-sm overflow-hidden shadow-2xl">
+                {/* 배경 grid pattern */}
+                <svg className="absolute inset-0 w-full h-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="hero-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="white" strokeWidth="0.5"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#hero-grid)" />
+                </svg>
+
+                {/* 건물 SVG illustration */}
+                <svg
+                  viewBox="0 0 400 300"
+                  className="absolute inset-0 w-full h-full"
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-hidden="true"
+                >
+                  {/* 뒷쪽 큰 건물 */}
+                  <g opacity="0.55">
+                    <rect x="100" y="80" width="100" height="180" fill="white" fillOpacity="0.18" rx="2" />
+                    {[...Array(7)].map((_, row) =>
+                      [...Array(4)].map((_, col) => (
+                        <rect
+                          key={`b1-${row}-${col}`}
+                          x={108 + col * 22}
+                          y={92 + row * 22}
+                          width="14"
+                          height="14"
+                          fill="#FBBF24"
+                          fillOpacity={Math.random() > 0.4 ? 0.55 : 0.15}
+                          rx="1"
+                        />
+                      ))
+                    )}
+                    {/* 옥상 */}
+                    <rect x="95" y="75" width="110" height="8" fill="white" fillOpacity="0.25" rx="1" />
+                  </g>
+
+                  {/* 중간 건물 */}
+                  <g>
+                    <rect x="210" y="110" width="90" height="160" fill="white" fillOpacity="0.22" rx="2" />
+                    {[...Array(6)].map((_, row) =>
+                      [...Array(4)].map((_, col) => (
+                        <rect
+                          key={`b2-${row}-${col}`}
+                          x={216 + col * 20}
+                          y={120 + row * 22}
+                          width="12"
+                          height="12"
+                          fill="#FBBF24"
+                          fillOpacity={Math.random() > 0.35 ? 0.7 : 0.2}
+                          rx="1"
+                        />
+                      ))
+                    )}
+                    <rect x="205" y="105" width="100" height="8" fill="white" fillOpacity="0.3" rx="1" />
+                  </g>
+
+                  {/* 앞쪽 작은 건물 */}
+                  <g opacity="0.9">
+                    <rect x="50" y="150" width="60" height="120" fill="white" fillOpacity="0.28" rx="2" />
+                    {[...Array(4)].map((_, row) =>
+                      [...Array(2)].map((_, col) => (
+                        <rect
+                          key={`b3-${row}-${col}`}
+                          x={58 + col * 22}
+                          y={162 + row * 24}
+                          width="14"
+                          height="14"
+                          fill="#FBBF24"
+                          fillOpacity={Math.random() > 0.4 ? 0.85 : 0.25}
+                          rx="1"
+                        />
+                      ))
+                    )}
+                    <rect x="46" y="145" width="68" height="7" fill="white" fillOpacity="0.35" rx="1" />
+                    {/* 출입구 */}
+                    <rect x="74" y="246" width="12" height="24" fill="#1C3A5E" fillOpacity="0.6" rx="1" />
+                  </g>
+
+                  {/* 지반 */}
+                  <rect x="0" y="270" width="400" height="30" fill="white" fillOpacity="0.1" />
+                </svg>
+
+                {/* 떠다니는 작은 정보 카드 */}
+                <div className="absolute top-5 left-5 rounded-xl bg-white/15 backdrop-blur px-3 py-2 border border-white/20 flex items-center gap-2 animate-fade-in shadow-lg">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-soft"></div>
+                  <span className="text-xs font-medium">실시간 공실 정보</span>
                 </div>
-                <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">{COMPANY.yearsOfExperience}년차</div>
-                    <div className="text-xs text-blue-200">업력</div>
+
+                <div className="absolute top-5 right-5 rounded-xl bg-white/15 backdrop-blur px-3 py-2 border border-white/20 flex items-center gap-2 animate-fade-in shadow-lg">
+                  <ShieldCheck className="h-3.5 w-3.5 text-blue-300" />
+                  <span className="text-xs font-medium">HUG 대응 가능</span>
+                </div>
+
+                {/* 하단 stat 카드 */}
+                <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-2.5 stagger-children">
+                  <div className="rounded-xl bg-white/15 backdrop-blur p-3 border border-white/20 animate-slide-up">
+                    <div className="text-2xl font-bold tracking-tight">{COMPANY.yearsOfExperience}년차</div>
+                    <div className="text-[10px] text-blue-200 mt-0.5">업력</div>
                   </div>
-                  <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">부천</div>
-                    <div className="text-xs text-blue-200">중동 본점</div>
+                  <div className="rounded-xl bg-white/15 backdrop-blur p-3 border border-white/20 animate-slide-up">
+                    <div className="text-2xl font-bold tracking-tight">부천</div>
+                    <div className="text-[10px] text-blue-200 mt-0.5">중동 본점</div>
                   </div>
-                  <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">3개시</div>
-                    <div className="text-xs text-blue-200">{COMPANY.serviceArea.replace(/ · /g, "·")}</div>
+                  <div className="rounded-xl bg-white/15 backdrop-blur p-3 border border-white/20 animate-slide-up">
+                    <div className="text-2xl font-bold tracking-tight">3개시</div>
+                    <div className="text-[10px] text-blue-200 mt-0.5">{COMPANY.serviceArea.replace(/ · /g, "·")}</div>
                   </div>
                 </div>
               </div>
