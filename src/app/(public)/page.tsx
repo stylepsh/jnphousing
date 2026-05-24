@@ -75,8 +75,8 @@ export default async function HomePage() {
                     <div className="text-xs text-blue-200">업력</div>
                   </div>
                   <div className="rounded-xl bg-white/10 backdrop-blur p-4">
-                    <div className="text-2xl font-bold">2지점</div>
-                    <div className="text-xs text-blue-200">부천 본점·심곡</div>
+                    <div className="text-2xl font-bold">부천</div>
+                    <div className="text-xs text-blue-200">중동 본점</div>
                   </div>
                   <div className="rounded-xl bg-white/10 backdrop-blur p-4">
                     <div className="text-2xl font-bold">3개시</div>
