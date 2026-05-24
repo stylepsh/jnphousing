@@ -35,7 +35,7 @@ export const COMPANY = {
     phone: "010-7508-6916",
     phoneHref: "tel:01075086916",
     phoneLabel: "신규 위탁운영 관리 문의",
-    email: "info@jnp-housing.com",
+    email: "info@jnphousing.com",
     kakaoOpenChat: "https://open.kakao.com/o/scZWs5vi",
   },
 

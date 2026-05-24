@@ -12,7 +12,7 @@ export function OrganizationJsonLd() {
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
     description: `${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 부동산 관리 전문기업`,
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnp-housing.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
     address: COMPANY.branches.map((b) => ({

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   },
   description:
     "HUG 대위변제·부실 건물·세입자 분쟁까지 27년 노하우로 해결하는 위탁임대 전문기업. 제이앤피 주택관리, 경기·서울·인천.",
-  metadataBase: new URL("https://jnp-housing.com"),
+  metadataBase: new URL("https://jnphousing.com"),
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/favicon.svg" }],
