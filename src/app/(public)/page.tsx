@@ -635,6 +635,38 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* ============ 최근 블로그 3개 (P23-40) ============ */}
+      <section className="bg-background py-16 md:py-20 border-t border-border/60">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+            <div>
+              <p className="text-sm font-semibold text-primary uppercase tracking-wide">최신 블로그</p>
+              <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">위탁임대 가이드</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/blog">전체 보기 <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            </Button>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4 stagger-children">
+            {[
+              { slug: "hug-subrogation-5-actions", title: "HUG 대위변제 발생 시 임대인이 해야 할 5가지", cat: "임대인 가이드", hue: 5 },
+              { slug: "jeonse-fraud-24-hour-checklist", title: "전세사기 의심 시 24시간 안에 해야 할 일", cat: "세입자 가이드", hue: 0 },
+              { slug: "vacancy-rate-halving-strategy", title: "공실률을 6개월 안에 절반으로 줄이는 위탁임대 전략", cat: "사례 분석", hue: 200 },
+            ].map(b => (
+              <Link key={b.slug} href={`/blog/${b.slug}`} className="block animate-fade-in">
+                <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all h-full">
+                  <div className="aspect-[16/9]" style={{ background: `linear-gradient(135deg, hsl(${b.hue}, 60%, 35%) 0%, hsl(${b.hue}, 50%, 20%) 100%)` }} />
+                  <CardContent className="p-5">
+                    <Badge variant="outline" className="text-[10px] mb-2">{b.cat}</Badge>
+                    <h3 className="font-bold line-clamp-2">{b.title}</h3>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ============ 부동산 파트너 CTA ============ */}
       <section className="bg-slate-900 text-white py-20">
         <div className="mx-auto max-w-5xl px-6 text-center">
