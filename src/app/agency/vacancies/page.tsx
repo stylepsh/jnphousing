@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Home, Building2, MapPin } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { NotConfiguredBanner } from "@/components/shared/NotConfiguredBanner";
 import { LogoutButton } from "./logout-button";
 import { VacancyFilters } from "./vacancy-filters";
 import type { Property, Vacancy } from "@/types/database";
@@ -85,6 +86,7 @@ export default async function VacanciesPage({
   }>;
 }) {
   const sp = await searchParams;
+  if (!isSupabaseConfigured()) return <NotConfiguredBanner />;
   const agency = await fetchAgency();
   const { properties, vacancies } = await fetchData(sp);
 

@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Building2, MapPin, MessageCircle, Phone } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { ArrowLeft, Building2, MapPin, MessageCircle, Phone, FileDown, Printer } from "lucide-react";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { NotConfiguredBanner } from "@/components/shared/NotConfiguredBanner";
 import { COMPANY } from "@/lib/company";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -39,6 +40,7 @@ export default async function VacancyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (!isSupabaseConfigured()) return <NotConfiguredBanner />;
   const supabase = await createClient();
 
   const { data: vData } = await supabase
@@ -123,6 +125,30 @@ export default async function VacancyDetailPage({
               {vacancy.floor != null && <Row label="층" value={`${vacancy.floor}층`} />}
               {vacancy.room_count != null && <Row label="방" value={`${vacancy.room_count}개`} />}
               {vacancy.bathroom_count != null && <Row label="욕실" value={`${vacancy.bathroom_count}개`} />}
+            </CardContent>
+          </Card>
+
+          {/* 자료 다운로드 */}
+          <Card className="border-primary/20">
+            <CardContent className="pt-5 pb-5">
+              <p className="text-sm font-semibold mb-3">자료 다운로드</p>
+              <div className="space-y-2">
+                <Button asChild className="w-full" variant="default">
+                  <a href={`/agency/vacancies/${vacancy.id}/info.pdf`} target="_blank" rel="noopener noreferrer">
+                    <FileDown className="h-4 w-4 mr-2" /> 매물 정보서 (PDF)
+                  </a>
+                </Button>
+                <Button asChild className="w-full" variant="outline">
+                  <a href="/tenant/downloads" target="_blank" rel="noopener noreferrer">
+                    <FileDown className="h-4 w-4 mr-2" /> 표준 계약서 양식
+                  </a>
+                </Button>
+                <Button asChild className="w-full" variant="ghost" size="sm">
+                  <a href={`javascript:window.print()`}>
+                    <Printer className="h-3.5 w-3.5 mr-1.5" /> 이 페이지 인쇄
+                  </a>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
