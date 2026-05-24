@@ -312,10 +312,10 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="border-border/60 hover:shadow-lg transition-shadow">
+          <div className="grid gap-6 md:grid-cols-3 stagger-children">
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>주택관리</CardTitle>
@@ -325,9 +325,9 @@ export default async function HomePage() {
                 <p>전문 인력이 상주하여 건물의 가치를 유지합니다. 시설 점검, 정기 청소, 보안 관리까지 일괄 처리.</p>
               </CardContent>
             </Card>
-            <Card className="border-border/60 hover:shadow-lg transition-shadow">
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Wrench className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>위탁임대관리</CardTitle>
@@ -337,9 +337,9 @@ export default async function HomePage() {
                 <p>임대료 수납, 공실 마케팅, 임차인 응대까지. 소유주는 정산서만 받아보시면 됩니다.</p>
               </CardContent>
             </Card>
-            <Card className="border-border/60 hover:shadow-lg transition-shadow">
+            <Card className="border-border/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group animate-fade-in">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 flex items-center justify-center mb-3 transition-colors">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle>입주민 서비스</CardTitle>
@@ -562,8 +562,8 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <Card className="border-primary/30 bg-primary/5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-red-100 text-red-700 hover:bg-red-100">긴급</Badge>
                 <h3 className="text-xl font-bold">HUG 대위변제 발생</h3>
@@ -574,7 +574,7 @@ export default async function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-amber-100 text-amber-800 hover:bg-amber-100">정상화</Badge>
                 <h3 className="text-xl font-bold">부실 건물 정상화</h3>
@@ -585,7 +585,7 @@ export default async function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-blue-100 text-blue-800 hover:bg-blue-100">중재</Badge>
                 <h3 className="text-xl font-bold">세입자 분쟁 해결</h3>
@@ -596,7 +596,7 @@ export default async function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-green-100 text-green-800 hover:bg-green-100">현금흐름</Badge>
                 <h3 className="text-xl font-bold">임차 굴림으로 생활비 확보</h3>
@@ -607,7 +607,7 @@ export default async function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-purple-100 text-purple-800 hover:bg-purple-100">동행</Badge>
                 <h3 className="text-xl font-bold">변호사·법무 자문 연결</h3>
@@ -618,7 +618,7 @@ export default async function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 animate-fade-in">
               <CardContent className="pt-7 pb-7">
                 <Badge className="mb-3 bg-slate-100 text-slate-700 hover:bg-slate-100">경험</Badge>
                 <h3 className="text-xl font-bold">{COMPANY.yearsOfExperience}년 실전 조언</h3>
