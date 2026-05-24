@@ -48,6 +48,10 @@
 | P21-24 | 모바일 푸터 accordion (어제 작업 — Phase 9) | 2026-05-24 | (Phase 9 commit) |
 | P24-43 | 메인 metadata 키워드 강화 (부천 위탁임대/HUG/전세사기) + alternates.canonical | 2026-05-24 | _pending_ |
 | P24-48 | 네이버·구글 site-verification env (GOOGLE_SITE_VERIFICATION, NAVER_SITE_VERIFICATION) | 2026-05-24 | (이 commit) |
+| P24-44 | /api/og 동적 OG 이미지 생성 (title/subtitle/category query) | 2026-05-24 | _pending_ |
+| P24-45 | JSON-LD 빌더 lib/seo/jsonld.ts (6종 + safe stringify) | 2026-05-24 | (이 commit) |
+| P24-46 | sitemap.ts 동적 확장 (어제 작업 — properties/news 자동 포함) | 2026-05-24 | (Phase 4) |
+| P24-47 | Breadcrumbs 컴포넌트 + BreadcrumbList JSON-LD 자동 포함 | 2026-05-24 | (이 commit) |
 
 ---
 
