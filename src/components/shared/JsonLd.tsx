@@ -33,6 +33,142 @@ export function OrganizationJsonLd() {
   );
 }
 
+export function LocalBusinessJsonLd() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com") + "/#business",
+    name: COMPANY.brand,
+    legalName: COMPANY.legalName,
+    description: `HUG 대위변제·부실 건물·세입자 분쟁까지 ${COMPANY.yearsOfExperience}년 노하우로 해결하는 위탁임대 전문기업`,
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
+    telephone: COMPANY.contact.phone,
+    email: COMPANY.contact.email,
+    image: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com") + "/og-default.png",
+    priceRange: "₩₩",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: COMPANY.branches[0].address,
+      addressLocality: "부천시",
+      addressRegion: "경기도",
+      postalCode: "14627",
+      addressCountry: "KR",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 37.504,
+      longitude: 126.766,
+    },
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "09:00",
+        closes: "18:00",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: "Saturday",
+        opens: "10:00",
+        closes: "14:00",
+      },
+    ],
+    sameAs: [],
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
+
+export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string }[] }) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      name: item.name,
+      item: item.url.startsWith("http") ? item.url : `${base}${item.url}`,
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
+
+export function FAQPageJsonLd({ items }: { items: { question: string; answer: string }[] }) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((q) => ({
+      "@type": "Question",
+      name: q.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: q.answer,
+      },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
+
+export function ArticleJsonLd({
+  title,
+  description,
+  datePublished,
+  dateModified,
+  imageUrl,
+  authorName,
+}: {
+  title: string;
+  description?: string;
+  datePublished?: string;
+  dateModified?: string;
+  imageUrl?: string;
+  authorName?: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    image: imageUrl,
+    datePublished,
+    dateModified: dateModified ?? datePublished,
+    author: {
+      "@type": "Organization",
+      name: authorName ?? COMPANY.brand,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: COMPANY.brand,
+      logo: {
+        "@type": "ImageObject",
+        url: `${base}/favicon.svg`,
+      },
+    },
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
+
 export function PropertyJsonLd({
   name,
   address,

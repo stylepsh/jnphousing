@@ -27,6 +27,7 @@ import { Building2, Wrench, Users, ArrowRight, QrCode, CheckCircle2, MessageCirc
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
+import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import type { Property } from "@/types/database";
 
 interface RecentNotice {
@@ -96,6 +97,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <LocalBusinessJsonLd />
       {/* ============ HERO ============ */}
       <section className="relative bg-gradient-to-br from-primary via-primary to-slate-800 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(37,99,235,0.25),transparent_60%)]" />
