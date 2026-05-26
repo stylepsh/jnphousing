@@ -4,6 +4,8 @@ import { KakaoChatFloat } from "@/components/shared/KakaoChatFloat";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { PageTransition } from "@/components/providers/page-transition";
 import { CommandSearch } from "@/components/CommandSearch";
+import { AnalyticsProvider } from "@/components/providers/analytics-provider";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -64,6 +66,10 @@ export default function RootLayout({
           <CommandSearch />
           <KakaoChatFloat />
           <Toaster richColors position="top-center" />
+          {/* P30-98 PostHog + Vercel Analytics (env 없으면 mute) */}
+          <Suspense fallback={null}>
+            <AnalyticsProvider />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
