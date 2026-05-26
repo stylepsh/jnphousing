@@ -143,7 +143,15 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
             <Building2 className="h-5 w-5 text-blue-300" />
             <span>JNP 관리자</span>
           </Link>
-          <p className="mt-2 text-xs text-blue-200">{adminName} 님</p>
+          <div className="mt-3 flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold shrink-0">
+              {adminName.slice(0, 1)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{adminName}</p>
+              <p className="text-[10px] text-blue-300">로그인 중</p>
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">

@@ -149,13 +149,74 @@ async function getDashboardData() {
   };
 }
 
+async function getCurrentAdmin() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase
+      .from("admin_users")
+      .select("name, role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    return data as { name: string; role: string } | null;
+  } catch {
+    return null;
+  }
+}
+
+const ROLE_LABEL: Record<string, { label: string; color: string }> = {
+  super:    { label: "최고 관리자", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  staff:    { label: "일반 직원",   color: "bg-blue-100 text-blue-700 border-blue-200" },
+  readonly: { label: "조회 전용",   color: "bg-slate-100 text-slate-600 border-slate-200" },
+};
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 6) return "늦은 시간 수고 많으십니다";
+  if (h < 12) return "좋은 아침입니다";
+  if (h < 18) return "수고 많으십니다";
+  return "오늘도 고생하셨습니다";
+}
+
 export default async function DashboardPage() {
-  const d = await getDashboardData();
+  const [d, admin] = await Promise.all([getDashboardData(), getCurrentAdmin()]);
+  const adminName = admin?.name ?? "관리자";
+  const roleInfo = ROLE_LABEL[admin?.role ?? "staff"] ?? ROLE_LABEL.staff;
+  const today = new Date();
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
-      <h1 className="text-2xl md:text-3xl font-bold tracking-tight">대시보드</h1>
-      <p className="mt-1 text-sm text-muted-foreground">현재 운영 현황을 확인하세요.</p>
+      {/* 환영 헤더 (P25-50 보강) */}
+      <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-slate-800 text-white p-6 md:p-7 mb-6 shadow-lg shadow-primary/20 relative overflow-hidden animate-fade-in">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(49,130,246,0.35),transparent_55%)] animate-gradient" />
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <Badge variant="outline" className={`text-[10px] ${roleInfo.color} border-0`}>{roleInfo.label}</Badge>
+              <span className="text-xs text-blue-100">
+                {today.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              {adminName}님, {getGreeting()} 👋
+            </h1>
+            <p className="mt-1.5 text-sm text-blue-100">
+              오늘의 운영 현황입니다. 우선 처리할 항목은 좌측 사이드바에 빨간색·노란색 뱃지로 표시됩니다.
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="rounded-xl bg-white/10 backdrop-blur px-4 py-2.5 border border-white/20 text-center">
+              <div className="text-[10px] text-blue-200 uppercase tracking-wide">신규 민원</div>
+              <div className="text-2xl font-bold tabular-nums">{d.received}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur px-4 py-2.5 border border-white/20 text-center">
+              <div className="text-[10px] text-blue-200 uppercase tracking-wide">관리문의</div>
+              <div className="text-2xl font-bold tabular-nums">{d.newInquiries}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 운영 KPI */}
       <div className="mt-6">
