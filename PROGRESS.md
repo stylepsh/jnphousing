@@ -103,6 +103,27 @@
 | P27-74 | UnpaidBanner 컴포넌트 (미납·연체 알림 3단계) | 2026-05-24 | (df7024d) |
 | P25-50 | KpiTrend 컴포넌트 (전월 대비 +Δ TrendingUp/Down) | 2026-05-24 | (df7024d) |
 | P29-87 | VacancyTrendChart (recharts LineChart 12개월) | 2026-05-24 | (df7024d) |
+| P25-49 | DateRangePicker (URL query, 4 preset, 직접입력) | 2026-05-26 | `625794b` |
+| P25-51 | PropertyFilter 사이드바 (URL query) | 2026-05-26 | `625794b` |
+| P25-53b | /admin/favorites UI (6 resource_type 그룹) | 2026-05-26 | `625794b` |
+| P25-56 | Audit 검색·필터 (or 조건 + action select + 날짜) | 2026-05-26 | `625794b` |
+| P25-58 | SessionTimeout (30분 무활동 + 5분 전 경고 모달) | 2026-05-26 | `625794b` |
+| P26-59 | /admin/units/board 호실 grid 시각화 (4상태 색상) | 2026-05-26 | `ac00b3f` |
+| P26-61 | 호실 multi-select 패턴 (#69 동일 적용) | 2026-05-26 | `ac00b3f` |
+| P26-63 | /admin/tenants/import CSV (papaparse + 미리보기) | 2026-05-26 | `ac00b3f` |
+| P26-68 | LeaseRenewalDialog (5% formula + 보증금 변동) | 2026-05-26 | `ac00b3f` |
+| P26-69 | /admin/rent/bulk 청구 일괄 상태 변경 4종 | 2026-05-26 | `ac00b3f` |
+| P26-70 | /admin/rent/match 은행 CSV 매칭 미리보기 | 2026-05-26 | `ac00b3f` |
+| P27-71 | /tenant/my-rent 페이징 + 연도 필터 + 월별 그룹 | 2026-05-26 | `cf83962` |
+| P27-72 | 청구·입금 모바일 카드형 (md: 분기) | 2026-05-26 | `cf83962` |
+| P27-77 | ComplaintStatusPoll (8초 router.refresh) | 2026-05-26 | `cf83962` |
+| P27-78 | BuildingSelectModal (QR 진입 + sessionStorage dismissed) | 2026-05-26 | `cf83962` |
+| P29-88 | /landlord/delinquency 연체 50건 + 4단계 severity | 2026-05-26 | `73b6840` |
+| P29-89 | /landlord/simulation 공실 메꿈 수익 계산 | 2026-05-26 | `73b6840` |
+| P29-90 | LeaseRenewalDialog 재사용 (임대인 측) | 2026-05-26 | `73b6840` |
+| P29-92 | /api/cron/landlord-monthly-report 카톡 정산 알림 | 2026-05-26 | `73b6840` |
+| P29-93 | BuildingFilter chip (URL ?buildingId) | 2026-05-26 | `73b6840` |
+| P30-98 | AnalyticsProvider (PostHog + Vercel Analytics, env mute) | 2026-05-26 | `c37b353` |
 
 ---
 
@@ -122,12 +143,12 @@
 | P22 회사·서비스 확장 | 8 | 8 |
 | P23 게시판 CMS | 10 | 10 |
 | P24 SEO | 6 | 6 |
-| P25 관리자 대시보드 | 6 | 10 |
-| P26 운영 자동화 | 7 | 12 |
-| P27 임차인 포털 | 4 | 8 |
-| P28 부동산 포털 ⭐ | 7 | 8 |
-| P29 임대인 포털 | 2 | 7 |
-| P30 인프라/보안 | 6 | 7 |
-| **합계** | **91** | **104** |
+| P25 관리자 대시보드 | 10 | 10 |
+| P26 운영 자동화 | 12 | 12 |
+| P27 임차인 포털 | 8 | 8 |
+| P28 부동산 포털 ⭐ | 8 | 8 |
+| P29 임대인 포털 | 7 | 7 |
+| P30 인프라/보안 | 7 | 7 |
+| **합계** | **104** | **104** ✅ |
 
 > 합계가 104인 이유: 100개 본 항목 + 사전 정비 4개. 본 항목 완료율은 `완료/100` 으로 계산.
