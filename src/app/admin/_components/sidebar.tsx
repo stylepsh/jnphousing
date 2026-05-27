@@ -25,6 +25,7 @@ import {
   Settings,
   ShieldCheck,
   Award,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,26 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // 현재 경로가 포함된 그룹만 기본으로 펼침
+  const activeGroup = NAV.find(g => g.items.some(i =>
+    pathname === i.href || (i.href !== "/admin/dashboard" && pathname.startsWith(i.href))
+  ))?.group ?? "운영";
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set([activeGroup]));
+
+  function toggleGroup(name: string) {
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  // 그룹별 합산 배지 (접혀있을 때 그룹 헤더에 표시)
+  function groupBadgeTotal(g: typeof NAV[0]): number {
+    return g.items.reduce((sum, i) => sum + (i.badgeKey ? counts[i.badgeKey] : 0), 0);
+  }
+
   async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -164,43 +185,69 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
-          {NAV.map((g) => (
-            <div key={g.group}>
-              <p className="px-2 mb-1 text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
-                {g.group}
-              </p>
-              <div className="space-y-0.5">
-                {g.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
-                  const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0;
-                  const badgeBg = BADGE_BG[item.badgeColor ?? "red"];
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition",
-                        active
-                          ? "bg-white/15 text-white"
-                          : "text-blue-100 hover:bg-white/10 hover:text-white",
-                      )}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="flex-1">{item.label}</span>
-                      {badgeValue > 0 && (
-                        <span className={cn("text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", badgeBg)}>
-                          {badgeValue > 99 ? "99+" : badgeValue}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
+        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+          {NAV.map((g) => {
+            const isOpen = openGroups.has(g.group);
+            const total = groupBadgeTotal(g);
+            return (
+              <div key={g.group}>
+                {/* 그룹 헤더 — 클릭하여 펴기/접기 */}
+                <button
+                  onClick={() => toggleGroup(g.group)}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition",
+                    isOpen
+                      ? "text-blue-200 bg-white/[0.04]"
+                      : "text-blue-300 hover:bg-white/[0.04]"
+                  )}
+                >
+                  <ChevronDown
+                    className={cn("h-3.5 w-3.5 transition-transform shrink-0", !isOpen && "-rotate-90")}
+                  />
+                  <span className="flex-1 text-left">{g.group}</span>
+                  {!isOpen && total > 0 && (
+                    <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {total > 99 ? "99+" : total}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-medium text-blue-300/60">{g.items.length}</span>
+                </button>
+
+                {/* 그룹 내 메뉴 — 펼쳐졌을 때만 표시 */}
+                {isOpen && (
+                  <div className="space-y-0.5 mt-0.5 mb-2 animate-slide-down">
+                    {g.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+                      const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0;
+                      const badgeBg = BADGE_BG[item.badgeColor ?? "red"];
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 pl-7 pr-3 py-1.5 rounded-lg text-sm font-medium transition",
+                            active
+                              ? "bg-white/15 text-white"
+                              : "text-blue-100 hover:bg-white/10 hover:text-white",
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
+                          <span className="flex-1">{item.label}</span>
+                          {badgeValue > 0 && (
+                            <span className={cn("text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", badgeBg)}>
+                              {badgeValue > 99 ? "99+" : badgeValue}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         <div className="px-3 py-3 border-t border-white/10">
