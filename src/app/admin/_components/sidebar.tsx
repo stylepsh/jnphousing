@@ -64,6 +64,14 @@ const NAV: NavGroup[] = [
       { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
       { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
+      { href: "/admin/buildings-managed", label: "위탁관리 건물", icon: Building2 },
+    ],
+  },
+  {
+    group: "DM 단기임대",
+    items: [
+      { href: "/admin/dm", label: "DM 대시보드", icon: LayoutDashboard },
+      { href: "/admin/dm/settlement", label: "월별 정산", icon: Wallet },
     ],
   },
   {
