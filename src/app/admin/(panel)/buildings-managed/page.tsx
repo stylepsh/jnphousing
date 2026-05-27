@@ -83,7 +83,7 @@ export default async function BuildingsManagedPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/properties"><Plus className="h-4 w-4 mr-1.5" /> 건물 등록·편집</Link>
+          <Link href="/admin/buildings-managed/new"><Plus className="h-4 w-4 mr-1.5" /> 건물 추가</Link>
         </Button>
       </div>
 

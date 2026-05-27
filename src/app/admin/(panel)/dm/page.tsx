@@ -95,8 +95,11 @@ export default async function DmDashboardPage() {
           <Button asChild variant="outline">
             <Link href="/admin/dm/units"><Home className="h-4 w-4 mr-1.5" /> 호실 목록</Link>
           </Button>
-          <Button asChild>
+          <Button asChild variant="outline">
             <Link href="/admin/dm/settlement"><Wallet className="h-4 w-4 mr-1.5" /> 월별 정산</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/dm/units/new"><Plus className="h-4 w-4 mr-1.5" /> 호실 추가</Link>
           </Button>
         </div>
       </div>

@@ -92,6 +92,8 @@ export default async function LandlordBusinessPage() {
         </Button>
       </div>
 
+      <p className="mb-4 text-xs text-muted-foreground">💡 카드 클릭 → 편집 페이지로 이동</p>
+
       {showSeed && (
         <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
           <p className="font-semibold mb-1">📦 DB 데이터 비어있음</p>
@@ -111,7 +113,7 @@ export default async function LandlordBusinessPage() {
           return (
             <Link
               key={id}
-              href={isSeed ? "/admin/landlord-business" : `/admin/landlord-business/${id}`}
+              href={isSeed ? "/admin/landlord-business" : `/admin/landlord-business/${id}/edit`}
               className="block animate-fade-in"
             >
               <Card interactive className="h-full">

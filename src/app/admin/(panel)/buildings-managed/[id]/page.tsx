@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, Building2, MapPin, FileText, Plus } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Building2, MapPin, FileText, Plus, Edit3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Icons } from "@/lib/icons";
 import { VENDOR_CATEGORIES, getCategoryMeta, type VendorCategory } from "@/lib/data/vendor-categories";
@@ -82,9 +82,16 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="p-6 lg:p-8 max-w-6xl">
-      <Link href="/admin/buildings-managed" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-5">
-        <ArrowLeft className="h-4 w-4 mr-1" /> 위탁관리 건물 목록
-      </Link>
+      <div className="flex items-center justify-between mb-5">
+        <Link href="/admin/buildings-managed" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4 mr-1" /> 위탁관리 건물 목록
+        </Link>
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/admin/buildings-managed/${p.id}/edit`}>
+            <Edit3 className="h-3.5 w-3.5 mr-1" /> 건물 편집
+          </Link>
+        </Button>
+      </div>
 
       {/* Header */}
       <Card className="mb-6 bg-gradient-to-br from-primary to-slate-800 text-white border-0">
@@ -203,7 +210,7 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
                 ) : (
                   <div className="space-y-2">
                     {items.map(v => (
-                      <div key={v.id} className="rounded border border-border/60 p-2.5 text-xs">
+                      <Link key={v.id} href={`/admin/buildings-managed/${p.id}/vendors/${v.id}/edit`} className="block rounded border border-border/60 p-2.5 text-xs hover:bg-muted/40 transition">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="font-semibold">{v.vendor_name}</div>
                           {v.monthly_fee && <span className="tabular-nums text-primary">{Math.floor(v.monthly_fee / 10000)}만</span>}
@@ -228,7 +235,7 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
                             </a>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}

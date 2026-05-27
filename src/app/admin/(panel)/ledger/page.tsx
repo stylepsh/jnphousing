@@ -216,20 +216,28 @@ export default async function LedgerPage({ searchParams }: LedgerProps) {
                   const prop = r.property_id ? propMap.get(r.property_id) : null;
                   const meta = CATEGORY_LABEL[r.category] ?? CATEGORY_LABEL.expense_other;
                   return (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium text-sm">{prop?.short_alias ?? prop?.name ?? "-"}</TableCell>
-                      <TableCell><Badge variant="outline" className={`text-[10px] ${meta.color}`}>{meta.label}</Badge></TableCell>
+                    <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40">
+                      <TableCell className="font-medium text-sm">
+                        <Link href={`/admin/ledger/${r.id}/edit`} className="block">{prop?.short_alias ?? prop?.name ?? "-"}</Link>
+                      </TableCell>
+                      <TableCell><Link href={`/admin/ledger/${r.id}/edit`} className="block"><Badge variant="outline" className={`text-[10px] ${meta.color}`}>{meta.label}</Badge></Link></TableCell>
                       <TableCell className="text-xs">
-                        {r.subcategory && <span className="text-muted-foreground">{r.subcategory} · </span>}
-                        {r.description ?? "-"}
+                        <Link href={`/admin/ledger/${r.id}/edit`} className="block">
+                          {r.subcategory && <span className="text-muted-foreground">{r.subcategory} · </span>}
+                          {r.description ?? "-"}
+                        </Link>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-emerald-700">{r.revenue ? `+${Math.floor(r.revenue / 10000).toLocaleString()}만` : "-"}</TableCell>
-                      <TableCell className="text-right tabular-nums text-red-700">{r.expense ? `-${Math.floor(r.expense / 10000).toLocaleString()}만` : "-"}</TableCell>
+                      <TableCell className="text-right tabular-nums text-emerald-700">
+                        <Link href={`/admin/ledger/${r.id}/edit`} className="block">{r.revenue ? `+${Math.floor(r.revenue / 10000).toLocaleString()}만` : "-"}</Link>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-red-700">
+                        <Link href={`/admin/ledger/${r.id}/edit`} className="block">{r.expense ? `-${Math.floor(r.expense / 10000).toLocaleString()}만` : "-"}</Link>
+                      </TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${r.profit >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                        {r.profit >= 0 ? "+" : ""}{Math.floor(r.profit / 10000).toLocaleString()}만
+                        <Link href={`/admin/ledger/${r.id}/edit`} className="block">{r.profit >= 0 ? "+" : ""}{Math.floor(r.profit / 10000).toLocaleString()}만</Link>
                       </TableCell>
-                      <TableCell className="text-xs">{r.paid_at?.slice(0, 10) ?? "-"}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px]">{r.payment_status}</Badge></TableCell>
+                      <TableCell className="text-xs"><Link href={`/admin/ledger/${r.id}/edit`} className="block">{r.paid_at?.slice(0, 10) ?? "-"}</Link></TableCell>
+                      <TableCell><Link href={`/admin/ledger/${r.id}/edit`} className="block"><Badge variant="outline" className="text-[10px]">{r.payment_status}</Badge></Link></TableCell>
                     </TableRow>
                   );
                 })}
