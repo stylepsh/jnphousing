@@ -80,6 +80,7 @@ const NAV: NavGroup[] = [
   {
     group: "콘텐츠",
     items: [
+      { href: "/admin/banner", label: "팝업 배너", icon: Megaphone },
       { href: "/admin/notices", label: "임차인 공지", icon: Megaphone },
       { href: "/admin/cms/news", label: "공지 게시판", icon: Megaphone },
       { href: "/admin/cms/faq", label: "FAQ 관리", icon: FileQuestion },
