@@ -49,7 +49,6 @@ export const COMPANY = {
 
   legal: {
     registrationNumber: "361-27-02026",
-    taxType: "간이과세자",
-    openDate: "2026-05-08",
+    openDate: "2022",
   },
 } as const;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Target, Heart, ShieldCheck, Award, MapPin, FileText, Phone, Home as HomeIcon, TrendingUp, Sparkles, Quote, Navigation, ExternalLink } from "lucide-react";
+import { Building2, Target, Heart, ShieldCheck, Award, MapPin, FileText, Phone, Quote, Navigation, ExternalLink } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { createClient } from "@/lib/supabase/server";
@@ -33,20 +33,24 @@ const VALUES = [
   },
 ];
 
-// 5년 단위로 확대된 연혁
-const TIMELINE_DEFAULT = [
-  { year: 1999, title: "주택관리업 시작",
-    text: "부천 일대에서 빌라·다세대 주택 관리 시작. 1인 사업자로 출발." },
-  { year: 2005, title: "오피스텔·상가 확장",
-    text: "관리 포트폴리오 확대 — 오피스텔·상가 등 다양한 부동산 자산 운영 경험 축적." },
-  { year: 2010, title: "위탁임대관리 본격화",
-    text: "임대인 대행 서비스 본격 운영. 임차인 모집·임대료 수납·민원 일괄 처리." },
-  { year: 2015, title: "분쟁·HUG 대응 노하우 정립",
-    text: "HUG 대위변제·세입자 분쟁 등 위기 자산 정상화 실전 경험 본격 축적." },
-  { year: 2020, title: "법무 자문 네트워크 구축",
-    text: "변호사·법무사 협력 네트워크 — 임대 분쟁 시 즉시 자문 가능 체계 완성." },
-  { year: 2026, title: `${COMPANY.legalName} 사업자 등록`,
-    text: `부천세무서 (${COMPANY.legal.registrationNumber}) — 디지털 운영 시스템 도입과 함께 본격 법인화 단계.` },
+// 연혁 — 건설업 배경 → 위탁임대 전문
+type TimelineItem = { year: string | number; title: string; text: string };
+const TIMELINE_DEFAULT: TimelineItem[] = [
+  {
+    year: "건설업",
+    title: "건설업 종사 (이한종합건설)",
+    text: "시공·현장 관리 경력을 바탕으로 건물의 구조·설비·하자를 꿰뚫는 실무 역량을 쌓았습니다. 단순 관리가 아닌 '건물을 아는 관리'의 토대.",
+  },
+  {
+    year: 2022,
+    title: "분쟁·HUG 대응 노하우 정립",
+    text: "HUG 대위변제·세입자 분쟁·부실 건물 정상화 등 일반 관리회사가 손대지 않는 위기 자산 대응 노하우를 본격 체계화했습니다.",
+  },
+  {
+    year: 2026,
+    title: `${COMPANY.legalName} 설립`,
+    text: "위탁임대 전문 사업자로 출발. 27년 현장 경험에 디지털 운영 시스템을 더해 투명하고 책임 있는 위탁관리를 시작합니다.",
+  },
 ];
 
 interface MilestoneRow {
@@ -57,7 +61,7 @@ interface MilestoneRow {
   display_order: number;
 }
 
-async function fetchMilestones(): Promise<typeof TIMELINE_DEFAULT> {
+async function fetchMilestones(): Promise<TimelineItem[]> {
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -186,7 +190,6 @@ export default async function AboutPage() {
                 <InfoRow icon={Building2} label="상호" value={COMPANY.legalName} />
                 <InfoRow icon={Award} label="대표" value={COMPANY.representative} />
                 <InfoRow icon={FileText} label="사업자등록번호" value={COMPANY.legal.registrationNumber} />
-                <InfoRow icon={ShieldCheck} label="과세 유형" value={COMPANY.legal.taxType} />
                 <InfoRow icon={Target} label="업태 / 종목" value={`${COMPANY.business.category} / ${COMPANY.business.item}`} />
                 <InfoRow icon={Phone} label={COMPANY.contact.phoneLabel} value={COMPANY.contact.phone} />
                 <div className="sm:col-span-2">
@@ -199,39 +202,71 @@ export default async function AboutPage() {
       </section>
 
       {/* ============ 대표 인사말 ============ */}
-      <section className="bg-background py-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="flex items-center gap-3 mb-6">
+      <section className="bg-background py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center gap-3 mb-10">
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Quote className="h-5 w-5 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">대표 인사말</h2>
           </div>
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardContent className="pt-7 pb-7">
-              <div className="space-y-4 text-base text-foreground/85 leading-relaxed">
-                <p>안녕하세요. JNP주택관리를 찾아주셔서 감사합니다.</p>
-                <p>
-                  저희는 단순히 시설을 유지하는 것을 넘어, 건물 한 채 한 채를 마치 저희 것처럼 생각하고 관리하는 회사를 만들고자 합니다.
-                  건물주께는 투명한 운영 보고서를, 입주민께는 빠른 응대와 쾌적한 환경을 약속드립니다.
-                </p>
-                <p>
-                  특히 HUG 대위변제·부실 건물·세입자 분쟁처럼 일반 관리회사가 손대지 않는 위기 상황에서도
-                  27년 노하우로 끝까지 동행해 왔습니다.
-                </p>
-                <p>지역에 뿌리내려 오랫동안 신뢰받는 관리회사가 되겠습니다. 감사합니다.</p>
+
+          <div className="grid md:grid-cols-[300px_1fr] gap-10 lg:gap-14 items-start">
+            {/* 대표 사진 */}
+            <div className="md:sticky md:top-24">
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 shadow-xl shadow-black/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80&auto=format&fit=crop"
+                  alt={`${COMPANY.representative} 대표`}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="mt-6 pt-6 border-t border-border flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                  {COMPANY.representative.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-semibold">{COMPANY.representative} 대표</p>
-                  <p className="text-xs text-muted-foreground">{COMPANY.legalName}</p>
+              <div className="mt-5 text-center md:text-left">
+                <p className="font-bold text-lg tracking-tight">{COMPANY.representative} <span className="text-base font-medium text-muted-foreground">대표</span></p>
+                <p className="text-sm text-muted-foreground mt-0.5">{COMPANY.legalName}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5 justify-center md:justify-start">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">건설업 27년</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">HUG 대응 전문</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* 인사말 본문 */}
+            <div className="space-y-5 text-base md:text-[17px] text-foreground/85 leading-relaxed">
+              <p className="text-xl md:text-2xl font-bold text-foreground leading-snug tracking-tight">
+                “저는 건물을 짓던 사람입니다.<br />
+                그래서 건물을 누구보다 잘 압니다.”
+              </p>
+              <p>
+                안녕하세요. {COMPANY.legalName} 대표 {COMPANY.representative}입니다.
+                저는 오랜 세월 건설 현장에서 일해 왔습니다. 골조부터 설비, 마감, 하자까지 —
+                건물이 어떻게 지어지고 어디서 문제가 생기는지 몸으로 익혔습니다.
+              </p>
+              <p>
+                그 경험이 지금의 위탁관리로 이어졌습니다. 시공을 아는 사람이 관리하면 다릅니다.
+                누수 하나, 균열 하나도 원인을 짚어내고, 불필요한 수선비를 줄이며,
+                건물의 수명을 길게 봅니다. <strong className="text-foreground">단순 관리가 아니라 ‘건물을 아는 관리’</strong>입니다.
+              </p>
+              <p>
+                특히 HUG 대위변제·부실 건물·세입자 분쟁처럼 일반 관리회사가 손사래 치는 위기 상황에서
+                진가가 드러납니다. 자산 정리부터 임차인 정리, 법무 동행, 재계약까지 —
+                막막한 임대인 곁에서 끝까지 함께해 왔습니다.
+              </p>
+              <p>
+                건물주께는 매월 투명한 운영 보고서를, 입주민께는 빠른 응대와 쾌적한 환경을 약속드립니다.
+                건물 한 채 한 채를 제 것처럼 생각하겠습니다.
+              </p>
+              <p className="font-semibold text-foreground">
+                지역에 뿌리내려 오랫동안 신뢰받는 관리회사가 되겠습니다. 감사합니다.
+              </p>
+
+              <div className="pt-6 mt-2 border-t border-border flex items-center justify-end gap-2 text-sm">
+                <span className="text-muted-foreground">{COMPANY.legalName} 대표</span>
+                <span className="font-bold text-lg tracking-tight">{COMPANY.representative}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -239,7 +274,6 @@ export default async function AboutPage() {
       <section className="bg-primary/5 py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-12">
-            <Sparkles className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">핵심 가치</h2>
             <p className="mt-3 text-muted-foreground">JNP가 모든 결정의 기준으로 삼는 세 가지</p>
           </div>
@@ -315,7 +349,7 @@ export default async function AboutPage() {
                       부천세무서 / 사업자등록번호 {COMPANY.legal.registrationNumber}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      개업일 {COMPANY.legal.openDate} · {COMPANY.legal.taxType}
+                      사업자 등록 {COMPANY.legal.openDate}년 · 위탁임대 전문
                     </p>
                     <a
                       href={`https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=2316&cntntsId=7878`}

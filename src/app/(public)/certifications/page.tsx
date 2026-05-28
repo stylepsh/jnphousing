@@ -72,7 +72,7 @@ export default async function CertificationsPage() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     부천세무서 / 사업자등록번호 <strong className="text-foreground">{COMPANY.legal.registrationNumber}</strong>
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">개업일 {COMPANY.legal.openDate} · {COMPANY.legal.taxType}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">사업자 등록 {COMPANY.legal.openDate}년 · 위탁임대 전문</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button asChild size="sm" variant="outline">
                       <a href="https://teht.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/ab/a/a/UTEABAAA13.xml" target="_blank" rel="noopener noreferrer">

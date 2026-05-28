@@ -498,7 +498,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/40 rounded-2xl overflow-hidden">
             {[
               { label: "사업자등록", value: COMPANY.legal.registrationNumber, sub: "부천세무서" },
-              { label: "법적 형태", value: COMPANY.legal.taxType, sub: COMPANY.business.category },
+              { label: "전문 분야", value: "위탁임대", sub: COMPANY.business.category },
               { label: "운영 경력", value: `${COMPANY_STATS.yearsAsTeam}년`, sub: "1999년 시작" },
               { label: "관리 자산", value: `${COMPANY_STATS.operatedBuildings}+`, sub: `${COMPANY_STATS.managedUnits}+ 세대` },
             ].map((c) => (

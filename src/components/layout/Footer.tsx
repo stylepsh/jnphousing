@@ -105,7 +105,7 @@ export function Footer() {
             <div className="space-y-1">
               <p>© {new Date().getFullYear()} {COMPANY.brand} ({COMPANY.legalName}). All rights reserved.</p>
               <p className="flex items-center gap-1.5">
-                대표 {COMPANY.representative} · 사업자등록번호 {COMPANY.legal.registrationNumber} · {COMPANY.legal.taxType}
+                대표 {COMPANY.representative} · 사업자등록번호 {COMPANY.legal.registrationNumber}
                 <Award className="h-3 w-3 text-blue-400 ml-1" />
               </p>
             </div>
