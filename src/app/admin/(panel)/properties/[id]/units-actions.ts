@@ -20,6 +20,7 @@ const schema = z.object({
   deposit_default: z.coerce.number().int().min(0).default(0),
   rent_default: z.coerce.number().int().min(0).default(0),
   management_fee_default: z.coerce.number().int().min(0).default(0),
+  service_modes: z.array(z.enum(["housing_mgmt", "rental", "dm"])).default([]),
   notes: z.string().max(1000).optional().or(z.literal("")).transform((v) => v || null),
 });
 
@@ -38,8 +39,9 @@ export async function upsertUnit(id: string | null, formData: FormData) {
         raw.area_m2 = (py * 3.3058).toFixed(2);
       }
     }
+    const modes = formData.getAll("service_modes").map(String).filter(Boolean);
 
-    const parsed = schema.safeParse(raw);
+    const parsed = schema.safeParse({ ...raw, service_modes: modes });
     if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
 
     const supabase = createServiceClient();
@@ -96,6 +98,7 @@ const bulkSchema = z.object({
   deposit_default: z.coerce.number().int().min(0).default(0),
   rent_default: z.coerce.number().int().min(0).default(0),
   management_fee_default: z.coerce.number().int().min(0).default(0),
+  service_modes: z.array(z.enum(["housing_mgmt", "rental", "dm"])).default([]),
 });
 
 function formatUnitNo(pattern: string, floor: number, n: number): string {
@@ -121,7 +124,8 @@ export async function bulkCreateUnits(formData: FormData): Promise<BulkResult> {
       }
     }
 
-    const parsed = bulkSchema.safeParse(raw);
+    const bulkModes = formData.getAll("service_modes").map(String).filter(Boolean);
+    const parsed = bulkSchema.safeParse({ ...raw, service_modes: bulkModes });
     if (!parsed.success) {
       return { ok: false, error: "입력값을 확인해 주세요." };
     }
@@ -168,6 +172,7 @@ export async function bulkCreateUnits(formData: FormData): Promise<BulkResult> {
           deposit_default: d.deposit_default,
           rent_default: d.rent_default,
           management_fee_default: d.management_fee_default,
+          service_modes: d.service_modes,
         });
       }
     }

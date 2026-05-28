@@ -58,6 +58,7 @@ export interface PropertyUnit {
   deposit_default: number;
   rent_default: number;
   management_fee_default: number;
+  service_modes: string[] | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

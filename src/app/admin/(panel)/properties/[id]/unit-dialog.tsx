@@ -126,6 +126,30 @@ export function UnitDialog({ mode, propertyId, unit }: Props) {
             </div>
           </div>
 
+          <hr />
+
+          <div>
+            <Label>관리 유형 (복수 선택)</Label>
+            <div className="flex flex-wrap gap-4 mt-2">
+              {[
+                { k: "housing_mgmt", l: "🏢 주택관리" },
+                { k: "rental", l: "🤝 임대관리" },
+                { k: "dm", l: "🏠 단기임대(DM)" },
+              ].map((m) => (
+                <label key={m.k} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="service_modes"
+                    value={m.k}
+                    defaultChecked={unit?.service_modes?.includes(m.k) ?? false}
+                    className="h-4 w-4"
+                  />
+                  {m.l}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div>
             <Label>메모</Label>
             <Textarea name="notes" rows={2} defaultValue={unit?.notes ?? ""} placeholder="특이사항, 옵션 등" className="mt-1.5" />

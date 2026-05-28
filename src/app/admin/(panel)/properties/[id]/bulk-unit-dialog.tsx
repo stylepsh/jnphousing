@@ -183,6 +183,22 @@ export function BulkUnitDialog({ propertyId }: { propertyId: string }) {
               </div>
             </div>
 
+            <div>
+              <Label>관리 유형 (모든 호실에 동일 적용)</Label>
+              <div className="flex flex-wrap gap-4 mt-2">
+                {[
+                  { k: "housing_mgmt", l: "🏢 주택관리" },
+                  { k: "rental", l: "🤝 임대관리" },
+                  { k: "dm", l: "🏠 단기임대(DM)" },
+                ].map((m) => (
+                  <label key={m.k} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="checkbox" name="service_modes" value={m.k} className="h-4 w-4" />
+                    {m.l}
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>취소</Button>
               <Button type="submit" disabled={pending || totalUnits === 0 || totalUnits > 500}>
