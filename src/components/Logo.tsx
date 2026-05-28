@@ -53,24 +53,22 @@ function LogoSvg({ className, title, colors, size = "default" }: LogoSizedProps 
     >
       <title>{title ?? "JNP주택관리"}</title>
       <rect width="64" height="64" rx={colors.rx} fill={colors.bg} />
+      {/* JNP 텍스트 모노그램 */}
+      <text
+        x="32"
+        y="40"
+        textAnchor="middle"
+        fontSize="22"
+        fontWeight="800"
+        fill={colors.stroke}
+        fontFamily="'Pretendard Variable', Pretendard, system-ui, sans-serif"
+        letterSpacing="-1.5"
+      >
+        JNP
+      </text>
       {colors.dot !== "none" && (
-        <circle cx="32" cy="14" r="3" fill={colors.dot} />
+        <circle cx="50" cy="18" r="3.5" fill={colors.dot} />
       )}
-      <path
-        d="M20 22 L20 42 Q20 48 25 48 Q30 48 30 42"
-        stroke={colors.stroke}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M36 48 L36 22 L43 22 Q49 22 49 28 Q49 34 43 34 L36 34"
-        stroke={colors.stroke}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
     </svg>
   );
 }
