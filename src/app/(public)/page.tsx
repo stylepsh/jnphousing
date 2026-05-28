@@ -185,8 +185,8 @@ export default async function HomePage() {
             <div>
               <p className="text-overline text-primary mb-4">Our Promise</p>
               <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-                "건물 한 채를<br />
-                기업처럼 운영합니다"
+                건물 한 채를<br />
+                기업처럼 운영합니다.
               </h2>
             </div>
             <div className="space-y-6 text-base md:text-[17px] leading-relaxed text-foreground/85">
