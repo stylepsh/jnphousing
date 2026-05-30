@@ -48,6 +48,16 @@ export default async function LoginPage({
           </CardContent>
         </Card>
 
+        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-400">
+          <Link href="/auth/find-email" className="hover:text-white transition-colors">
+            아이디(이메일) 찾기
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/auth/forgot-password" className="hover:text-white transition-colors">
+            비밀번호 찾기
+          </Link>
+        </div>
+
         <div className="mt-6 rounded-lg bg-slate-800/50 border border-slate-700/50 p-4">
           <p className="text-xs font-semibold text-slate-300 mb-2">로그인 후 자동 안내</p>
           <ul className="space-y-1.5 text-xs text-slate-400">
