@@ -127,6 +127,26 @@
 
 ---
 
+## 🔁 추가 진화 세션 (2026-05-30, 야간 자율) — 플랜 너머 개선
+
+> 104개 본 플랜 완료 이후, 코드 심층 감사로 발굴한 보안·완성도 개선. 각 Phase build+test 통과 후 로컬 commit (push 안 함).
+
+| Phase | 항목 | commit |
+|---|------|--------|
+| A | **PII 암호화 실제 연결** — landlords/tenants 저장 시 AES-256-GCM, 목록은 서버에서 복호화→마스킹(평문 클라이언트 미전달), excel-backup 복호화 출력. edit 시 빈칸=기존값 유지(wipe 버그 수정). 테스트 7개 | `46413b4` |
+| B | **해지 정산서 PDF 발행** — 미사용이던 SettlementPdf 연결, `/admin/leases/[id]/settlement` route + 상세 페이지 버튼 | `54fabb1` |
+| C | **블로그 markdown XSS 방어** — 원문 HTML 이스케이프 + 링크 href 화이트리스트(javascript: 차단) | `1f15a6f` |
+| D | **Server Action 권한 감사** — 30개 액션 전수 점검. 실제 취약점 없음 확인(agency/tenant 액션 모두 auth.getUser+승인체크로 보호). 코드 변경 없음 | — |
+| E | **dates.ts 핵심 청구일 로직 테스트 18개** — 말일 보정/윤년/monthly·weekly·daily/영업일. 총 71개 통과 | `5a3285f` |
+
+### 후속 권장 (이번 세션 미처리 — 사유 명시)
+- **공휴일 청구일 보정**: BLOCKERS B-108 (비즈니스 결정 + 정확한 데이터 소스 필요 → 하드코딩 위험으로 보류)
+- **PII 운영 키 설정**: BLOCKERS B-109 (배포 전 `PII_ENCRYPTION_KEY` 설정 필수)
+- **next/image 전환**: 공개 페이지 `<img>`(about/properties/certifications) 성능 개선 여지. 단 시각 회귀 위험 → 박성혁님 화면 확인 가능할 때 진행 권장. (현행 `<img>`는 eslint-disable된 의도적 working 코드)
+- **메시지 실발송**: BLOCKERS B-101/B-106 (카카오 비즈인증·NCP SENS 키 — 현재 mock/console fallback)
+
+---
+
 ## 🚧 진행 중
 
 (없음)
