@@ -35,14 +35,32 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-/** 매우 단순한 markdown 렌더링 (## h2, ### h3, **bold**, --- hr, list, paragraph) */
+/** 원문 HTML 특수문자 이스케이프 — markdown 변환 전에 적용해 raw HTML/스크립트 주입 차단. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** 링크 href 화이트리스트 — http(s)/mailto/tel 및 상대경로(/ #)만 허용. javascript: 등 차단. */
+function safeHref(url: string): string {
+  const u = url.trim();
+  if (/^(https?:\/\/|mailto:|tel:|\/|#)/i.test(u)) return u;
+  return "#";
+}
+
+/** 매우 단순한 markdown 렌더링 (## h2, ### h3, **bold**, --- hr, list, paragraph). 입력은 먼저 이스케이프된다. */
 function renderMarkdown(md: string): string {
-  let html = md
+  // 1) 원문 이스케이프 — 이후 삽입되는 태그만 신뢰한다(저장형 XSS 방어).
+  let html = escapeHtml(md)
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
     .replace(/^---$/gm, '<hr class="my-8 border-border" />')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary underline underline-offset-2 hover:text-primary/80">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, url) =>
+      `<a href="${safeHref(url)}" class="text-primary underline underline-offset-2 hover:text-primary/80">${text}</a>`)
     .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-muted text-foreground text-sm">$1</code>');
 
   // Lists
