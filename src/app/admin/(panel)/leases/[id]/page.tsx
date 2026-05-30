@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatWonSuffix, formatWonMan } from "@/lib/money";
 import { formatKoreanDate } from "@/lib/dates";
@@ -85,7 +85,16 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{lease.unit?.properties?.address}</p>
         </div>
-        <LeaseActions lease={lease} />
+        <div className="flex flex-wrap items-center gap-2">
+          {lease.status === "terminated" && (
+            <Button asChild variant="outline">
+              <a href={`/admin/leases/${lease.id}/settlement`} target="_blank" rel="noopener noreferrer">
+                <FileText className="h-4 w-4 mr-1.5" /> 정산서 PDF
+              </a>
+            </Button>
+          )}
+          <LeaseActions lease={lease} />
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
