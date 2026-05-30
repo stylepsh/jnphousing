@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
+import { encryptPII } from "@/lib/crypto-pii";
 
 const schema = z.object({
   name: z.string().min(1).max(80),
@@ -26,16 +27,21 @@ export async function upsertTenant(id: string | null, formData: FormData) {
     const parsed = schema.safeParse(raw);
     if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
 
-    // TODO(성혁): id_number 암호화. 현재 plain 저장.
-    const data = {
+    // 주민번호는 AES-256-GCM 암호화 후 저장 (lib/crypto-pii).
+    // 값이 입력됐을 때만 갱신 — edit 시 빈칸이면 기존 암호화값 유지(실수로 지워짐 방지).
+    const data: Record<string, unknown> = {
       name: parsed.data.name,
       phone: parsed.data.phone,
       emergency_contact: parsed.data.emergency_contact,
-      id_number_encrypted: parsed.data.id_number,
       move_in_date: parsed.data.move_in_date,
       move_out_date: parsed.data.move_out_date,
       memo: parsed.data.memo,
     };
+    if (parsed.data.id_number !== null) {
+      data.id_number_encrypted = await encryptPII(parsed.data.id_number);
+    } else if (!id) {
+      data.id_number_encrypted = null;
+    }
 
     const supabase = createServiceClient();
     const { error } = id

@@ -9,12 +9,12 @@
 
 import { webcrypto } from "crypto";
 
-const KEY_HEX = process.env.PII_ENCRYPTION_KEY;
-
 async function getKey(): Promise<CryptoKey | null> {
-  if (!KEY_HEX) return null;
+  // 호출 시점에 env 를 읽는다(모듈 로드 시점 캡처 회피 — 서버리스/테스트 모두 견고).
+  const keyHex = process.env.PII_ENCRYPTION_KEY;
+  if (!keyHex) return null;
   try {
-    const keyBytes = new Uint8Array(KEY_HEX.match(/.{2}/g)!.map(b => parseInt(b, 16)));
+    const keyBytes = new Uint8Array(keyHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
     if (keyBytes.length !== 32) {
       console.warn("[crypto-pii] PII_ENCRYPTION_KEY must be 32 bytes (64 hex chars)");
       return null;

@@ -3,15 +3,35 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LandlordDialog } from "./landlord-dialog";
 import { createClient } from "@/lib/supabase/server";
 import { maskPhone, maskAccount, maskBusinessNumber } from "@/lib/pii";
+import { decryptPII } from "@/lib/crypto-pii";
 import type { Landlord } from "@/types/lease";
 
-async function fetchLandlords(): Promise<Landlord[]> {
+interface LandlordRow {
+  /** 민감 암호문 필드를 제거한 안전 객체 (client dialog 전달용). */
+  safe: Landlord;
+  accountMasked: string;
+  bizMasked: string;
+}
+
+async function fetchLandlords(): Promise<LandlordRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("landlords")
     .select("*")
     .order("name");
-  return (data ?? []) as Landlord[];
+  const rows = (data ?? []) as Landlord[];
+  // 복호화·마스킹은 서버에서만. 평문은 클라이언트로 전달하지 않는다.
+  return Promise.all(
+    rows.map(async (l) => {
+      const account = await decryptPII(l.account_number_encrypted ?? "");
+      const biz = await decryptPII(l.business_number_encrypted ?? "");
+      return {
+        safe: { ...l, account_number_encrypted: null, business_number_encrypted: null },
+        accountMasked: maskAccount(account),
+        bizMasked: maskBusinessNumber(biz),
+      };
+    }),
+  );
 }
 
 export default async function LandlordsPage() {
@@ -44,15 +64,15 @@ export default async function LandlordsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {landlords.map((l) => (
+                {landlords.map(({ safe: l, accountMasked, bizMasked }) => (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.name}</TableCell>
                     <TableCell className="text-sm">{maskPhone(l.phone)}</TableCell>
                     <TableCell className="text-sm">{l.email ?? "-"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {l.account_bank ? `${l.account_bank} · ` : ""}{maskAccount(l.account_number_encrypted)}
+                      {l.account_bank ? `${l.account_bank} · ` : ""}{accountMasked}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{maskBusinessNumber(l.business_number_encrypted)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{bizMasked}</TableCell>
                     <TableCell className="text-right">
                       <LandlordDialog mode="edit" landlord={l} />
                     </TableCell>

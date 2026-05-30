@@ -58,7 +58,7 @@ export function LandlordDialog({ mode, landlord }: Props) {
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "임대인 등록" : "임대인 수정"}</DialogTitle>
-          <DialogDescription>계좌/사업자번호는 마스킹 표시되며 향후 암호화 저장됩니다.</DialogDescription>
+          <DialogDescription>계좌·사업자번호는 암호화 저장되며 목록에는 마스킹 표시됩니다. 수정 시 빈칸으로 두면 기존 값이 유지됩니다.</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3.5">
           <div className="grid sm:grid-cols-2 gap-3">

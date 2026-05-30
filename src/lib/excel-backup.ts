@@ -18,6 +18,7 @@ import "server-only";
 
 import ExcelJS from "exceljs";
 import { createServiceClient } from "@/lib/supabase/server";
+import { decryptPII } from "@/lib/crypto-pii";
 
 interface SheetSpec<TRow> {
   title: string;
@@ -145,7 +146,13 @@ export async function buildBackupWorkbook(): Promise<Buffer> {
     { header: "등록일", key: "created_at", width: 18 },
   ];
   for (const r of await fetchAll<Record<string, unknown>>("landlords", { col: "name", asc: true })) {
-    wsLandlords.addRow({ ...r, created_at: ts(r.created_at) });
+    // 백업은 관리자 전용 — 실제 계좌·사업자번호 복호화 후 출력.
+    wsLandlords.addRow({
+      ...r,
+      account_number_encrypted: await decryptPII((r.account_number_encrypted as string) ?? ""),
+      business_number_encrypted: await decryptPII((r.business_number_encrypted as string) ?? ""),
+      created_at: ts(r.created_at),
+    });
   }
   applyHeaderStyle(wsLandlords);
 
@@ -164,7 +171,12 @@ export async function buildBackupWorkbook(): Promise<Buffer> {
     { header: "등록일", key: "created_at", width: 18 },
   ];
   for (const r of await fetchAll<Record<string, unknown>>("tenants", { col: "name", asc: true })) {
-    wsTenants.addRow({ ...r, created_at: ts(r.created_at) });
+    // 백업은 관리자 전용 — 실제 주민번호 복호화 후 출력.
+    wsTenants.addRow({
+      ...r,
+      id_number_encrypted: await decryptPII((r.id_number_encrypted as string) ?? ""),
+      created_at: ts(r.created_at),
+    });
   }
   applyHeaderStyle(wsTenants);
 

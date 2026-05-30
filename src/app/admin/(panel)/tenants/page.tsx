@@ -3,16 +3,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TenantDialog } from "./tenant-dialog";
 import { createClient } from "@/lib/supabase/server";
 import { maskPhone, maskIdNumber } from "@/lib/pii";
+import { decryptPII } from "@/lib/crypto-pii";
 import { formatKoreanDate } from "@/lib/dates";
 import type { Tenant } from "@/types/lease";
 
-async function fetchTenants(): Promise<Tenant[]> {
+interface TenantRow {
+  /** 주민번호 암호문을 제거한 안전 객체 (client dialog 전달용). */
+  safe: Tenant;
+  idMasked: string;
+}
+
+async function fetchTenants(): Promise<TenantRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("tenants")
     .select("*")
     .order("name");
-  return (data ?? []) as Tenant[];
+  const rows = (data ?? []) as Tenant[];
+  // 복호화·마스킹은 서버에서만. 평문 주민번호는 클라이언트로 전달하지 않는다.
+  return Promise.all(
+    rows.map(async (t) => ({
+      safe: { ...t, id_number_encrypted: null },
+      idMasked: maskIdNumber(await decryptPII(t.id_number_encrypted ?? "")),
+    })),
+  );
 }
 
 export default async function TenantsPage() {
@@ -46,11 +60,11 @@ export default async function TenantsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tenants.map((t) => (
+                {tenants.map(({ safe: t, idMasked }) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.name}</TableCell>
                     <TableCell className="text-sm">{maskPhone(t.phone)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{maskIdNumber(t.id_number_encrypted)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{idMasked}</TableCell>
                     <TableCell className="text-sm">{t.emergency_contact ? maskPhone(t.emergency_contact) : "-"}</TableCell>
                     <TableCell className="text-xs">{t.move_in_date ? formatKoreanDate(t.move_in_date) : "-"}</TableCell>
                     <TableCell className="text-xs">{t.move_out_date ? formatKoreanDate(t.move_out_date) : "-"}</TableCell>

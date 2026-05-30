@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
+import { encryptPII } from "@/lib/crypto-pii";
 
 const schema = z.object({
   name: z.string().min(1).max(80),
@@ -27,17 +28,26 @@ export async function upsertLandlord(id: string | null, formData: FormData) {
     const parsed = schema.safeParse(raw);
     if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
 
-    // TODO(성혁): 계좌/사업자번호 application-layer 암호화. 현재는 plain 저장 후 _encrypted 컬럼에 동일 값.
-    const data = {
+    // 계좌·사업자번호는 AES-256-GCM 암호화 후 저장 (lib/crypto-pii).
+    // 값이 입력됐을 때만 갱신 — edit 시 빈칸이면 기존 암호화값 유지(실수로 지워짐 방지).
+    const data: Record<string, unknown> = {
       name: parsed.data.name,
       phone: parsed.data.phone,
       email: parsed.data.email,
       account_holder: parsed.data.account_holder,
       account_bank: parsed.data.account_bank,
-      account_number_encrypted: parsed.data.account_number,
-      business_number_encrypted: parsed.data.business_number,
       memo: parsed.data.memo,
     };
+    if (parsed.data.account_number !== null) {
+      data.account_number_encrypted = await encryptPII(parsed.data.account_number);
+    } else if (!id) {
+      data.account_number_encrypted = null;
+    }
+    if (parsed.data.business_number !== null) {
+      data.business_number_encrypted = await encryptPII(parsed.data.business_number);
+    } else if (!id) {
+      data.business_number_encrypted = null;
+    }
 
     const supabase = createServiceClient();
     const { error } = id
