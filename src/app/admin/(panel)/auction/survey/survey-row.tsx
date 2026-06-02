@@ -8,30 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatWon } from "@/lib/money";
 import { updateSurveyResult } from "./survey-actions";
-
-export interface SurveyItem {
-  id: string;
-  case_number: string;
-  court: string | null;
-  address: string;
-  owner_name: string;
-  category: string | null;
-  appraisal_value: number | null;
-  minimum_bid: number | null;
-  survey_status: string;
-  survey_date: string | null;
-  survey_by: string | null;
-  door_code: string | null;
-  survey_memo: string | null;
-}
-
-export const SURVEY_STATUS: { value: string; label: string; color: string }[] = [
-  { value: "pending", label: "미답사", color: "bg-slate-100 text-slate-600" },
-  { value: "vacant", label: "공실", color: "bg-emerald-100 text-emerald-700" },
-  { value: "occupied", label: "점유", color: "bg-rose-100 text-rose-700" },
-  { value: "revisit", label: "재방문", color: "bg-amber-100 text-amber-700" },
-  { value: "skip", label: "제외", color: "bg-slate-100 text-slate-400" },
-];
+import { SURVEY_STATUS, type SurveyItem } from "./survey-status";
 
 export function SurveyRow({ item }: { item: SurveyItem }) {
   const [status, setStatus] = useState(item.survey_status);

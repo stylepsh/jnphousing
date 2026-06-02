@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { SurveyRow, SURVEY_STATUS, type SurveyItem } from "./survey-row";
+import { SurveyRow } from "./survey-row";
+import { SURVEY_STATUS, type SurveyItem } from "./survey-status";
 
 export const metadata: Metadata = { title: "경매 답사 관리" };
 export const dynamic = "force-dynamic";
 
 interface Row extends SurveyItem {
   batch_id: string | null;
-  batch: { name: string; area: string | null } | null;
+  batch_name: string | null;
 }
 
 async function fetchSurvey(): Promise<Row[]> {
@@ -17,11 +18,33 @@ async function fetchSurvey(): Promise<Row[]> {
     const { data } = await supabase
       .from("auction_property")
       .select(
-        "id, case_number, court, address, owner_name, category, appraisal_value, minimum_bid, survey_status, survey_date, survey_by, door_code, survey_memo, batch_id, batch:auction_survey_batch(name, area)",
+        "id, case_number, court, address, owner_name, category, appraisal_value, minimum_bid, survey_status, survey_date, survey_by, door_code, survey_memo, batch_id",
       )
       .neq("survey_status", "rejected")
       .order("created_at", { ascending: false });
-    return (data ?? []) as unknown as Row[];
+
+    const props = (data ?? []) as (SurveyItem & { batch_id: string | null })[];
+    if (props.length === 0) return [];
+
+    // 배치명은 별도 조회로 매핑 (PostgREST 관계 임베드 의존 제거)
+    const batchIds = Array.from(
+      new Set(props.map((p) => p.batch_id).filter((v): v is string => !!v)),
+    );
+    const nameById = new Map<string, string>();
+    if (batchIds.length > 0) {
+      const { data: batches } = await supabase
+        .from("auction_survey_batch")
+        .select("id, name")
+        .in("id", batchIds);
+      for (const b of (batches ?? []) as { id: string; name: string }[]) {
+        nameById.set(b.id, b.name);
+      }
+    }
+
+    return props.map((p) => ({
+      ...p,
+      batch_name: p.batch_id ? nameById.get(p.batch_id) ?? null : null,
+    }));
   } catch {
     return [];
   }
@@ -38,7 +61,7 @@ export default async function AuctionSurveyPage() {
   const groups = new Map<string, { label: string; items: Row[] }>();
   for (const r of rows) {
     const key = r.batch_id ?? "(no-batch)";
-    const label = r.batch?.name ?? "(배치 없음)";
+    const label = r.batch_name ?? "(배치 없음)";
     if (!groups.has(key)) groups.set(key, { label, items: [] });
     groups.get(key)!.items.push(r);
   }
