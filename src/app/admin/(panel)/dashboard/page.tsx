@@ -87,7 +87,7 @@ async function getDashboardData() {
     supabase.from("complaints").select("*").order("created_at", { ascending: false }).limit(5),
     supabase.from("inquiries").select("*").order("created_at", { ascending: false }).limit(5),
     supabase.from("rent_invoices").select("amount_total, paid_total, due_date").gte("due_date", trendStartIso).lte("due_date", trendEndIso),
-    supabase.from("properties_units").select("id"),
+    supabase.from("properties").select("id").eq("unit_type", "unit"),
     supabase.from("leases").select("unit_id, end_date").in("status", ["active", "expiring"]),
     supabase.from("vacancy_ad_listings").select("channel_id, inquiry_count, status"),
     supabase.from("ad_channels").select("id, name").eq("is_active", true).order("display_order"),

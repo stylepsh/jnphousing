@@ -5,15 +5,24 @@ import type { Landlord, Tenant, PropertyUnit } from "@/types/lease";
 
 async function fetchOptions() {
   const supabase = await createClient();
-  const [llRes, tRes, uRes] = await Promise.all([
-    supabase.from("landlords").select("id, name").order("name"),
+  // 신 통합 모델: 소유주(owners) + 물건(properties unit_type='unit'). 013 적용 후 신규 호실도 계약 가능.
+  const [oRes, tRes, uRes, bRes] = await Promise.all([
+    supabase.from("owners").select("id, name").order("name"),
     supabase.from("tenants").select("id, name").order("name"),
-    supabase.from("properties_units").select("id, unit_no, property_id, properties:property_id(name)").order("unit_no"),
+    supabase.from("properties").select("id, unit_no, parent_building_id").eq("unit_type", "unit").order("unit_no"),
+    supabase.from("properties").select("id, name").eq("unit_type", "building"),
   ]);
+  const bName = new Map(((bRes.data ?? []) as { id: string; name: string | null }[]).map((b) => [b.id, b.name ?? "건물"]));
+  const units = ((uRes.data ?? []) as { id: string; unit_no: string | null; parent_building_id: string | null }[]).map((u) => ({
+    id: u.id,
+    unit_no: u.unit_no ?? "",
+    property_id: u.parent_building_id ?? "",
+    properties: { name: u.parent_building_id ? (bName.get(u.parent_building_id) ?? "건물") : "단독호실" },
+  }));
   return {
-    landlords: (llRes.data ?? []) as Pick<Landlord, "id" | "name">[],
+    landlords: (oRes.data ?? []) as Pick<Landlord, "id" | "name">[],
     tenants: (tRes.data ?? []) as Pick<Tenant, "id" | "name">[],
-    units: (uRes.data ?? []) as unknown as (Pick<PropertyUnit, "id" | "unit_no" | "property_id"> & { properties: { name: string } | null })[],
+    units: units as unknown as (Pick<PropertyUnit, "id" | "unit_no" | "property_id"> & { properties: { name: string } | null })[],
   };
 }
 
