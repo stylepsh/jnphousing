@@ -68,11 +68,18 @@ buildings-managed(+vendors), dm(+units/settlement), landlord-business, ledger, t
 
 ## 5. 진행 순서
 
-- [x] ① 사이드바 IA 4단 + CMS 분리 (커밋 b25232c)
-- [ ] **A. 마이그레이션 012** (owners/properties 통합 + owner_id) ← 파이프라인 토대, 먼저
-- [ ] ② 대시보드 재설계 (임대인 파이프라인 + 오늘 할 일)
-- [ ] ③ 소유주 탭 페이지 (리스트 롤업 + 상세 탭)
+- [x] ① 사이드바 IA 4단 + CMS 분리 (b25232c)
+- [x] A. 마이그레이션 012 (owners/properties 통합 + owner_id + v_owner_pipeline) — DB 적용 완료
+- [x] ② 대시보드 재설계 (임대인 파이프라인 + 오늘 할 일) (327f24d)
+- [x] ③-a 소유주 리스트 + 상세 탭 골격 (bec4cf2)
+- [x] ③-b 소유주 코크핏 — 인라인 건물·호실 등록(상속·일괄) (e398a6e)
+- [x] DM→JNP 라벨 일괄 변경 (5009e88)
+- [x] 현황 통합 엑셀 내보내기 (0b43e3c)
+- [x] P0 leases 재배선 코드 (1736345) — **마이그레이션 013 적용 필요(미적용 시 신규 호실 계약만 막힘)**
+- [ ] ③-c 정산(수수료) 탭 — 소유주 정산 연결
 - [ ] ④ 수금·청구 통합 (/admin/billing)
+- [ ] P1 공실→계약→수금 자동 생성 / P2 단기임대·위탁관리건물 owner 흡수 / P3 카카오 주소검색·물건 편집
+- [ ] 정리: 구 테이블(landlords/landlord_business/properties_units) _deprecated 후 downstream 페이지 신 모델 전환
 
 각 단계: 빌드·실행 확인 후 다음. 구 라우트 redirect로 북마크 보존.
 
