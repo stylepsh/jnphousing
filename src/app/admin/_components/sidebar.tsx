@@ -26,6 +26,8 @@ import {
   ShieldCheck,
   Award,
   ChevronDown,
+  Gavel,
+  ClipboardList,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -66,6 +68,13 @@ const NAV: NavGroup[] = [
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
       { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
       { href: "/admin/buildings-managed", label: "위탁관리 건물", icon: Building2 },
+    ],
+  },
+  {
+    group: "경매",
+    items: [
+      { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
+      { href: "/admin/auction/survey", label: "경매 답사 관리", icon: ClipboardList },
     ],
   },
   {
