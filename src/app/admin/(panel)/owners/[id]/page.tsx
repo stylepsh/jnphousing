@@ -5,7 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { decryptPII } from "@/lib/crypto-pii";
 import { maskAccount } from "@/lib/pii";
-import { OwnerDetailTabs, type OwnerDetail, type OwnerBuilding, type OwnerUnit } from "./owner-detail-tabs";
+import { OwnerDetailTabs } from "./owner-detail-tabs";
+import type { OwnerDetail, OwnerBuilding, OwnerUnit } from "./types";
 import type { OwnerPipeline } from "../constants";
 
 export const metadata: Metadata = { title: "소유주 상세" };

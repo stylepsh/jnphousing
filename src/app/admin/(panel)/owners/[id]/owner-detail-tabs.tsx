@@ -2,37 +2,11 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, DoorOpen, Phone, Mail, Wallet, ChevronRight } from "lucide-react";
+import { Building2, DoorOpen, Phone, Mail, Wallet } from "lucide-react";
 import { OwnerDialog, type SafeOwner } from "../owner-dialog";
 import { modeLabel, type OwnerPipeline } from "../constants";
-
-export interface OwnerUnit {
-  id: string;
-  label: string;
-  floor: number | null;
-  modes: string[];
-  occupied: boolean;
-}
-export interface OwnerBuilding {
-  id: string;
-  name: string;
-  address: string | null;
-  modes: string[];
-  units: OwnerUnit[];
-}
-export interface OwnerDetail {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  account_bank: string | null;
-  account_holder: string | null;
-  account_masked: string;
-  business_name: string | null;
-  business_number: string | null;
-  representative: string | null;
-  memo: string | null;
-}
+import type { OwnerDetail, OwnerBuilding, OwnerUnit } from "./types";
+import { PropertyManager } from "./property-manager";
 
 function ModeBadges({ modes }: { modes: string[] }) {
   if (modes.length === 0) return <span className="text-xs text-muted-foreground">관리유형 미지정</span>;
@@ -129,48 +103,11 @@ export function OwnerDetailTabs({
           </Card>
         </TabsContent>
 
-        {/* 물건 — 건물→호실 드릴다운 */}
+        {/* 물건 — 건물→호실 드릴다운 + 인라인 등록(코크핏) */}
         <TabsContent value="props">
           <Card>
-            <CardContent className="pt-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">건물 {buildings.length} · 호실 {buildings.reduce((s, b) => s + b.units.length, 0) + standaloneUnits.length}</p>
-                <span className="text-xs text-muted-foreground">+ 건물·호실 등록은 ③-b 예정</span>
-              </div>
-
-              {buildings.length === 0 && standaloneUnits.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-10">등록된 물건이 없습니다.</p>
-              ) : (
-                <div className="space-y-3">
-                  {buildings.map((b) => (
-                    <div key={b.id} className="rounded-lg border overflow-hidden">
-                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/40">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold text-sm">{b.name}</span>
-                        {b.address && <span className="text-xs text-muted-foreground truncate">{b.address}</span>}
-                        <div className="ml-auto"><ModeBadges modes={b.modes} /></div>
-                      </div>
-                      {b.units.length === 0 ? (
-                        <p className="text-xs text-muted-foreground px-3 py-3">등록된 호실 없음</p>
-                      ) : (
-                        <ul className="divide-y">
-                          {b.units.map((u) => <UnitRow key={u.id} u={u} />)}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
-                  {standaloneUnits.length > 0 && (
-                    <div className="rounded-lg border overflow-hidden">
-                      <div className="px-3 py-2 bg-muted/40 text-sm font-semibold flex items-center gap-2">
-                        <DoorOpen className="h-4 w-4 text-muted-foreground" /> 단독 호실 (상위 건물 없음)
-                      </div>
-                      <ul className="divide-y">
-                        {standaloneUnits.map((u) => <UnitRow key={u.id} u={u} />)}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+            <CardContent className="pt-5">
+              <PropertyManager ownerId={detail.id} buildings={buildings} standaloneUnits={standaloneUnits} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -211,17 +148,3 @@ function Field({ icon: Icon, label, value }: { icon?: React.ComponentType<{ clas
   );
 }
 
-function UnitRow({ u }: { u: OwnerUnit }) {
-  return (
-    <li className="flex items-center gap-2 px-3 py-2 text-sm">
-      <DoorOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-      <span className="font-medium">{u.label}</span>
-      {u.floor != null && <span className="text-xs text-muted-foreground">{u.floor}층</span>}
-      <div className="ml-2"><ModeBadges modes={u.modes} /></div>
-      <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold ${u.occupied ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}>
-        {u.occupied ? "임차중" : "공실"}
-      </span>
-      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-    </li>
-  );
-}
