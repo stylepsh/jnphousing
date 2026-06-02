@@ -8,7 +8,7 @@ import { ArrowLeft, Calendar, TrendingUp, Plus, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfitShareDef } from "@/lib/data/dm-profit-share";
 
-export const metadata: Metadata = { title: "DM 월별 정산" };
+export const metadata: Metadata = { title: "JNP 월별 정산" };
 export const dynamic = "force-dynamic";
 
 interface SettlementRow {
@@ -98,7 +98,7 @@ export default async function SettlementPage({ searchParams }: SettlementPagePro
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
       <Link href="/admin/dm" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4 mr-1" /> DM 단기임대
+        <ArrowLeft className="h-4 w-4 mr-1" /> JNP 단기임대
       </Link>
 
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">

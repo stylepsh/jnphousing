@@ -24,7 +24,7 @@ interface Initial {
 
 const MODE_OPTIONS = [
   { key: "housing_mgmt",     label: "건물 위탁관리" },
-  { key: "dm",               label: "DM 단기임대" },
+  { key: "dm",               label: "JNP 단기임대" },
   { key: "rental_consigned", label: "임대 위탁" },
 ];
 

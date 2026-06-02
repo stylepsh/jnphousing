@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Home, Plus, ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "DM 호실 목록" };
+export const metadata: Metadata = { title: "JNP 호실 목록" };
 export const dynamic = "force-dynamic";
 
 interface UnitRow {
@@ -59,11 +59,11 @@ export default async function DmUnitsPage() {
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
         <div>
           <Link href="/admin/dm" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" /> DM 대시보드
+            <ArrowLeft className="h-4 w-4 mr-1" /> JNP 대시보드
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
             <Home className="h-6 w-6 text-purple-600" />
-            DM 호실 목록
+            JNP 호실 목록
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">단기임대 운영 호실 · 등록 {units.length}호</p>
         </div>
@@ -77,7 +77,7 @@ export default async function DmUnitsPage() {
           {units.length === 0 ? (
             <div className="text-center py-16">
               <Home className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">등록된 DM 호실 없음</p>
+              <p className="text-sm text-muted-foreground">등록된 JNP 호실 없음</p>
               <Button asChild size="sm" className="mt-3">
                 <Link href="/admin/dm/units/new"><Plus className="h-3.5 w-3.5 mr-1" /> 첫 호실 추가</Link>
               </Button>

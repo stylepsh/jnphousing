@@ -1,7 +1,7 @@
 /**
  * 임사자(임대사업자) 마스터 데이터 (P32).
  *
- * 박성혁 엑셀 'DM-건물위탁관리.xlsx' 에서 추출.
+ * 박성혁 엑셀 'JNP-건물위탁관리.xlsx' 에서 추출.
  * DB landlord_business 테이블 비어있을 때 fallback.
  */
 
@@ -68,36 +68,36 @@ export const LANDLORD_BUSINESS_SEED: LandlordBusiness[] = [
     phoneHint: "010-9537-7501",
     notes: "골든프라자 관련",
   },
-  // DM 단기임대 임대인 (별도 라인)
+  // JNP 단기임대 임대인 (별도 라인)
   {
     id: "lb-lee-jw-dm",
     name: "이지웅",
-    notes: "DM 단기임대 (수익 분배 5:5)",
+    notes: "JNP 단기임대 (수익 분배 5:5)",
   },
   {
     id: "lb-kim-sh-dm",
     name: "김상혁",
-    notes: "DM 단기임대 (위탁)",
+    notes: "JNP 단기임대 (위탁)",
   },
   {
     id: "lb-kim-jh-dm",
     name: "김정호",
-    notes: "DM 단기임대 (5:2.5:2.5)",
+    notes: "JNP 단기임대 (5:2.5:2.5)",
   },
   {
     id: "lb-lim-sh-dm",
     name: "임수형",
-    notes: "DM 단기임대",
+    notes: "JNP 단기임대",
   },
   {
     id: "lb-lee-jy-dm",
     name: "이재영",
     businessName: "(주)리빙트리",
-    notes: "DM 단기임대 (매월 5일 지급, 7:3)",
+    notes: "JNP 단기임대 (매월 5일 지급, 7:3)",
   },
   {
     id: "lb-hwang-jh-dm",
     name: "황정현",
-    notes: "DM 단기임대 (6:2:2 서팀 포함)",
+    notes: "JNP 단기임대 (6:2:2 서팀 포함)",
   },
 ];

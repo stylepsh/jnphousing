@@ -160,7 +160,7 @@ export default async function LandlordBusinessPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">DM 호실</div>
+                      <div className="text-muted-foreground">JNP 호실</div>
                       <div className="font-semibold">{sum?.active_units ?? 0}호</div>
                     </div>
                     <div className="text-right">
@@ -182,7 +182,7 @@ export default async function LandlordBusinessPage() {
       <div className="mt-8 rounded-lg bg-slate-50 border border-border/60 p-4 text-xs text-muted-foreground">
         <p className="font-semibold text-foreground mb-1">📋 임사자 vs 임대인</p>
         <ul className="space-y-0.5 ml-4 list-disc">
-          <li><b>임사자 (임대사업자)</b>: 건물 단위 위탁관리·DM 단기임대를 의뢰한 사업자/법인</li>
+          <li><b>임사자 (임대사업자)</b>: 건물 단위 위탁관리·JNP 단기임대를 의뢰한 사업자/법인</li>
           <li><b>임대인 (landlords)</b>: 일반 임대 위탁의 개인 임대인</li>
           <li>같은 사람이 둘 다일 수 있음 (예: 이장미 = 트라움하임 임사자 + 일반 임대인)</li>
         </ul>

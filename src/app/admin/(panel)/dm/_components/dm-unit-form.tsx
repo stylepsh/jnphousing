@@ -73,7 +73,7 @@ export function DmUnitForm({
 
   function onDelete() {
     if (!id) return;
-    if (!confirm("이 DM 호실을 삭제하시겠습니까?\n연결된 정산 데이터도 함께 삭제됩니다.")) return;
+    if (!confirm("이 JNP 호실을 삭제하시겠습니까?\n연결된 정산 데이터도 함께 삭제됩니다.")) return;
     startTransition(async () => {
       const res = await deleteDmUnit(id);
       if (res.ok) {

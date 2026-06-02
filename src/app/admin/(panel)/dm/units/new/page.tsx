@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DmUnitForm } from "../../_components/dm-unit-form";
 
-export const metadata: Metadata = { title: "DM 호실 추가" };
+export const metadata: Metadata = { title: "JNP 호실 추가" };
 export const dynamic = "force-dynamic";
 
 export default async function NewDmUnitPage() {
@@ -18,10 +18,10 @@ export default async function NewDmUnitPage() {
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <Link href="/admin/dm" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-5">
-        <ArrowLeft className="h-4 w-4 mr-1" /> DM 대시보드
+        <ArrowLeft className="h-4 w-4 mr-1" /> JNP 대시보드
       </Link>
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">DM 호실 추가</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">JNP 호실 추가</h1>
         <p className="mt-1 text-sm text-muted-foreground">단기임대 운영 호실 + 수익 분배 비율 등록</p>
       </div>
       <Card>

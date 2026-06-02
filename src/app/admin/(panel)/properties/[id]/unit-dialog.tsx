@@ -134,7 +134,7 @@ export function UnitDialog({ mode, propertyId, unit }: Props) {
               {[
                 { k: "housing_mgmt", l: "🏢 주택관리" },
                 { k: "rental", l: "🤝 임대관리" },
-                { k: "dm", l: "🏠 단기임대(DM)" },
+                { k: "dm", l: "🏠 JNP 단기임대" },
               ].map((m) => (
                 <label key={m.k} className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input

@@ -42,7 +42,7 @@ export function LandlordBusinessForm({ id, initial }: { id?: string; initial?: I
 
   function onDelete() {
     if (!id) return;
-    if (!confirm("정말 삭제하시겠습니까?\n연결된 건물·DM 호실에서 임사자 정보가 해제됩니다.")) return;
+    if (!confirm("정말 삭제하시겠습니까?\n연결된 건물·JNP 호실에서 임사자 정보가 해제됩니다.")) return;
     startTransition(async () => {
       const res = await deleteLandlordBusiness(id);
       if (res.ok) {
@@ -95,7 +95,7 @@ export function LandlordBusinessForm({ id, initial }: { id?: string; initial?: I
       </div>
       <div>
         <Label htmlFor="memo">메모 (분배 비율·특이사항)</Label>
-        <Textarea id="memo" name="memo" defaultValue={initial?.memo ?? ""} rows={3} placeholder="DM 단기임대 5:5, 매월 5일 지급 등" />
+        <Textarea id="memo" name="memo" defaultValue={initial?.memo ?? ""} rows={3} placeholder="JNP 단기임대 5:5, 매월 5일 지급 등" />
       </div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id="is_active" name="is_active" defaultChecked={initial?.is_active ?? true} className="h-4 w-4" />

@@ -51,7 +51,7 @@ async function fetchData() {
 }
 
 const MODE_LABEL: Record<string, { label: string; color: string }> = {
-  dm:                { label: "DM 단기임대", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  dm:                { label: "JNP 단기임대", color: "bg-purple-100 text-purple-700 border-purple-200" },
   housing_mgmt:      { label: "건물 위탁관리", color: "bg-blue-100 text-blue-700 border-blue-200" },
   rental_consigned:  { label: "임대 위탁",    color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
 };
@@ -91,7 +91,7 @@ export default async function BuildingsManagedPage() {
         <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
           <p className="font-semibold mb-1">📦 DB 데이터 비어있음</p>
           <p className="text-xs">
-            아래는 박성혁님 엑셀 (DM-건물위탁관리.xlsx) 에서 추출한 시드 데이터입니다.
+            아래는 박성혁님 엑셀 (JNP-건물위탁관리.xlsx) 에서 추출한 시드 데이터입니다.
             마이그레이션 008 실행 후 실 데이터로 교체됩니다.
           </p>
         </div>
@@ -183,7 +183,7 @@ export default async function BuildingsManagedPage() {
             <ul className="text-xs space-y-1 ml-4 list-disc text-muted-foreground">
               <li>건물 클릭 → 6종 시설관리 업체 정보 + 계좌 + 청구</li>
               <li>임사자별 그룹핑은 임사자 페이지에서</li>
-              <li>DM 단기임대는 별도 메뉴에서 분배 비율 관리</li>
+              <li>JNP 단기임대는 별도 메뉴에서 분배 비율 관리</li>
             </ul>
           </CardContent>
         </Card>

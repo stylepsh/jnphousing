@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LANDLORD_BUSINESS_SEED } from "@/lib/data/landlord-business";
 import { PROFIT_SHARE_DEFS } from "@/lib/data/dm-profit-share";
 
-export const metadata: Metadata = { title: "DM 단기임대" };
+export const metadata: Metadata = { title: "JNP 단기임대" };
 export const dynamic = "force-dynamic";
 
 interface DmUnitRow {
@@ -85,7 +85,7 @@ export default async function DmDashboardPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-purple-600" />
-            DM 단기임대
+            JNP 단기임대
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {now.getFullYear()}년 {now.getMonth() + 1}월 · 단기임대 호실 운영 + 수익 분배 정산
@@ -191,7 +191,7 @@ export default async function DmDashboardPage() {
         <Card className="lg:col-span-2">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm">임대인 (DM 단기임대)</h3>
+              <h3 className="font-bold text-sm">임대인 (JNP 단기임대)</h3>
               <Button asChild size="xs" variant="ghost">
                 <Link href="/admin/landlord-business">전체 보기 <ArrowRight className="h-3 w-3 ml-0.5" /></Link>
               </Button>
@@ -230,7 +230,7 @@ export default async function DmDashboardPage() {
 
       <div className="mt-6 rounded-lg bg-slate-50 border border-border/60 p-4 text-xs text-muted-foreground">
         <p className="font-semibold text-foreground mb-1 flex items-center gap-1">
-          <Calendar className="h-3.5 w-3.5" /> DM 단기임대 운영 안내
+          <Calendar className="h-3.5 w-3.5" /> JNP 단기임대 운영 안내
         </p>
         <ul className="space-y-0.5 ml-4 list-disc">
           <li>매월 정산 = 수익 - 회사 몫 - (제3자 몫) → 임대인 지급액</li>
