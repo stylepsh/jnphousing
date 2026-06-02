@@ -17,7 +17,6 @@ import {
   X,
   LogOut,
   FileSignature,
-  Receipt,
   UserSquare,
   Users,
   Wallet,
@@ -34,40 +33,46 @@ import { cn } from "@/lib/utils";
 
 type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries";
 
-type NavGroup = { group: string; items: { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue" }[] };
+type NavLeaf = { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue" };
+type NavGroup = {
+  group: string;
+  items: NavLeaf[];
+  pinned?: boolean;   // true → 항상 펼침(토글 없음). 티어① 매일 / 처리
+  divider?: boolean;  // 위에 구분선 — 홈페이지 관리(CMS) 섹션 분리용
+};
 
 const NAV: NavGroup[] = [
+  // ───────── ① 매일 (항상 노출) ─────────
+  // 소유주·수금/청구는 ③④에서 /admin/owners·/admin/billing 통합 페이지로 교체 예정.
+  // 그 전까지는 기존 페이지에 새 라벨로 연결(라우트 무변경).
   {
-    group: "운영",
+    group: "매일",
+    pinned: true,
     items: [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
-      { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
-      { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
-      { href: "/admin/notifications", label: "알림 이력", icon: Bell },
+      { href: "/admin/landlords", label: "소유주", icon: UserSquare },
+      { href: "/admin/rent", label: "수금·청구", icon: Wallet, badgeKey: "overdue", badgeColor: "red" },
+      { href: "/admin/tenants", label: "임차인", icon: Users },
     ],
   },
   {
-    group: "계약·월세",
+    group: "처리",
+    pinned: true,
     items: [
       { href: "/admin/leases", label: "계약", icon: FileSignature, badgeKey: "expiring", badgeColor: "amber" },
-      { href: "/admin/rent", label: "월세 현황", icon: Receipt, badgeKey: "overdue", badgeColor: "red" },
-      { href: "/admin/rent/bulk", label: "청구 일괄작업", icon: Receipt },
-      { href: "/admin/rent/match", label: "은행입금 매칭", icon: Wallet },
-      { href: "/admin/commissions", label: "위탁수수료", icon: Wallet },
-      { href: "/admin/landlords", label: "임대인", icon: UserSquare },
-      { href: "/admin/tenants", label: "임차인", icon: Users },
-      { href: "/admin/tenants/import", label: "임차인 CSV 등록", icon: Users },
+      { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
+      { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
     ],
   },
+  // ───────── ② 가끔 (그룹·접힘 기본) ─────────
   {
-    group: "매물·관리현장",
+    group: "현장·매물",
     items: [
+      { href: "/admin/properties", label: "관리현장", icon: Building2 },
       { href: "/admin/vacancies", label: "공실 매물", icon: Home },
+      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
       { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
       { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
-      { href: "/admin/properties", label: "관리현장", icon: Building2 },
-      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
-      { href: "/admin/buildings-managed", label: "위탁관리 건물", icon: Building2 },
     ],
   },
   {
@@ -86,8 +91,20 @@ const NAV: NavGroup[] = [
       { href: "/admin/ledger", label: "월별 손익", icon: Wallet },
     ],
   },
+  // ───────── ③ 도구 (하단) ─────────
   {
-    group: "콘텐츠",
+    group: "도구",
+    items: [
+      { href: "/admin/notifications", label: "알림 이력", icon: Bell },
+      { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
+      { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
+      { href: "/admin/favorites", label: "즐겨찾기", icon: LayoutDashboard },
+    ],
+  },
+  // ───────── ④ 홈페이지 관리 (OS와 분리) ─────────
+  {
+    group: "홈페이지 관리",
+    divider: true,
     items: [
       { href: "/admin/banner", label: "팝업 배너", icon: Megaphone },
       { href: "/admin/notices", label: "임차인 공지", icon: Megaphone },
@@ -95,16 +112,8 @@ const NAV: NavGroup[] = [
       { href: "/admin/cms/faq", label: "FAQ 관리", icon: FileQuestion },
       { href: "/admin/cms/milestones", label: "회사 연혁", icon: Award },
       { href: "/admin/cms/certs", label: "인증서·자격증", icon: ShieldCheck },
-      { href: "/admin/downloads", label: "서류 관리", icon: FileText },
       { href: "/admin/qr", label: "QR 생성", icon: QrCode },
-    ],
-  },
-  {
-    group: "시스템",
-    items: [
-      { href: "/admin/favorites", label: "즐겨찾기", icon: LayoutDashboard },
-      { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
-      { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
+      { href: "/admin/downloads", label: "서류 관리", icon: FileText },
     ],
   },
 ];
@@ -131,7 +140,7 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
   // 현재 경로가 포함된 그룹만 기본으로 펼침
   const activeGroup = NAV.find(g => g.items.some(i =>
     pathname === i.href || (i.href !== "/admin/dashboard" && pathname.startsWith(i.href))
-  ))?.group ?? "운영";
+  ))?.group ?? "";
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set([activeGroup]));
 
   function toggleGroup(name: string) {
@@ -197,64 +206,74 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
 
         <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
           {NAV.map((g) => {
-            const isOpen = openGroups.has(g.group);
             const total = groupBadgeTotal(g);
+            // pinned 그룹은 항상 펼침(토글 없음). 그 외에는 접힘 토글.
+            const isOpen = g.pinned || openGroups.has(g.group);
+
+            const itemList = (
+              <div className={cn("space-y-0.5", g.pinned ? "" : "mt-0.5 mb-2 animate-slide-down")}>
+                {g.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+                  const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0;
+                  const badgeBg = BADGE_BG[item.badgeColor ?? "red"];
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 pr-3 py-1.5 rounded-lg text-sm font-medium transition",
+                        g.pinned ? "pl-3" : "pl-7",
+                        active
+                          ? "bg-white/15 text-white"
+                          : "text-blue-100 hover:bg-white/10 hover:text-white",
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                      <span className="flex-1">{item.label}</span>
+                      {badgeValue > 0 && (
+                        <span className={cn("text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", badgeBg)}>
+                          {badgeValue > 99 ? "99+" : badgeValue}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+
             return (
               <div key={g.group}>
-                {/* 그룹 헤더 — 클릭하여 펴기/접기 */}
-                <button
-                  onClick={() => toggleGroup(g.group)}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition",
-                    isOpen
-                      ? "text-blue-200 bg-white/[0.04]"
-                      : "text-blue-300 hover:bg-white/[0.04]"
-                  )}
-                >
-                  <ChevronDown
-                    className={cn("h-3.5 w-3.5 transition-transform shrink-0", !isOpen && "-rotate-90")}
-                  />
-                  <span className="flex-1 text-left">{g.group}</span>
-                  {!isOpen && total > 0 && (
-                    <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                      {total > 99 ? "99+" : total}
-                    </span>
-                  )}
-                  <span className="text-[10px] font-medium text-blue-300/60">{g.items.length}</span>
-                </button>
+                {/* 홈페이지 관리(CMS) 등 분리 섹션 앞 구분선 */}
+                {g.divider && <div className="my-2 border-t border-white/10" />}
 
-                {/* 그룹 내 메뉴 — 펼쳐졌을 때만 표시 */}
-                {isOpen && (
-                  <div className="space-y-0.5 mt-0.5 mb-2 animate-slide-down">
-                    {g.items.map((item) => {
-                      const Icon = item.icon;
-                      const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
-                      const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0;
-                      const badgeBg = BADGE_BG[item.badgeColor ?? "red"];
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 pl-7 pr-3 py-1.5 rounded-lg text-sm font-medium transition",
-                            active
-                              ? "bg-white/15 text-white"
-                              : "text-blue-100 hover:bg-white/10 hover:text-white",
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                          <span className="flex-1">{item.label}</span>
-                          {badgeValue > 0 && (
-                            <span className={cn("text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", badgeBg)}>
-                              {badgeValue > 99 ? "99+" : badgeValue}
-                            </span>
-                          )}
-                        </Link>
-                      );
-                    })}
+                {g.pinned ? (
+                  // 티어① — 항상 노출, 토글 없는 옅은 라벨
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-blue-300/70">
+                    {g.group}
                   </div>
+                ) : (
+                  // 티어②③④ — 클릭하여 펴기/접기
+                  <button
+                    onClick={() => toggleGroup(g.group)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition",
+                      isOpen ? "text-blue-200 bg-white/[0.04]" : "text-blue-300 hover:bg-white/[0.04]",
+                    )}
+                  >
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform shrink-0", !isOpen && "-rotate-90")} />
+                    <span className="flex-1 text-left">{g.group}</span>
+                    {!isOpen && total > 0 && (
+                      <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                        {total > 99 ? "99+" : total}
+                      </span>
+                    )}
+                    <span className="text-[10px] font-medium text-blue-300/60">{g.items.length}</span>
+                  </button>
                 )}
+
+                {isOpen && itemList}
               </div>
             );
           })}
