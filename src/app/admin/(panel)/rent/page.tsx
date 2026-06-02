@@ -60,10 +60,14 @@ export default async function RentDashboardPage() {
     <div className="p-6 lg:p-8 max-w-7xl">
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">이번달 월세 현황</h1>
-          <p className="mt-1 text-sm text-muted-foreground">총 청구 {invoices.length}건 · 수금률 {rate}%</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">수금·청구</h1>
+          <p className="mt-1 text-sm text-muted-foreground">이번달 청구 {invoices.length}건 · 수금률 {rate}% · 월세현황·청구·입금매칭·연체 통합</p>
         </div>
-        <RentTriggers />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button asChild variant="outline" size="sm"><Link href="/admin/rent/bulk">청구 일괄작업</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link href="/admin/rent/match">은행입금 매칭</Link></Button>
+          <RentTriggers />
+        </div>
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
