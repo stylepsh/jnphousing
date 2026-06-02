@@ -3,14 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, ChevronRight } from "lucide-react";
+import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, FileSignature } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MODE_OPTIONS, TYPE_OPTIONS, modeLabel } from "../constants";
 import type { OwnerBuilding, OwnerUnit } from "./types";
-import { createBuilding, addUnit, addUnitsBulk, deleteProperty } from "./property-actions";
+import { createBuilding, addUnit, addUnitsBulk, deleteProperty, createLeaseForUnit } from "./property-actions";
 
 function ModeBadges({ modes }: { modes: string[] }) {
   if (!modes.length) return <span className="text-xs text-muted-foreground">유형 미지정</span>;
@@ -38,11 +38,12 @@ function ModeChecks() {
 }
 
 export function PropertyManager({
-  ownerId, buildings, standaloneUnits,
+  ownerId, buildings, standaloneUnits, tenants,
 }: {
   ownerId: string;
   buildings: OwnerBuilding[];
   standaloneUnits: OwnerUnit[];
+  tenants: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,6 +51,7 @@ export function PropertyManager({
     | { kind: "building" }
     | { kind: "unit"; buildingId: string | null; buildingName?: string }
     | { kind: "bulk"; buildingId: string; buildingName: string }
+    | { kind: "lease"; unitId: string; unitLabel: string }
     | null
   >(null);
 
@@ -116,7 +118,7 @@ export function PropertyManager({
                 <p className="text-xs text-muted-foreground px-3 py-3">등록된 호실 없음 — 우측 &quot;호실&quot;/&quot;일괄&quot;로 추가</p>
               ) : (
                 <ul className="divide-y">
-                  {b.units.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} />)}
+                  {b.units.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: `${b.name} ${u.label}` })} />)}
                 </ul>
               )}
             </div>
@@ -128,7 +130,7 @@ export function PropertyManager({
                 <DoorOpen className="h-4 w-4 text-muted-foreground" /> 단독 호실 (상위 건물 없음)
               </div>
               <ul className="divide-y">
-                {standaloneUnits.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} />)}
+                {standaloneUnits.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: u.label })} />)}
               </ul>
             </div>
           )}
@@ -228,11 +230,47 @@ export function PropertyManager({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ── 공실 → 임차계약 생성 (수금 스케줄 자동) ── */}
+      <Dialog open={dialog?.kind === "lease"} onOpenChange={(o) => !o && setDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>임차계약 — {dialog?.kind === "lease" ? dialog.unitLabel : ""}</DialogTitle>
+            <DialogDescription>계약 저장 시 월 수금 스케줄이 자동 생성됩니다. (수수료는 정산 탭에서 설정)</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); const uid = dialog?.kind === "lease" ? dialog.unitId : ""; run(() => createLeaseForUnit(ownerId, uid, fd), "계약·수금 스케줄이 생성되었습니다"); }} className="space-y-3">
+            <div>
+              <Label className="mb-1 block text-xs">임차인 (기존 선택)</Label>
+              <select name="tenant_id" className="w-full h-9 px-3 text-sm rounded-md border bg-background">
+                <option value="">+ 신규 임차인 직접 입력</option>
+                {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="mb-1 block text-xs">신규 임차인명</Label><Input name="tenant_name" placeholder="미선택 시 입력" /></div>
+              <div><Label className="mb-1 block text-xs">신규 연락처</Label><Input name="tenant_phone" placeholder="010-…" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="mb-1 block text-xs">보증금 *</Label><Input name="deposit" type="number" min={0} required defaultValue={0} /></div>
+              <div><Label className="mb-1 block text-xs">월세 *</Label><Input name="rent_amount" type="number" min={0} required defaultValue={0} /></div>
+              <div><Label className="mb-1 block text-xs">관리비</Label><Input name="management_fee" type="number" min={0} defaultValue={0} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="mb-1 block text-xs">시작일 *</Label><Input name="start_date" type="date" required /></div>
+              <div><Label className="mb-1 block text-xs">종료일 *</Label><Input name="end_date" type="date" required /></div>
+              <div><Label className="mb-1 block text-xs">청구일</Label><Input name="rent_day" type="number" min={1} max={31} defaultValue={1} /></div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={pending} className="gap-1">{pending && <Loader2 className="h-4 w-4 animate-spin" />}계약 생성 + 수금 스케줄</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function UnitRow({ u, onDelete }: { u: OwnerUnit; onDelete: () => void }) {
+function UnitRow({ u, onDelete, onLease }: { u: OwnerUnit; onDelete: () => void; onLease: () => void }) {
   return (
     <li className="flex items-center gap-2 px-3 py-2 text-sm">
       <DoorOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -242,8 +280,12 @@ function UnitRow({ u, onDelete }: { u: OwnerUnit; onDelete: () => void }) {
       <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold ${u.occupied ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}>
         {u.occupied ? "임차중" : "공실"}
       </span>
+      {!u.occupied && (
+        <Button size="sm" variant="ghost" className="h-7 px-2 gap-1 text-blue-600" onClick={onLease}>
+          <FileSignature className="h-3.5 w-3.5" /> 계약
+        </Button>
+      )}
       <Button size="sm" variant="ghost" className="h-7 px-1.5 text-destructive" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></Button>
-      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
     </li>
   );
 }

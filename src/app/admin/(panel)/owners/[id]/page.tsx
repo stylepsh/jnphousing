@@ -33,13 +33,15 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
   if (!ownerRow) notFound();
   const o = ownerRow as Record<string, unknown>;
 
-  const [propsRes, pipeRes] = await Promise.all([
+  const [propsRes, pipeRes, tenantsRes] = await Promise.all([
     supabase.from("properties")
       .select("id, unit_type, name, address, unit_no, dong, ho, floor, service_modes, parent_building_id")
       .eq("owner_id", id),
     supabase.from("v_owner_pipeline").select("*").eq("owner_id", id).maybeSingle(),
+    supabase.from("tenants").select("id, name").order("name"),
   ]);
   const props = (propsRes.data ?? []) as PropRow[];
+  const tenants = (tenantsRes.data ?? []) as { id: string; name: string }[];
 
   // 호실 임차 상태
   const unitIds = props.filter((p) => p.unit_type === "unit").map((p) => p.id);
@@ -96,7 +98,7 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
       <Link href="/admin/owners" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="h-4 w-4" /> 소유주 목록
       </Link>
-      <OwnerDetailTabs detail={detail} buildings={buildings} standaloneUnits={standaloneUnits} pipe={pipe} />
+      <OwnerDetailTabs detail={detail} buildings={buildings} standaloneUnits={standaloneUnits} pipe={pipe} tenants={tenants} />
     </div>
   );
 }

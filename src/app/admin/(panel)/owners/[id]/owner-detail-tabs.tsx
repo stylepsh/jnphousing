@@ -21,12 +21,13 @@ function ModeBadges({ modes }: { modes: string[] }) {
 }
 
 export function OwnerDetailTabs({
-  detail, buildings, standaloneUnits, pipe,
+  detail, buildings, standaloneUnits, pipe, tenants,
 }: {
   detail: OwnerDetail;
   buildings: OwnerBuilding[];
   standaloneUnits: OwnerUnit[];
   pipe: OwnerPipeline | null;
+  tenants: { id: string; name: string }[];
 }) {
   const safe: SafeOwner = {
     id: detail.id, name: detail.name, phone: detail.phone, email: detail.email,
@@ -107,7 +108,7 @@ export function OwnerDetailTabs({
         <TabsContent value="props">
           <Card>
             <CardContent className="pt-5">
-              <PropertyManager ownerId={detail.id} buildings={buildings} standaloneUnits={standaloneUnits} />
+              <PropertyManager ownerId={detail.id} buildings={buildings} standaloneUnits={standaloneUnits} tenants={tenants} />
             </CardContent>
           </Card>
         </TabsContent>

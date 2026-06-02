@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { activateLease } from "@/lib/billing/actions";
 
 const MODE_VALUES = ["housing_mgmt", "rental_consigned", "dm"] as const;
 const TYPE_VALUES = ["villa", "apartment", "officetel", "commercial"] as const;
@@ -152,6 +153,73 @@ export async function addUnitsBulk(ownerId: string, buildingId: string, fd: Form
     if (error) return { ok: false as const, error: error.message };
     revalidatePath(`/admin/owners/${ownerId}`);
     return { ok: true as const, count: rows.length };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
+const leaseSchema = z.object({
+  tenant_id: z.string().uuid().optional().or(z.literal("")),
+  tenant_name: z.string().max(100).optional().or(z.literal("")),
+  tenant_phone: z.string().max(50).optional().or(z.literal("")),
+  deposit: z.coerce.number().int().min(0).default(0),
+  rent_amount: z.coerce.number().int().min(0).default(0),
+  management_fee: z.coerce.number().int().min(0).default(0),
+  start_date: z.string().min(1, "시작일 필수"),
+  end_date: z.string().min(1, "종료일 필수"),
+  rent_day: z.coerce.number().int().min(1).max(31).default(1),
+});
+
+/**
+ * 공실 호실 → 임차계약 생성 + 수금 스케줄 자동 생성.
+ * 임차인은 기존 선택 또는 신규(name+phone). 계약 생성 후 activateLease 로 스케줄 일괄 생성.
+ * ※ leases.unit_id FK가 properties 를 가리켜야(마이그레이션 013) 신규 호실 계약 가능.
+ */
+export async function createLeaseForUnit(ownerId: string, unitId: string, fd: FormData) {
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(unitId).success) return { ok: false as const, error: "잘못된 호실" };
+
+    const parsed = leaseSchema.safeParse({
+      tenant_id: fd.get("tenant_id") || "", tenant_name: fd.get("tenant_name") || "",
+      tenant_phone: fd.get("tenant_phone") || "",
+      deposit: fd.get("deposit") || 0, rent_amount: fd.get("rent_amount") || 0,
+      management_fee: fd.get("management_fee") || 0,
+      start_date: fd.get("start_date"), end_date: fd.get("end_date"), rent_day: fd.get("rent_day") || 1,
+    });
+    if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    const d = parsed.data;
+    if (d.end_date < d.start_date) return { ok: false as const, error: "종료일이 시작일보다 빠릅니다." };
+
+    const supabase = createServiceClient();
+
+    // 임차인: 기존 또는 신규
+    let tenantId = d.tenant_id || "";
+    if (!tenantId) {
+      if (!d.tenant_name || !d.tenant_phone) return { ok: false as const, error: "신규 임차인은 이름·연락처가 필요합니다." };
+      const { data: tRow, error: tErr } = await supabase
+        .from("tenants").insert({ name: d.tenant_name, phone: d.tenant_phone }).select("id").single();
+      if (tErr || !tRow) return { ok: false as const, error: tErr?.message ?? "임차인 생성 실패" };
+      tenantId = (tRow as { id: string }).id;
+    }
+
+    // 계약 draft (수수료는 기본 정액 0 — 정산 탭에서 조정)
+    const { data: lRow, error: lErr } = await supabase.from("leases").insert({
+      lease_type: "long_term", unit_id: unitId, landlord_id: ownerId, tenant_id: tenantId,
+      status: "draft", start_date: d.start_date, end_date: d.end_date,
+      deposit: d.deposit, rent_amount: d.rent_amount, rent_cycle: "monthly", rent_day: d.rent_day,
+      management_fee: d.management_fee, vat_included: false,
+      fee_type: "fixed", fee_fixed: 0, fee_percent: null, overdue_annual_rate: 12,
+    }).select("id").single();
+    if (lErr || !lRow) return { ok: false as const, error: lErr?.message ?? "계약 생성 실패 (호실 FK 미배선이면 013 적용 필요)" };
+
+    // 스케줄 자동 생성 + active 전환
+    const act = await activateLease((lRow as { id: string }).id);
+    if (!act.ok) return { ok: false as const, error: `계약은 생성됐으나 스케줄 생성 실패: ${act.error}` };
+
+    revalidatePath(`/admin/owners/${ownerId}`);
+    return { ok: true as const, scheduled: act.count };
   } catch (e) {
     if (e instanceof AppError) return { ok: false as const, error: e.message };
     return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
