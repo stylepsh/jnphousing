@@ -243,10 +243,10 @@ export default async function DashboardPage() {
       <section className="mt-8">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">임대인 파이프라인</p>
-          <Button asChild variant="ghost" size="sm"><Link href="/admin/landlords">임대인별 보기 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
+          <Button asChild variant="ghost" size="sm"><Link href="/admin/owners">임대인별 보기 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
         </div>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
-          <StatTile label="임대인" value={String(d.ownerCount)} icon={UserSquare} href="/admin/landlords" />
+          <StatTile label="임대인" value={String(d.ownerCount)} icon={UserSquare} href="/admin/owners" />
           <StatTile label="건물" value={String(d.totalBuildings)} icon={Building2} href="/admin/properties" />
           <StatTile label="호실" value={String(d.totalUnits)} icon={DoorOpen} href="/admin/units/board" />
           <StatTile label="공실" value={String(d.totalVacant)} icon={Home} href="/admin/vacancies" tone={d.totalVacant > 0 ? "amber" : undefined} />

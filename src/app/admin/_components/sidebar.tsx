@@ -50,7 +50,7 @@ const NAV: NavGroup[] = [
     pinned: true,
     items: [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
-      { href: "/admin/landlords", label: "소유주", icon: UserSquare },
+      { href: "/admin/owners", label: "소유주", icon: UserSquare },
       { href: "/admin/rent", label: "수금·청구", icon: Wallet, badgeKey: "overdue", badgeColor: "red" },
       { href: "/admin/tenants", label: "임차인", icon: Users },
     ],
