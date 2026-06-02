@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, Building2, DoorOpen } from "lucide-react";
+import { ChevronRight, Building2, DoorOpen, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { maskPhone } from "@/lib/pii";
 import { OwnerDialog } from "./owner-dialog";
@@ -63,7 +63,16 @@ export default async function OwnersPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">소유주</h1>
           <p className="mt-1 text-sm text-muted-foreground">총 {owners.length}명 · 임대인별 물건·공실·임차·월세 파이프라인</p>
         </div>
-        <OwnerDialog mode="create" />
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/export/overview"
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted transition"
+          >
+            <Download className="h-4 w-4" /> 현황 엑셀
+          </a>
+          <OwnerDialog mode="create" />
+        </div>
       </div>
 
       <Card>

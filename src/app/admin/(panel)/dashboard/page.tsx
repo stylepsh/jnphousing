@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquareWarning, Home, ArrowRight, Wallet, AlertTriangle, FileSignature,
-  Building2, UserSquare, DoorOpen, Banknote,
+  Building2, UserSquare, DoorOpen, Banknote, Download,
 } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
@@ -221,6 +221,13 @@ export default async function DashboardPage() {
                 : "오늘 급히 처리할 일은 없습니다. 👍"}
             </p>
           </div>
+          <a
+            href="/api/admin/export/overview"
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur px-3.5 py-2 text-sm font-semibold border border-white/20 transition"
+          >
+            <Download className="h-4 w-4" /> 현황 엑셀 내보내기
+          </a>
         </div>
       </div>
 
