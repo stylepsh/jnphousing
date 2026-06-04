@@ -81,7 +81,8 @@ buildings-managed(+vendors), dm(+units/settlement), landlord-business, ledger, t
 - [x] P1 공실→계약→수금 자동 생성 (9e9dee1)
 - [x] P3 건물·호실 편집 (71e9378)
 - [ ] **P0 마이그레이션 013 적용** (박성혁이 Supabase에 붙여넣기 — 미적용 시 신규 호실 계약만 막힘)
-- [ ] P2 JNP 단기임대·위탁관리건물 owner 모델 흡수 (현재 별도 dm_units/landlord_business)
+- [x] P2 라이트 통합 (ec7ec7b): 임사자→소유주 redirect, 위탁관리건물 시설업체 코크핏 링크, DM 정산 진입 링크 (DM 특화 로직 유지)
+- [ ] P2 딥 통합(선택): dm_units 수익분배·정산을 소유주/계약 모델로 흡수 — 감독 하 권장
 - [ ] P3 카카오 주소검색 (API 키 필요)
 - [ ] 정리: 구 테이블(_deprecated) + downstream ~14페이지(rent/commissions/properties/units-board 등) 신 모델 전환
 
