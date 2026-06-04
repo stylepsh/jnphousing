@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Building2, DoorOpen, Phone, Mail, Wallet } from "lucide-react";
 import { OwnerDialog, type SafeOwner } from "../owner-dialog";
 import { modeLabel, type OwnerPipeline } from "../constants";
-import type { OwnerDetail, OwnerBuilding, OwnerUnit } from "./types";
+import type { OwnerDetail, OwnerBuilding, OwnerUnit, SettlementRow } from "./types";
 import { PropertyManager } from "./property-manager";
+import { formatWon } from "@/lib/money";
 
 function ModeBadges({ modes }: { modes: string[] }) {
   if (modes.length === 0) return <span className="text-xs text-muted-foreground">관리유형 미지정</span>;
@@ -21,13 +22,14 @@ function ModeBadges({ modes }: { modes: string[] }) {
 }
 
 export function OwnerDetailTabs({
-  detail, buildings, standaloneUnits, pipe, tenants,
+  detail, buildings, standaloneUnits, pipe, tenants, commissions,
 }: {
   detail: OwnerDetail;
   buildings: OwnerBuilding[];
   standaloneUnits: OwnerUnit[];
   pipe: OwnerPipeline | null;
   tenants: { id: string; name: string }[];
+  commissions: SettlementRow[];
 }) {
   const safe: SafeOwner = {
     id: detail.id, name: detail.name, phone: detail.phone, email: detail.email,
@@ -98,7 +100,7 @@ export function OwnerDetailTabs({
               </p>
               <ModeBadges modes={allModes} />
               <p className="text-xs text-muted-foreground pt-2 border-t">
-                물건별 개별 유형 편집은 다음 단계(③-b 건물·호실 등록)에서 제공됩니다.
+                관리유형은 &quot;물건&quot; 탭에서 건물·호실을 등록·선택하면 자동 반영됩니다.
               </p>
             </CardContent>
           </Card>
@@ -113,13 +115,50 @@ export function OwnerDetailTabs({
           </Card>
         </TabsContent>
 
-        {/* 정산 */}
+        {/* 정산 (수수료) */}
         <TabsContent value="settle">
           <Card>
-            <CardContent className="pt-5">
-              <p className="text-sm text-muted-foreground text-center py-10">
-                수수료·정산 내역은 ③-c 단계에서 연결됩니다.
-              </p>
+            <CardContent className="pt-5 space-y-3">
+              {(() => {
+                const pendingSum = commissions.filter((c) => c.status === "pending").reduce((s, c) => s + c.commission_amount, 0);
+                const paidSum = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.commission_amount, 0);
+                return (
+                  <>
+                    <div className="flex gap-3 text-sm">
+                      <span className="text-muted-foreground">정산대기 <strong className="text-amber-600">{formatWon(pendingSum)}원</strong></span>
+                      <span className="text-muted-foreground">지급완료 <strong className="text-emerald-600">{formatWon(paidSum)}원</strong></span>
+                    </div>
+                    {commissions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        정산(수수료) 내역이 없습니다. 계약 활성화 + 월 정산 생성 시 표시됩니다.
+                      </p>
+                    ) : (
+                      <div className="rounded-lg border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40 text-xs text-muted-foreground">
+                            <tr><th className="text-left px-3 py-2">기간</th><th className="text-right px-3 py-2">기준액</th><th className="text-right px-3 py-2">수수료</th><th className="text-center px-3 py-2">상태</th></tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {commissions.map((c, i) => (
+                              <tr key={i}>
+                                <td className="px-3 py-2">{c.period_start?.slice(0, 7)}{c.period_end && c.period_end.slice(0, 7) !== c.period_start?.slice(0, 7) ? ` ~ ${c.period_end.slice(0, 7)}` : ""}</td>
+                                <td className="px-3 py-2 text-right">{formatWon(c.base_amount)}</td>
+                                <td className="px-3 py-2 text-right font-medium">{formatWon(c.commission_amount)}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${c.status === "paid" ? "bg-emerald-100 text-emerald-700" : c.status === "waived" ? "bg-slate-100 text-slate-500" : "bg-amber-100 text-amber-700"}`}>
+                                    {c.status === "paid" ? "지급" : c.status === "waived" ? "면제" : "대기"}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-1">수수료율은 각 계약에서 설정됩니다. 월 정산 생성은 수금·청구에서.</p>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

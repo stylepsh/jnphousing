@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { decryptPII } from "@/lib/crypto-pii";
 import { maskAccount } from "@/lib/pii";
 import { OwnerDetailTabs } from "./owner-detail-tabs";
-import type { OwnerDetail, OwnerBuilding, OwnerUnit } from "./types";
+import type { OwnerDetail, OwnerBuilding, OwnerUnit, SettlementRow } from "./types";
 import type { OwnerPipeline } from "../constants";
 
 export const metadata: Metadata = { title: "소유주 상세" };
@@ -42,6 +42,19 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
   ]);
   const props = (propsRes.data ?? []) as PropRow[];
   const tenants = (tenantsRes.data ?? []) as { id: string; name: string }[];
+
+  // 정산(수수료) — 소유주 계약의 agency_commissions
+  const { data: ownerLeases } = await supabase.from("leases").select("id").eq("landlord_id", id);
+  const leaseIds = ((ownerLeases ?? []) as { id: string }[]).map((l) => l.id);
+  let commissions: SettlementRow[] = [];
+  if (leaseIds.length > 0) {
+    const { data: cRows } = await supabase
+      .from("agency_commissions")
+      .select("period_start, period_end, base_amount, commission_amount, status")
+      .in("lease_id", leaseIds)
+      .order("period_start", { ascending: false });
+    commissions = (cRows ?? []) as SettlementRow[];
+  }
 
   // 호실 임차 상태
   const unitIds = props.filter((p) => p.unit_type === "unit").map((p) => p.id);
@@ -98,7 +111,7 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
       <Link href="/admin/owners" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="h-4 w-4" /> 소유주 목록
       </Link>
-      <OwnerDetailTabs detail={detail} buildings={buildings} standaloneUnits={standaloneUnits} pipe={pipe} tenants={tenants} />
+      <OwnerDetailTabs detail={detail} buildings={buildings} standaloneUnits={standaloneUnits} pipe={pipe} tenants={tenants} commissions={commissions} />
     </div>
   );
 }

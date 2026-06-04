@@ -14,6 +14,13 @@ export interface OwnerBuilding {
   modes: string[];
   units: OwnerUnit[];
 }
+export interface SettlementRow {
+  period_start: string;
+  period_end: string;
+  base_amount: number;
+  commission_amount: number;
+  status: string;
+}
 export interface OwnerDetail {
   id: string;
   name: string;
