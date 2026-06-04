@@ -23,15 +23,18 @@ interface UnitWithLease {
 async function fetchData(propertyId?: string) {
   try {
     const supabase = await createClient();
-    const { data: props } = await supabase.from("properties").select("id, name").order("name");
+    // 신 통합 모델: 건물=properties(unit_type='building'), 호실=properties(unit_type='unit')
+    const { data: props } = await supabase.from("properties").select("id, name").eq("unit_type", "building").order("name");
     const properties = (props ?? []) as { id: string; name: string }[];
+    const buildingName = new Map(properties.map((b) => [b.id, b.name]));
 
     let unitsQuery = supabase
-      .from("properties_units")
-      .select("id, unit_no, floor, property_id, properties(name)")
-      .order("property_id")
+      .from("properties")
+      .select("id, unit_no, floor, parent_building_id")
+      .eq("unit_type", "unit")
+      .order("parent_building_id")
       .order("unit_no");
-    if (propertyId && propertyId !== "all") unitsQuery = unitsQuery.eq("property_id", propertyId);
+    if (propertyId && propertyId !== "all") unitsQuery = unitsQuery.eq("parent_building_id", propertyId);
     const { data: units } = await unitsQuery;
 
     // 활성 계약 매칭
@@ -58,7 +61,7 @@ async function fetchData(propertyId?: string) {
       leaseMap.set(l.unit_id, l);
     }
 
-    const result: UnitWithLease[] = ((units ?? []) as { id: string; unit_no: string; floor: number | null; property_id: string; properties: { name: string } | null }[]).map(u => {
+    const result: UnitWithLease[] = ((units ?? []) as { id: string; unit_no: string; floor: number | null; parent_building_id: string | null }[]).map(u => {
       const lease = leaseMap.get(u.id);
       let status: UnitWithLease["status"] = "vacant";
       if (lease) {
@@ -70,8 +73,8 @@ async function fetchData(propertyId?: string) {
         id: u.id,
         unit_no: u.unit_no,
         floor: u.floor,
-        property_id: u.property_id,
-        property_name: u.properties?.name ?? "—",
+        property_id: u.parent_building_id ?? "",
+        property_name: u.parent_building_id ? (buildingName.get(u.parent_building_id) ?? "—") : "단독호실",
         status,
         tenant_name: lease?.tenants?.name ?? null,
         end_date: lease?.end_date ?? null,
