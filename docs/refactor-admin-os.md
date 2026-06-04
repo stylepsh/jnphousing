@@ -76,10 +76,14 @@ buildings-managed(+vendors), dm(+units/settlement), landlord-business, ledger, t
 - [x] DM→JNP 라벨 일괄 변경 (5009e88)
 - [x] 현황 통합 엑셀 내보내기 (0b43e3c)
 - [x] P0 leases 재배선 코드 (1736345) — **마이그레이션 013 적용 필요(미적용 시 신규 호실 계약만 막힘)**
-- [ ] ③-c 정산(수수료) 탭 — 소유주 정산 연결
-- [ ] ④ 수금·청구 통합 (/admin/billing)
-- [ ] P1 공실→계약→수금 자동 생성 / P2 단기임대·위탁관리건물 owner 흡수 / P3 카카오 주소검색·물건 편집
-- [ ] 정리: 구 테이블(landlords/landlord_business/properties_units) _deprecated 후 downstream 페이지 신 모델 전환
+- [x] ③-c 정산(수수료) 탭 — 소유주 정산 연결 (4d58f3f)
+- [x] ④ 수금·청구 통합 (/admin/rent 허브 + /admin/billing) (0597803)
+- [x] P1 공실→계약→수금 자동 생성 (9e9dee1)
+- [x] P3 건물·호실 편집 (71e9378)
+- [ ] **P0 마이그레이션 013 적용** (박성혁이 Supabase에 붙여넣기 — 미적용 시 신규 호실 계약만 막힘)
+- [ ] P2 JNP 단기임대·위탁관리건물 owner 모델 흡수 (현재 별도 dm_units/landlord_business)
+- [ ] P3 카카오 주소검색 (API 키 필요)
+- [ ] 정리: 구 테이블(_deprecated) + downstream ~14페이지(rent/commissions/properties/units-board 등) 신 모델 전환
 
 각 단계: 빌드·실행 확인 후 다음. 구 라우트 redirect로 북마크 보존.
 
