@@ -226,6 +226,67 @@ export async function createLeaseForUnit(ownerId: string, unitId: string, fd: Fo
   }
 }
 
+/** 건물 정보 수정 */
+export async function updateBuilding(ownerId: string, id: string, fd: FormData) {
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    const parsed = buildingSchema.safeParse({
+      owner_id: ownerId,
+      name: fd.get("name"), address: fd.get("address"), type: fd.get("type") || "villa",
+      service_modes: parseModes(fd),
+      deposit_default: fd.get("deposit_default") || 0,
+      rent_default: fd.get("rent_default") || 0,
+      management_fee_default: fd.get("management_fee_default") || 0,
+    });
+    if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    const { owner_id: _o, ...upd } = parsed.data;
+    void _o;
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("properties").update(upd).eq("id", id).eq("unit_type", "building");
+    if (error) return { ok: false as const, error: error.message };
+    revalidatePath(`/admin/owners/${ownerId}`);
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
+const unitEditSchema = z.object({
+  unit_no: z.string().min(1, "호수 필수").max(50),
+  floor: z.coerce.number().int().optional().or(z.literal("")).transform((v) => (typeof v === "number" ? v : null)),
+  deposit_default: z.coerce.number().int().min(0).optional().or(z.literal("")).transform((v) => (typeof v === "number" ? v : null)),
+  rent_default: z.coerce.number().int().min(0).optional().or(z.literal("")).transform((v) => (typeof v === "number" ? v : null)),
+});
+
+/** 호실 정보 수정 (호수·층·보증금·월세·관리유형) */
+export async function updateUnit(ownerId: string, id: string, fd: FormData) {
+  try {
+    await requireAdmin();
+    if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
+    const parsed = unitEditSchema.safeParse({
+      unit_no: fd.get("unit_no"), floor: fd.get("floor") || "",
+      deposit_default: fd.get("deposit_default") || "", rent_default: fd.get("rent_default") || "",
+    });
+    if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    const modes = parseModes(fd);
+    const supabase = createServiceClient();
+    const upd: Record<string, unknown> = {
+      unit_no: parsed.data.unit_no, floor: parsed.data.floor,
+      deposit_default: parsed.data.deposit_default ?? 0, rent_default: parsed.data.rent_default ?? 0,
+    };
+    if (modes.length > 0) upd.service_modes = modes;
+    const { error } = await supabase.from("properties").update(upd).eq("id", id).eq("unit_type", "unit");
+    if (error) return { ok: false as const, error: error.message };
+    revalidatePath(`/admin/owners/${ownerId}`);
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
 /** 물건(건물/호실) 삭제. 건물 삭제 시 하위 호실의 parent는 FK on delete set null. */
 export async function deleteProperty(ownerId: string, id: string) {
   try {

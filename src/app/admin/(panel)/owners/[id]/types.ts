@@ -3,15 +3,22 @@
 export interface OwnerUnit {
   id: string;
   label: string;
+  unit_no: string | null;
   floor: number | null;
   modes: string[];
   occupied: boolean;
+  deposit_default: number | null;
+  rent_default: number | null;
 }
 export interface OwnerBuilding {
   id: string;
   name: string;
   address: string | null;
+  type: string;
   modes: string[];
+  deposit_default: number | null;
+  rent_default: number | null;
+  management_fee_default: number | null;
   units: OwnerUnit[];
 }
 export interface SettlementRow {

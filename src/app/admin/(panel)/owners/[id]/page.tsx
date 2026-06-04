@@ -17,12 +17,16 @@ interface PropRow {
   unit_type: "building" | "unit";
   name: string | null;
   address: string | null;
+  type: string;
   unit_no: string | null;
   dong: string | null;
   ho: string | null;
   floor: number | null;
   service_modes: string[] | null;
   parent_building_id: string | null;
+  deposit_default: number | null;
+  rent_default: number | null;
+  management_fee_default: number | null;
 }
 
 export default async function OwnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +39,7 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
 
   const [propsRes, pipeRes, tenantsRes] = await Promise.all([
     supabase.from("properties")
-      .select("id, unit_type, name, address, unit_no, dong, ho, floor, service_modes, parent_building_id")
+      .select("id, unit_type, name, address, type, unit_no, dong, ho, floor, service_modes, parent_building_id, deposit_default, rent_default, management_fee_default")
       .eq("owner_id", id),
     supabase.from("v_owner_pipeline").select("*").eq("owner_id", id).maybeSingle(),
     supabase.from("tenants").select("id, name").order("name"),
@@ -68,9 +72,12 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
   const toUnit = (p: PropRow): OwnerUnit => ({
     id: p.id,
     label: p.unit_no || [p.dong && `${p.dong}동`, p.ho && `${p.ho}호`].filter(Boolean).join(" ") || "(호실)",
+    unit_no: p.unit_no,
     floor: p.floor,
     modes: p.service_modes ?? [],
     occupied: occupied.has(p.id),
+    deposit_default: p.deposit_default,
+    rent_default: p.rent_default,
   });
 
   const buildings: OwnerBuilding[] = props
@@ -79,7 +86,11 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
       id: b.id,
       name: b.name ?? "(건물)",
       address: b.address,
+      type: b.type,
       modes: b.service_modes ?? [],
+      deposit_default: b.deposit_default,
+      rent_default: b.rent_default,
+      management_fee_default: b.management_fee_default,
       units: props.filter((u) => u.unit_type === "unit" && u.parent_building_id === b.id).map(toUnit),
     }));
 

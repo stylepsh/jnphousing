@@ -3,14 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, FileSignature } from "lucide-react";
+import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, FileSignature, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MODE_OPTIONS, TYPE_OPTIONS, modeLabel } from "../constants";
 import type { OwnerBuilding, OwnerUnit } from "./types";
-import { createBuilding, addUnit, addUnitsBulk, deleteProperty, createLeaseForUnit } from "./property-actions";
+import { createBuilding, addUnit, addUnitsBulk, deleteProperty, createLeaseForUnit, updateBuilding, updateUnit } from "./property-actions";
 
 function ModeBadges({ modes }: { modes: string[] }) {
   if (!modes.length) return <span className="text-xs text-muted-foreground">유형 미지정</span>;
@@ -24,12 +24,12 @@ function ModeBadges({ modes }: { modes: string[] }) {
   );
 }
 
-function ModeChecks() {
+function ModeChecks({ selected }: { selected?: string[] }) {
   return (
     <div className="flex flex-wrap gap-3">
       {MODE_OPTIONS.map((m) => (
         <label key={m.key} className="flex items-center gap-1.5 text-sm cursor-pointer">
-          <input type="checkbox" name="service_modes" value={m.key} className="h-4 w-4" />
+          <input type="checkbox" name="service_modes" value={m.key} defaultChecked={selected?.includes(m.key)} className="h-4 w-4" />
           {m.label}
         </label>
       ))}
@@ -52,6 +52,8 @@ export function PropertyManager({
     | { kind: "unit"; buildingId: string | null; buildingName?: string }
     | { kind: "bulk"; buildingId: string; buildingName: string }
     | { kind: "lease"; unitId: string; unitLabel: string }
+    | { kind: "editBuilding"; b: OwnerBuilding }
+    | { kind: "editUnit"; u: OwnerUnit }
     | null
   >(null);
 
@@ -103,6 +105,9 @@ export function PropertyManager({
                 {b.address && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{b.address}</span>}
                 <span className="ml-1"><ModeBadges modes={b.modes} /></span>
                 <div className="ml-auto flex items-center gap-1">
+                  <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => setDialog({ kind: "editBuilding", b })}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                   <Button size="sm" variant="ghost" className="h-7 px-2 gap-1" onClick={() => setDialog({ kind: "unit", buildingId: b.id, buildingName: b.name })}>
                     <Plus className="h-3.5 w-3.5" /> 호실
                   </Button>
@@ -118,7 +123,7 @@ export function PropertyManager({
                 <p className="text-xs text-muted-foreground px-3 py-3">등록된 호실 없음 — 우측 &quot;호실&quot;/&quot;일괄&quot;로 추가</p>
               ) : (
                 <ul className="divide-y">
-                  {b.units.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: `${b.name} ${u.label}` })} />)}
+                  {b.units.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: `${b.name} ${u.label}` })} onEdit={() => setDialog({ kind: "editUnit", u })} />)}
                 </ul>
               )}
             </div>
@@ -130,7 +135,7 @@ export function PropertyManager({
                 <DoorOpen className="h-4 w-4 text-muted-foreground" /> 단독 호실 (상위 건물 없음)
               </div>
               <ul className="divide-y">
-                {standaloneUnits.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: u.label })} />)}
+                {standaloneUnits.map((u) => <UnitRow key={u.id} u={u} onDelete={() => onDelete(u.id, u.label, false)} onLease={() => setDialog({ kind: "lease", unitId: u.id, unitLabel: u.label })} onEdit={() => setDialog({ kind: "editUnit", u })} />)}
               </ul>
             </div>
           )}
@@ -266,11 +271,70 @@ export function PropertyManager({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ── 건물 수정 ── */}
+      <Dialog open={dialog?.kind === "editBuilding"} onOpenChange={(o) => !o && setDialog(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>건물 수정</DialogTitle>
+            <DialogDescription>변경 사항은 기존 호실에 자동 적용되지 않습니다(신규 호실에만 상속).</DialogDescription>
+          </DialogHeader>
+          {dialog?.kind === "editBuilding" && (
+            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); run(() => updateBuilding(ownerId, dialog.b.id, fd), "건물이 수정되었습니다"); }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="mb-1 block text-xs">건물명 *</Label><Input name="name" required defaultValue={dialog.b.name} /></div>
+                <div>
+                  <Label className="mb-1 block text-xs">건물 유형</Label>
+                  <select name="type" defaultValue={dialog.b.type} className="w-full h-9 px-3 text-sm rounded-md border bg-background">
+                    {TYPE_OPTIONS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div><Label className="mb-1 block text-xs">주소 *</Label><Input name="address" required defaultValue={dialog.b.address ?? ""} /></div>
+              <div><Label className="mb-1 block text-xs">관리유형</Label><ModeChecks selected={dialog.b.modes} /></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="mb-1 block text-xs">기본 보증금</Label><Input name="deposit_default" type="number" min={0} defaultValue={dialog.b.deposit_default ?? 0} /></div>
+                <div><Label className="mb-1 block text-xs">기본 월세</Label><Input name="rent_default" type="number" min={0} defaultValue={dialog.b.rent_default ?? 0} /></div>
+                <div><Label className="mb-1 block text-xs">기본 관리비</Label><Input name="management_fee_default" type="number" min={0} defaultValue={dialog.b.management_fee_default ?? 0} /></div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={pending} className="gap-1">{pending && <Loader2 className="h-4 w-4 animate-spin" />}저장</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── 호실 수정 ── */}
+      <Dialog open={dialog?.kind === "editUnit"} onOpenChange={(o) => !o && setDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>호실 수정</DialogTitle>
+            <DialogDescription>관리유형은 체크한 항목으로 덮어씁니다(미체크 시 기존 유지).</DialogDescription>
+          </DialogHeader>
+          {dialog?.kind === "editUnit" && (
+            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); run(() => updateUnit(ownerId, dialog.u.id, fd), "호실이 수정되었습니다"); }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="mb-1 block text-xs">호수 *</Label><Input name="unit_no" required defaultValue={dialog.u.unit_no ?? dialog.u.label} /></div>
+                <div><Label className="mb-1 block text-xs">층</Label><Input name="floor" type="number" defaultValue={dialog.u.floor ?? ""} /></div>
+              </div>
+              <div><Label className="mb-1 block text-xs">관리유형</Label><ModeChecks selected={dialog.u.modes} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="mb-1 block text-xs">보증금</Label><Input name="deposit_default" type="number" min={0} defaultValue={dialog.u.deposit_default ?? 0} /></div>
+                <div><Label className="mb-1 block text-xs">월세</Label><Input name="rent_default" type="number" min={0} defaultValue={dialog.u.rent_default ?? 0} /></div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={pending} className="gap-1">{pending && <Loader2 className="h-4 w-4 animate-spin" />}저장</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function UnitRow({ u, onDelete, onLease }: { u: OwnerUnit; onDelete: () => void; onLease: () => void }) {
+function UnitRow({ u, onDelete, onLease, onEdit }: { u: OwnerUnit; onDelete: () => void; onLease: () => void; onEdit: () => void }) {
   return (
     <li className="flex items-center gap-2 px-3 py-2 text-sm">
       <DoorOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -285,6 +349,7 @@ function UnitRow({ u, onDelete, onLease }: { u: OwnerUnit; onDelete: () => void;
           <FileSignature className="h-3.5 w-3.5" /> 계약
         </Button>
       )}
+      <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={onEdit}><Pencil className="h-3.5 w-3.5" /></Button>
       <Button size="sm" variant="ghost" className="h-7 px-1.5 text-destructive" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></Button>
     </li>
   );
