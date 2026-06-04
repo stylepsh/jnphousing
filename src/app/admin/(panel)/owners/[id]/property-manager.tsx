@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, FileSignature, Pencil } from "lucide-react";
+import { Building2, DoorOpen, Plus, Layers, Trash2, Loader2, FileSignature, Pencil, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +106,11 @@ export function PropertyManager({
                 {b.address && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{b.address}</span>}
                 <span className="ml-1"><ModeBadges modes={b.modes} /></span>
                 <div className="ml-auto flex items-center gap-1">
+                  <Button asChild size="sm" variant="ghost" className="h-7 px-2 gap-1" title="시설관리 업체 (인터넷·청소·전기 등)">
+                    <Link href={`/admin/buildings-managed/${b.id}`}>
+                      <Wrench className="h-3.5 w-3.5" /> 시설{b.vendor_count > 0 ? ` ${b.vendor_count}` : ""}
+                    </Link>
+                  </Button>
                   <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => setDialog({ kind: "editBuilding", b })}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

@@ -19,6 +19,7 @@ export interface OwnerBuilding {
   deposit_default: number | null;
   rent_default: number | null;
   management_fee_default: number | null;
+  vendor_count: number;
   units: OwnerUnit[];
 }
 export interface SettlementRow {

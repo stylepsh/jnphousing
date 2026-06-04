@@ -99,6 +99,11 @@ export function OwnerDetailTabs({
                 관리유형은 각 건물·호실 등록 시 선택하며, 여기서는 이 소유주의 전체 유형을 합산해 보여줍니다.
               </p>
               <ModeBadges modes={allModes} />
+              {allModes.includes("dm") && (
+                <a href="/admin/dm/settlement" className="inline-flex items-center gap-1.5 text-sm font-medium text-purple-700 hover:underline">
+                  JNP 단기임대 월별 정산 보기 →
+                </a>
+              )}
               <p className="text-xs text-muted-foreground pt-2 border-t">
                 관리유형은 &quot;물건&quot; 탭에서 건물·호실을 등록·선택하면 자동 반영됩니다.
               </p>

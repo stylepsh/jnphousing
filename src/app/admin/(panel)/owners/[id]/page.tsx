@@ -69,6 +69,17 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
     for (const l of (leases ?? []) as { unit_id: string }[]) occupied.add(l.unit_id);
   }
 
+  // 시설관리 업체 수 (위탁관리 건물 통합) — 건물별 building_vendors 카운트
+  const buildingIds = props.filter((p) => p.unit_type === "building").map((p) => p.id);
+  const vendorCount = new Map<string, number>();
+  if (buildingIds.length > 0) {
+    const { data: vendors } = await supabase
+      .from("building_vendors").select("property_id").in("property_id", buildingIds);
+    for (const v of (vendors ?? []) as { property_id: string }[]) {
+      vendorCount.set(v.property_id, (vendorCount.get(v.property_id) ?? 0) + 1);
+    }
+  }
+
   const toUnit = (p: PropRow): OwnerUnit => ({
     id: p.id,
     label: p.unit_no || [p.dong && `${p.dong}동`, p.ho && `${p.ho}호`].filter(Boolean).join(" ") || "(호실)",
@@ -91,6 +102,7 @@ export default async function OwnerDetailPage({ params }: { params: Promise<{ id
       deposit_default: b.deposit_default,
       rent_default: b.rent_default,
       management_fee_default: b.management_fee_default,
+      vendor_count: vendorCount.get(b.id) ?? 0,
       units: props.filter((u) => u.unit_type === "unit" && u.parent_building_id === b.id).map(toUnit),
     }));
 

@@ -87,7 +87,6 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/dm", label: "JNP 대시보드", icon: LayoutDashboard },
       { href: "/admin/dm/settlement", label: "월별 정산", icon: Wallet },
-      { href: "/admin/landlord-business", label: "임사자 관리", icon: UserSquare },
       { href: "/admin/ledger", label: "월별 손익", icon: Wallet },
     ],
   },
