@@ -146,7 +146,15 @@ export default async function HomePage() {
               {COMPANY.yearsOfExperience}년 노하우로 끝까지 해결하는 {COMPANY.brand}
             </p>
 
-            <div className="mt-12 flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: "240ms" }}>
+            {/* 키워드 칩 — 경매 건물만 앰버 강조 */}
+            <div className="mt-6 flex flex-wrap gap-2 animate-fade-in" style={{ animationDelay: "180ms" }}>
+              {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
+                <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-white/80 border border-white/15">{k}</span>
+              ))}
+              <a href="/auction" className="text-xs px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30 font-bold hover:bg-amber-400/30 transition-colors">경매 건물</a>
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: "240ms" }}>
               <Button asChild size="lg" className="bg-white text-[#0a1730] hover:bg-white/90 h-12 px-7 font-semibold">
                 <Link href="/contact">
                   무료 상담 신청 <ArrowRight className="ml-2 h-4 w-4" />

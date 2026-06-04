@@ -9,7 +9,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-type NavLeaf = { href: string; label: string; desc?: string };
+type NavLeaf = { href: string; label: string; desc?: string; badge?: string };
 type NavGroup = { label: string; href?: string; items?: NavLeaf[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -29,6 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/services/rental", label: "위탁임대관리", desc: "수금·공실·정산" },
       { href: "/services/hug", label: "HUG 대위변제", desc: "보증사고 대응" },
       { href: "/services/dispute", label: "분쟁 중재", desc: "세입자 갈등 해결" },
+      { href: "/auction", label: "경매 건물 전문", desc: "경매·공실 건물 낙찰 전 수익화", badge: "NEW" },
     ],
   },
   { label: "관리현장", href: "/properties" },
@@ -152,6 +153,9 @@ export function Header() {
                         >
                           <div className="text-sm font-semibold text-foreground group-hover/item:text-primary transition-colors">
                             {item.label}
+                            {item.badge && (
+                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold align-middle">{item.badge}</span>
+                            )}
                           </div>
                           {item.desc && (
                             <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -227,6 +231,9 @@ export function Header() {
                           className="block py-2 px-3 rounded-lg text-sm text-foreground/75 hover:text-primary hover:bg-muted"
                         >
                           {item.label}
+                          {item.badge && (
+                            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">{item.badge}</span>
+                          )}
                           {item.desc && <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>}
                         </Link>
                       ))}
