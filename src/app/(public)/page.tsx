@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
-  ShieldCheck, TrendingUp, Megaphone, Pin, Calendar, Phone,
+  ShieldCheck, TrendingUp, Megaphone, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
@@ -205,6 +205,59 @@ export default async function HomePage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ 이런 고민이 있으신가요? (공감) ============ */}
+      <section className="bg-background py-24 md:py-32">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="max-w-2xl mb-14">
+            <p className="text-overline text-primary mb-4">Your Concerns</p>
+            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+              이런 고민이 있으신가요?
+            </h2>
+            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+              임대인이라면 누구나 겪는 문제들. JNP가 대신 맡아 해결합니다.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Building2, title: "장기 공실", quote: "공실이 몇 달째 그대로예요. 광고를 올려도 문의가 없어요." },
+              { icon: Wallet, title: "월세 연체·수금", quote: "월세가 자꾸 밀려요. 매번 독촉 전화하기도 지칩니다." },
+              { icon: Wrench, title: "끝없는 시설관리", quote: "누수·보일러·청소… 연락 올 때마다 직접 뛰어다녀요." },
+              { icon: MessageCircle, title: "세입자 민원", quote: "한밤중에도 민원 전화가 와요. 일상이 안 됩니다." },
+              { icon: ShieldCheck, title: "HUG 보증사고", quote: "HUG 대위변제 통보가 왔는데, 뭘 해야 할지 모르겠어요." },
+            ].map((c) => {
+              const Icon = c.icon;
+              return (
+                <div key={c.title} className="bg-white rounded-2xl p-7 border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 group">
+                  <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2">{c.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">&quot;{c.quote}&quot;</p>
+                </div>
+              );
+            })}
+
+            {/* 6번 — 경매 건물 (전문 서비스, 앰버 차별화) */}
+            <a href="/auction" className="bg-white rounded-2xl p-7 border border-amber-200 hover:border-amber-400 hover:shadow-xl transition-all duration-300 group cursor-pointer relative overflow-hidden block">
+              <div className="absolute top-3 right-3">
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">전문 서비스</span>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Gavel className="h-6 w-6 text-amber-600" />
+              </div>
+              <h3 className="font-bold text-lg mb-2">경매 건물 공실 방치</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                &quot;어차피 경매 넘어갈 건데... 공실을 그냥 놔두고 있어요. 매달 비용만 나가요.&quot;
+              </p>
+              <span className="mt-4 text-sm font-semibold text-amber-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                전문 상담 받기 <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </a>
           </div>
         </div>
       </section>
