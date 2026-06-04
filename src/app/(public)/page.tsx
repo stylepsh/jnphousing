@@ -115,68 +115,73 @@ export default async function HomePage() {
           className="absolute inset-0 w-full h-full object-cover"
           fetchPriority="high"
         />
-        {/* 어두운 그라데이션 오버레이 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0a1730]/95 via-[#0a1730]/80 to-[#0a1730]/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1730]/90 via-transparent to-transparent" />
+        {/* 블루 그라데이션 오버레이 — 대기업 신뢰감 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1B4DDB]/90 via-[#2563EB]/75 to-[#3B82F6]/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1340B8]/75 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl w-full px-6 py-24 md:py-32 lg:py-40">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/8 border border-white/20 backdrop-blur-sm text-xs font-medium tracking-wide mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-xs font-medium tracking-wide mb-8 animate-fade-in">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
-              <CountUp end={COMPANY_STATS.yearsAsTeam} className="tabular-nums" />년차 위탁임대 전문기업 · 부천 중동
+              상담 무료 · 계약 의무 없음
             </div>
 
             <h1
-              className="font-bold tracking-tighter leading-[1.05] animate-fade-in"
+              className="font-bold tracking-tighter leading-[1.08] animate-fade-in"
               style={{
-                fontSize: "clamp(36px, 7vw, 72px)",
+                fontSize: "clamp(34px, 6.5vw, 68px)",
                 letterSpacing: "-0.035em",
                 fontFeatureSettings: '"ss01"',
               }}
             >
-              주거의 가치를<br />
-              <span className="text-white/95">끝까지 책임집니다</span>
+              혼자 감당하기 힘든 건물,<br />
+              <span className="bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">이제 JNP가 책임집니다.</span>
             </h1>
 
-            <p className="mt-7 text-base md:text-lg text-white/75 leading-relaxed max-w-2xl animate-fade-in" style={{ animationDelay: "120ms" }}>
-              부천·경기·서울·인천 전 지역.
-              <br className="hidden md:block" />
-              HUG 대위변제 · 부실 건물 정상화 · 세입자 분쟁까지
-              <br className="hidden md:block" />
-              {COMPANY.yearsOfExperience}년 노하우로 끝까지 해결하는 {COMPANY.brand}
-            </p>
-
-            {/* 키워드 칩 — 경매 건물만 앰버 강조 */}
-            <div className="mt-6 flex flex-wrap gap-2 animate-fade-in" style={{ animationDelay: "180ms" }}>
-              {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
-                <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-white/80 border border-white/15">{k}</span>
-              ))}
-              <a href="/auction" className="text-xs px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30 font-bold hover:bg-amber-400/30 transition-colors">경매 건물</a>
+            {/* 서브카피 — 키워드 인라인 뱃지 + 한 줄 */}
+            <div className="mt-7 max-w-2xl animate-fade-in" style={{ animationDelay: "120ms" }}>
+              <div className="flex flex-wrap gap-2">
+                {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
+                  <span key={k} className="text-sm bg-white/10 rounded-full px-2.5 py-0.5 text-white/85">{k}</span>
+                ))}
+                <a href="/auction" className="text-sm bg-amber-400/20 text-amber-200 border border-amber-300/30 rounded-full px-2.5 py-0.5 font-bold hover:bg-amber-400/30 transition-colors">경매 건물</a>
+              </div>
+              <p className="mt-4 text-base md:text-lg text-white/80 leading-relaxed">
+                27년 현장 경험으로, 포기하고 싶었던 건물을 다시 살립니다.
+              </p>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: "240ms" }}>
-              <Button asChild size="lg" className="bg-white text-[#0a1730] hover:bg-white/90 h-12 px-7 font-semibold">
-                <Link href="/contact">
-                  무료 상담 신청 <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10 h-12 px-7 font-semibold">
-                <Link href="/properties">관리현장 보기</Link>
-              </Button>
+            <div className="mt-9 flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: "240ms" }}>
+              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-white text-[#1B4DDB] hover:bg-blue-50 h-14 px-7 rounded-xl text-base font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
+                <Phone className="h-5 w-5" /> 지금 무료 상담
+              </a>
+              <a href="#transformation" className="inline-flex items-center justify-center gap-2 bg-white/10 text-white border border-white/30 hover:bg-white/20 h-14 px-7 rounded-xl text-base font-semibold transition-all">
+                해결 사례 보기 <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+
+            {/* 신뢰 배지 한 줄 */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-8 text-xs text-white/65 animate-fade-in" style={{ animationDelay: "300ms" }}>
+              <span>🏢 운영 건물 {COMPANY_STATS.operatedBuildings}+</span>
+              <span>👨‍👩‍👧‍👦 관리 세대 {COMPANY_STATS.managedUnits}+</span>
+              <span>⚖️ 분쟁 해결 {COMPANY_STATS.resolvedDisputes}+</span>
+              <span>📅 경력 {COMPANY.yearsOfExperience}년</span>
             </div>
           </div>
 
-          {/* 하단 부유 stat — 더 큰 임팩트 */}
-          <div className="hidden md:grid grid-cols-4 gap-px mt-24 md:mt-32 max-w-4xl border-l border-white/15 animate-fade-in" style={{ animationDelay: "360ms" }}>
+          {/* 통계 그리드 — 모바일 2x2, 카운트업 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mt-16 md:mt-24 max-w-4xl animate-fade-in" style={{ animationDelay: "360ms" }}>
             {[
-              { value: `${COMPANY_STATS.operatedBuildings}+`, label: "운영 건물" },
-              { value: `${COMPANY_STATS.managedUnits}+`,      label: "관리 세대" },
-              { value: `${COMPANY_STATS.resolvedDisputes}+`,  label: "해결 분쟁" },
-              { value: `${COMPANY_STATS.yearsAsTeam}년`,      label: "운영 경력" },
+              { end: COMPANY_STATS.operatedBuildings, suffix: "+", label: "운영 건물" },
+              { end: COMPANY_STATS.managedUnits,      suffix: "+", label: "관리 세대" },
+              { end: COMPANY_STATS.resolvedDisputes,  suffix: "+", label: "해결 분쟁" },
+              { end: COMPANY.yearsOfExperience,       suffix: "년", label: "운영 경력" },
             ].map((s, i) => (
-              <div key={i} className="pl-6 border-r border-white/15">
-                <p className="text-[10px] uppercase tracking-widest text-white/55 mb-1">{s.label}</p>
-                <p className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight">{s.value}</p>
+              <div key={i} className="border-l-2 border-white/20 pl-4">
+                <p className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight">
+                  <CountUp end={s.end} className="tabular-nums" />{s.suffix}
+                </p>
+                <p className="text-[11px] md:text-xs text-white/60 mt-1">{s.label}</p>
               </div>
             ))}
           </div>
@@ -191,7 +196,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             <div>
-              <p className="text-overline text-primary mb-4">Our Promise</p>
+              <p className="text-overline text-primary mb-4">약속</p>
               <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
                 건물 한 채를<br />
                 기업처럼 운영합니다.
@@ -221,7 +226,7 @@ export default async function HomePage() {
       <section className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl mb-14">
-            <p className="text-overline text-primary mb-4">Your Concerns</p>
+            <p className="text-overline text-primary mb-4">고객의 고민</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               이런 고민이 있으신가요?
             </h2>
@@ -271,10 +276,10 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 6종 시설관리 카테고리 — 실제 이미지 ============ */}
-      <section className="bg-[#f5f7fb] py-24 md:py-32 border-y border-border/40">
+      <section className="bg-white py-24 md:py-32 border-y border-border/40">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl mb-14">
-            <p className="text-overline text-primary mb-4">Management Services</p>
+            <p className="text-overline text-primary mb-4">시설관리 서비스</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               건물 운영의 모든 영역
             </h2>
@@ -316,7 +321,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-end justify-between gap-4 mb-14 flex-wrap">
             <div>
-              <p className="text-overline text-primary mb-4">Our Portfolio</p>
+              <p className="text-overline text-primary mb-4">관리 현장</p>
               <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
                 JNP가 운영하는 건물
               </h2>
@@ -407,20 +412,20 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 위탁임대 — 위기 자산 회복 ============ */}
-      <section className="bg-[#0a1730] text-white py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(circle_at_30%_50%,white,transparent_60%)]" />
+      <section className="bg-[#F0F4FF] text-foreground py-24 md:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.5] bg-[radial-gradient(circle_at_30%_50%,#dbe6ff,transparent_60%)]" />
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="max-w-2xl mb-16">
-            <p className="text-overline text-white/55 mb-4">Specialized Expertise</p>
+            <p className="text-overline text-primary mb-4">전문 해결 영역</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               위기 자산을 정상화하는 6가지 전문 영역
             </h2>
-            <p className="mt-5 text-white/65 text-base md:text-lg leading-relaxed">
+            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
               일반 관리회사가 손대지 않는 영역. {COMPANY.yearsOfExperience}년 현장 노하우로 직접 해결합니다.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { tag: "긴급",    title: "HUG 대위변제 대응",       desc: "보증보험 사고 이후 자산 정리·임차인 정리·후속 절차 동행" },
               { tag: "정상화",  title: "부실 건물 회복",          desc: "수익이 안 나오는 빈 건물을 단계적 수선 + 임차인 매칭으로 회복" },
@@ -429,23 +434,23 @@ export default async function HomePage() {
               { tag: "법무동행", title: "변호사·법무 자문",        desc: "변호사비 부담 없이 시작. 실제 자문 네트워크 함께 동원" },
               { tag: "경험",    title: `${COMPANY.yearsOfExperience}년 실전 조언`, desc: "교과서가 아닌 현장에서 쌓은 노하우. 케이스별 최적의 다음 한 수" },
             ].map((s, i) => (
-              <div key={i} className="bg-[#0a1730] p-7 md:p-8 hover:bg-white/[0.03] transition-colors">
-                <p className="text-[10px] uppercase tracking-widest text-white/45 mb-3">0{i + 1} · {s.tag}</p>
-                <h3 className="font-bold text-lg md:text-xl tracking-tight">{s.title}</h3>
-                <p className="mt-3 text-sm text-white/65 leading-relaxed">{s.desc}</p>
+              <div key={i} className="bg-white border border-blue-100 rounded-2xl p-7 md:p-8 hover:shadow-lg hover:border-blue-300 transition-all">
+                <p className="text-[11px] font-semibold text-primary/60 mb-3">0{i + 1} · {s.tag}</p>
+                <h3 className="font-bold text-lg md:text-xl tracking-tight text-foreground">{s.title}</h3>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-14 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between p-8 rounded-2xl bg-white/[0.04] border border-white/10">
+          <div className="mt-14 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between p-8 rounded-2xl bg-white border border-blue-100 shadow-sm">
             <div>
-              <p className="text-lg font-semibold">자산 운영이 막혀 있다면, 망설이지 마세요.</p>
-              <p className="text-sm text-white/65 mt-1.5 inline-flex items-center gap-1.5">
+              <p className="text-lg font-semibold text-foreground">자산 운영이 막혀 있다면, 망설이지 마세요.</p>
+              <p className="text-sm text-muted-foreground mt-1.5 inline-flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
                 {COMPANY.serviceArea} 전 지역 출동 가능
               </p>
             </div>
-            <Button asChild size="lg" className="bg-white text-[#0a1730] hover:bg-white/90 font-semibold whitespace-nowrap">
+            <Button asChild size="lg" className="bg-primary text-white hover:bg-primary/90 font-semibold whitespace-nowrap">
               <a href={COMPANY.contact.phoneHref}>
                 <Phone className="h-4 w-4 mr-2" /> {COMPANY.contact.phone}
               </a>
@@ -595,10 +600,10 @@ export default async function HomePage() {
       </section>
 
       {/* ============ Before/After ============ */}
-      <section className="bg-background py-24 md:py-32">
+      <section id="transformation" className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl mb-14">
-            <p className="text-overline text-primary mb-4">Transformation</p>
+            <p className="text-overline text-primary mb-4">정상화 실적</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               위기 건물의 정상화 결과
             </h2>
@@ -620,7 +625,7 @@ export default async function HomePage() {
       <section className="bg-[#f5f7fb] py-24 md:py-32 border-y border-border/40">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 max-w-2xl">
-            <p className="text-overline text-primary mb-4">Case Studies</p>
+            <p className="text-overline text-primary mb-4">해결 사례</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               실제 해결 사례
             </h2>
@@ -636,7 +641,7 @@ export default async function HomePage() {
       <section className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <p className="text-overline text-primary mb-4">Our Process</p>
+            <p className="text-overline text-primary mb-4">진행 절차</p>
             <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
               위탁관리 5단계 절차
             </h2>
@@ -691,7 +696,7 @@ export default async function HomePage() {
       <section className="bg-[#f5f7fb] py-20 border-y border-border/40">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl mx-auto text-center mb-12">
-            <p className="text-overline text-primary mb-4">Trust & Compliance</p>
+            <p className="text-overline text-primary mb-4">공식 등록·인증</p>
             <h2 className="font-bold tracking-tight" style={{ fontSize: "clamp(24px, 3vw, 32px)", letterSpacing: "-0.025em" }}>
               공식 등록 · 인증
             </h2>
@@ -724,7 +729,7 @@ export default async function HomePage() {
             <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/[0.04]" />
             <div className="relative grid md:grid-cols-2 gap-10 items-center">
               <div>
-                <p className="text-overline text-white/55 mb-3">For Tenants</p>
+                <p className="text-overline text-white/55 mb-3">입주민 안내</p>
                 <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", letterSpacing: "-0.025em" }}>
                   건물에서 본 QR을<br />스캔하셨나요?
                 </h2>
@@ -766,7 +771,7 @@ export default async function HomePage() {
           <div className="mx-auto max-w-6xl px-6">
             <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
               <div>
-                <p className="text-overline text-primary mb-3">Latest News</p>
+                <p className="text-overline text-primary mb-3">최근 소식</p>
                 <h2 className="font-bold tracking-tight" style={{ fontSize: "clamp(24px, 3vw, 32px)", letterSpacing: "-0.025em" }}>
                   공지사항
                 </h2>
@@ -825,7 +830,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a1730] via-[#0a1730]/95 to-[#0a1730]/85" />
 
         <div className="relative mx-auto max-w-5xl px-6 text-center text-white">
-          <p className="text-overline text-white/55 mb-4">Real Estate Partners</p>
+          <p className="text-overline text-white/55 mb-4">부동산 파트너</p>
           <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
             공실 매물 정보,<br className="md:hidden" />
             부동산 회원께 실시간 공개합니다

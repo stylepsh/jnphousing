@@ -71,18 +71,24 @@
 }
 
 :root {
-  /* JNP brand tokens — Primary navy #1C2B4A, Accent blue #3182F6 (BLOCKERS B-003) */
-  --brand: #1c2b4a;
+  /* JNP brand tokens — Primary Royal Blue #1B4DDB (대기업 신뢰감 리브랜딩) */
+  --brand: #1b4ddb;
   --brand-foreground: #ffffff;
-  --brand-accent: #3182f6;
+  --brand-accent: #3b82f6;
 
-  --background: #f8fafc;
+  /* 신규 브랜드 팔레트 */
+  --primary-light: #ebf1ff;       /* 아이스 블루 — 섹션 배경 */
+  --primary-dark: #1340b8;        /* 진한 블루 — hover */
+  --brand-teal: #00b8a9;          /* 틸 — 정상화·성장 포인트 */
+  --accent-warm: #f59e0b;         /* 앰버 — 긴급 CTA·전화 */
+
+  --background: #fafbfe;
   --foreground: #0f1a2e;
   --card: #ffffff;
   --card-foreground: #0f1a2e;
   --popover: #ffffff;
   --popover-foreground: #0f1a2e;
-  --primary: #1c2b4a;
+  --primary: #1b4ddb;
   --primary-foreground: #ffffff;
   --secondary: #eef2f7;
   --secondary-foreground: #1c2b4a;
@@ -289,10 +295,10 @@
   color: var(--muted-foreground);
 }
 .text-overline {
-  font-size: 0.6875rem;       /* 11px */
-  line-height: 1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.875rem;        /* 14px — 한국어 라벨 */
+  line-height: 1.25rem;
+  letter-spacing: normal;
+  text-transform: none;
   font-weight: 600;
 }
 

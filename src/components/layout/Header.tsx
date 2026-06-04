@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -171,18 +171,33 @@ export function Header() {
         </nav>
 
         {/* 우측 버튼 */}
-        <div className="hidden lg:flex items-center gap-2 shrink-0">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
+          {/* 전화번호 — 항상 노출 */}
+          <a
+            href="tel:01075086916"
+            className={cn(
+              "flex items-center gap-1.5 text-sm font-bold transition-colors",
+              transparent ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80",
+            )}
+          >
+            <Phone className="h-4 w-4" />
+            010-7508-6916
+          </a>
+          <div className={cn("h-4 w-px", transparent ? "bg-white/30" : "bg-border")} />
+          <Link href="/login" className={cn("text-sm transition-colors", transparent ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+            로그인
+          </Link>
           <ThemeToggle />
-          <Button asChild variant={transparent ? "outline" : "outline"} size="sm" className={transparent ? "bg-transparent border-white/40 text-white hover:bg-white/10" : ""}>
-            <Link href="/login">로그인</Link>
-          </Button>
-          <Button asChild size="sm" className={transparent ? "bg-white text-primary hover:bg-white/90" : ""}>
-            <Link href="/contact">관리문의</Link>
+          <Button asChild size="sm" className={cn("gap-1.5 font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all", transparent && "bg-white text-primary hover:bg-white/90")}>
+            <Link href="/contact">무료 상담 <ArrowRight className="h-3.5 w-3.5" /></Link>
           </Button>
         </div>
 
         {/* 모바일 토글 */}
-        <div className="lg:hidden flex items-center gap-1">
+        <div className="lg:hidden flex items-center gap-0.5">
+          <a href="tel:01075086916" className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
+            <Phone className="h-5 w-5" />
+          </a>
           <ThemeToggle />
           <button
             className={cn("p-2 -mr-2", transparent ? "text-white" : "text-foreground")}
