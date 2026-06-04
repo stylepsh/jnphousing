@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Building2, ArrowRight, CheckCircle2, MessageCircle, FileText, MapPin,
+  Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
   ShieldCheck, TrendingUp, Megaphone, Pin, Calendar, Phone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -389,6 +389,146 @@ export default async function HomePage() {
                 <Phone className="h-4 w-4 mr-2" /> {COMPANY.contact.phone}
               </a>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ 경매 건물 전문 서비스 (핵심 차별화) ============ */}
+      <section id="auction-service" className="relative py-24 md:py-32 overflow-hidden">
+        {/* 배경: 좌측에 짙은 블루 그라디언트, 우측에 밝은 블루 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B5B] via-[#1B4DDB] to-[#3B82F6]" />
+        {/* 패턴 오버레이 */}
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+
+        <div className="relative mx-auto max-w-7xl px-6">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {/* 좌측: 텍스트 영역 */}
+            <div className="text-white">
+              {/* 뱃지 */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-sm font-medium mb-8">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                경매 건물 전문 서비스
+              </div>
+
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]">
+                경매 진행 중인 건물,<br/>
+                <span className="text-amber-300">공실로 손해만</span><br/>
+                보고 계십니까?
+              </h2>
+
+              <div className="mt-8 space-y-4 text-base md:text-lg text-white/80 leading-relaxed">
+                <p>
+                  임차권등기 · HUG 대위변제 · 명도 문제 · 장기 공실 때문에<br className="hidden md:block" />
+                  건물을 사실상 <strong className="text-white">방치</strong>하고 계신 임대인분들이 많습니다.
+                </p>
+                <p>
+                  하지만 경매가 진행 중인 건물이라고 해서<br className="hidden md:block" />
+                  반드시 <strong className="text-white">수익 창출이 불가능한 것은 아닙니다.</strong>
+                </p>
+              </div>
+
+              {/* 경고 박스 */}
+              <div className="mt-8 p-5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm">
+                <p className="text-amber-300 font-semibold text-lg mb-2">
+                  &quot;어차피 경매 넘어갈 건데...&quot;
+                </p>
+                <p className="text-white/75 text-sm leading-relaxed">
+                  그 생각으로 공실을 방치하는 동안, 매달 관리비·공과금·청소비 등의 비용이<br/>
+                  지속적으로 발생하고 있습니다. <strong className="text-white">생각보다 큰 손실</strong>이 될 수 있습니다.
+                </p>
+              </div>
+
+              {/* CTA */}
+              <div className="mt-10 flex flex-col sm:flex-row gap-3">
+                <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-14 px-8 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
+                  <Phone className="h-5 w-5" />
+                  010-9893-6882
+                </a>
+                <a href="/contact" className="inline-flex items-center justify-center gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 h-14 px-8 rounded-xl text-lg font-semibold transition-all">
+                  온라인 문의하기
+                  <ArrowRight className="h-5 w-5" />
+                </a>
+              </div>
+              <p className="mt-4 text-xs text-white/50">
+                ※ 건물 주소 또는 연락처를 문자로 남겨주시면 검토 후 연락드립니다.
+              </p>
+            </div>
+
+            {/* 우측: 체크리스트 카드 */}
+            <div className="relative">
+              {/* 카드 배경 글로우 */}
+              <div className="absolute -inset-4 bg-white/5 rounded-3xl blur-xl" />
+
+              <div className="relative bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 md:p-10">
+                <h3 className="text-white text-xl font-bold mb-6">
+                  이런 건물을 전문적으로 검토합니다
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">임차권등기 세대가 많은 건물</p>
+                      <p className="text-white/55 text-sm mt-0.5">등기 정리와 임차인 관리를 동시에</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">HUG 대위변제 진행 건물</p>
+                      <p className="text-white/55 text-sm mt-0.5">보증사고 이후 자산 정리 전문</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">공실이 다수 발생한 건물</p>
+                      <p className="text-white/55 text-sm mt-0.5">낙찰 전까지 공실 수익화</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">관리가 어려운 건물</p>
+                      <p className="text-white/55 text-sm mt-0.5">명도·시설·세입자 문제 종합 대응</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">경매 진행 중인 건물</p>
+                      <p className="text-white/55 text-sm mt-0.5">낙찰 전 기간 동안 수익 극대화</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/15">
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    이미 포기하셨던 건물이라도<br/>
+                    <strong className="text-white">한 번쯤은 확인해 보시기 바랍니다.</strong>
+                  </p>
+                  <p className="mt-3 text-amber-300 text-xs font-medium">
+                    ※ 경매 진행 건물, 임차권등기 다수 건물, 공실 다수 건물 우선 상담
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
