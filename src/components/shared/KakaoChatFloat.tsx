@@ -390,7 +390,7 @@ export function KakaoChatFloat({ variant = "default" }: Props) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "fixed z-50 transition-all",
-          "bottom-4 right-4 sm:bottom-6 sm:right-6",
+          "bottom-[88px] right-4 lg:bottom-6 lg:right-6",
           "h-14 w-14 rounded-full shadow-xl",
           "flex items-center justify-center",
           open ? "bg-slate-700 text-white" : "bg-[#FEE500] text-[#3C1E1E] hover:scale-105",

@@ -13,22 +13,13 @@ type NavLeaf = { href: string; label: string; desc?: string; badge?: string };
 type NavGroup = { label: string; href?: string; items?: NavLeaf[] };
 
 const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "회사소개",
-    items: [
-      { href: "/about", label: "회사소개", desc: "27년 역사와 경영 철학" },
-      { href: "/certifications", label: "인증·자격", desc: "사업자등록·협회 인증" },
-      { href: "/reviews", label: "고객 후기", desc: "임대인·임차인 실제 후기" },
-    ],
-  },
+  { label: "회사소개", href: "/about" },
   {
     label: "서비스",
     items: [
-      { href: "/services", label: "전체 서비스", desc: "위탁관리 종합 안내" },
       { href: "/services/housing", label: "주택관리", desc: "시설·청소·보안 일괄" },
       { href: "/services/rental", label: "위탁임대관리", desc: "수금·공실·정산" },
-      { href: "/services/hug", label: "HUG 대위변제", desc: "보증사고 대응" },
-      { href: "/services/dispute", label: "분쟁 중재", desc: "세입자 갈등 해결" },
+      { href: "/#expertise", label: "전문 해결 서비스", desc: "HUG·부실건물·분쟁 정상화" },
       { href: "/auction", label: "경매 건물 전문", desc: "경매·공실 건물 낙찰 전 수익화", badge: "NEW" },
     ],
   },
@@ -37,14 +28,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "고객지원",
     items: [
       { href: "/news", label: "공지사항", desc: "최신 소식·보도자료" },
-      { href: "/blog", label: "블로그", desc: "위탁임대 가이드" },
       { href: "/faq", label: "자주 묻는 질문", desc: "FAQ" },
-    ],
-  },
-  {
-    label: "전용 서비스",
-    items: [
-      { href: "/tenant", label: "세입자존", desc: "민원·AS·서류 다운로드" },
+      { href: "/contact", label: "관리문의", desc: "신규 위탁·상담 접수" },
+      { href: "/tenant/complaint", label: "민원·AS 접수", desc: "전화 없이 온라인 접수" },
+      { href: "/tenant", label: "세입자존", desc: "서류 다운로드·내 정보" },
       { href: "/agency/vacancies", label: "부동산존", desc: "공실 매물 실시간 열람" },
       { href: "/landlord/dashboard", label: "임대인존", desc: "정산·리포트 확인" },
     ],
