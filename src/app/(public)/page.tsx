@@ -759,6 +759,23 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+
+          {/* CTA — 무료 보장 3종 */}
+          <div className="mt-16 text-center space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary/90 h-14 px-8 rounded-xl text-lg font-semibold transition-all hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5">
+                <Phone className="h-5 w-5" /> 지금 바로 전화하기
+              </a>
+              <a href="https://open.kakao.com/o/scZWs5vi" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] hover:bg-[#FDD800] h-14 px-8 rounded-xl text-lg font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5">
+                <MessageCircle className="h-5 w-5" /> 카카오톡 상담하기
+              </a>
+            </div>
+            <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 상담 후 계약 의무 없음</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 현장 진단 무료</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 견적 무료</span>
+            </p>
+          </div>
         </div>
       </section>
 
