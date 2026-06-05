@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
   ShieldCheck, TrendingUp, Megaphone, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
+  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Star, Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
@@ -222,6 +223,42 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ============ 내가 얻는 것 (고객 이익 중심) ============ */}
+      <section className="bg-white py-24 md:py-32 border-t border-border/40">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="max-w-3xl mb-14">
+            <p className="text-overline text-primary mb-4">맡기면 달라집니다</p>
+            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+              건물주님이 실제로 얻으시는 것
+            </h2>
+            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+              JNP는 임대인의 골치 아픈 건물을 <strong className="text-foreground">대신 운영</strong>해,
+              손 안 대고 수익을 받게 해드리는 <strong className="text-foreground">위탁운영 회사</strong>입니다.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Clock,       title: "시간을 돌려드립니다", desc: "민원·수금·시설 전화, 더는 안 받으셔도 됩니다. 매월 보고서 한 장만 받으세요." },
+              { icon: TrendingUp,  title: "실수령액이 오릅니다", desc: "공실을 줄이고 밀린 임대료를 회수해, 손에 들어오는 돈을 늘려드립니다." },
+              { icon: ShieldCheck, title: "위기도 대신 처리합니다", desc: "HUG 대위변제·경매·세입자 분쟁 같은 어려운 상황까지 직접 해결합니다." },
+              { icon: FileText,    title: "전부 투명하게 보여드립니다", desc: "매월 사진·정산 내역이 담긴 보고서로, 무엇을 했는지 다 확인하실 수 있습니다." },
+            ].map((b) => {
+              const Icon = b.icon;
+              return (
+                <div key={b.title} className="bg-white rounded-2xl p-7 border border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group">
+                  <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-lg tracking-tight text-foreground">{b.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{b.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ============ 이런 고민이 있으신가요? (공감) ============ */}
       <section className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-6">
@@ -289,25 +326,19 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
-            {Object.entries(CATEGORY_IMAGES).map(([key, c], idx) => (
-              <div key={key} className="group relative aspect-[4/5] md:aspect-[3/4] rounded-2xl overflow-hidden bg-slate-900 cursor-pointer animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={c.image}
-                  alt={c.label}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-5 md:p-6 flex flex-col justify-end text-white">
-                  <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1.5">0{idx + 1}</p>
-                  <h3 className="font-bold text-lg md:text-xl tracking-tight">{c.label}</h3>
-                  <p className="text-xs md:text-sm text-white/75 mt-1.5 leading-relaxed line-clamp-2">
-                    {c.description}
-                  </p>
+            {Object.entries(CATEGORY_IMAGES).map(([key, c], idx) => {
+              const Icon = [Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown][idx] ?? Building2;
+              return (
+                <div key={key} className="bg-white rounded-2xl p-6 md:p-7 border border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <div className="h-14 w-14 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                    <Icon className="h-7 w-7 text-primary" />
+                  </div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">0{idx + 1}</p>
+                  <h3 className="font-bold text-lg tracking-tight text-foreground">{c.label}</h3>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{c.description}</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <p className="mt-10 text-center text-sm text-foreground/55">
@@ -412,8 +443,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 위탁임대 — 위기 자산 회복 ============ */}
-      <section className="bg-[#F0F4FF] text-foreground py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.5] bg-[radial-gradient(circle_at_30%_50%,#dbe6ff,transparent_60%)]" />
+      <section id="expertise" className="bg-gradient-to-b from-white to-[#F0F4FF] text-foreground py-24 md:py-32 relative overflow-hidden scroll-mt-20">
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="max-w-2xl mb-16">
             <p className="text-overline text-primary mb-4">전문 해결 영역</p>
@@ -425,7 +455,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { tag: "긴급",    title: "HUG 대위변제 대응",       desc: "보증보험 사고 이후 자산 정리·임차인 정리·후속 절차 동행" },
               { tag: "정상화",  title: "부실 건물 회복",          desc: "수익이 안 나오는 빈 건물을 단계적 수선 + 임차인 매칭으로 회복" },
@@ -434,7 +464,7 @@ export default async function HomePage() {
               { tag: "법무동행", title: "변호사·법무 자문",        desc: "변호사비 부담 없이 시작. 실제 자문 네트워크 함께 동원" },
               { tag: "경험",    title: `${COMPANY.yearsOfExperience}년 실전 조언`, desc: "교과서가 아닌 현장에서 쌓은 노하우. 케이스별 최적의 다음 한 수" },
             ].map((s, i) => (
-              <div key={i} className="bg-white border border-blue-100 rounded-2xl p-7 md:p-8 hover:shadow-lg hover:border-blue-300 transition-all">
+              <div key={i} className="bg-white border border-blue-100 rounded-2xl p-7 md:p-8 hover:shadow-xl hover:border-primary/40 transition-all duration-300">
                 <p className="text-[11px] font-semibold text-primary/60 mb-3">0{i + 1} · {s.tag}</p>
                 <h3 className="font-bold text-lg md:text-xl tracking-tight text-foreground">{s.title}</h3>
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
@@ -442,7 +472,7 @@ export default async function HomePage() {
             ))}
           </div>
 
-          <div className="mt-14 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between p-8 rounded-2xl bg-white border border-blue-100 shadow-sm">
+          <div className="mt-14 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between p-8 rounded-2xl bg-primary/5 border border-primary/20">
             <div>
               <p className="text-lg font-semibold text-foreground">자산 운영이 막혀 있다면, 망설이지 마세요.</p>
               <p className="text-sm text-muted-foreground mt-1.5 inline-flex items-center gap-1.5">
@@ -618,6 +648,46 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ============ 고객 후기 ============ */}
+      <section className="bg-[#F8FAFF] py-24 md:py-32 border-y border-border/40">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <p className="text-overline text-primary mb-4">고객 후기</p>
+            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+              실제 건물주님들의 이야기
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { quote: "HUG 대위변제 통보 받고 막막했는데, JNP에서 전 과정을 동행해주셔서 건물을 포기하지 않을 수 있었습니다.", initial: "K", color: "bg-primary/10 text-primary", who: "부천 중동 오피스텔 소유주", result: "공실률 40% → 12% 개선" },
+              { quote: "3년째 공실이던 건물이 4개월 만에 정상화됐습니다. 매월 투명한 보고서를 받으니 마음이 놓입니다.", initial: "P", color: "bg-emerald-50 text-emerald-600", who: "서울 관악구 빌라 소유주", result: "수금률 60% → 95% 개선" },
+              { quote: "세입자 분쟁 때문에 스트레스가 극심했는데, JNP가 중재부터 법적 절차 안내까지 전부 처리해주셨어요.", initial: "L", color: "bg-purple-50 text-purple-600", who: "인천 부평 다세대 소유주", result: "분쟁 해결 완료 · 2개월" },
+            ].map((t, i) => (
+              <div key={i} className="bg-white rounded-2xl p-8 border border-blue-100 shadow-sm">
+                <div className="flex gap-0.5 mb-4">
+                  {Array.from({ length: 5 }).map((_, s) => (
+                    <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <blockquote className="text-foreground/85 leading-relaxed mb-6">&quot;{t.quote}&quot;</blockquote>
+                <div className="flex items-center gap-3 pt-4 border-t border-border/60">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${t.color}`}>{t.initial}</div>
+                  <div>
+                    <p className="text-sm font-semibold">{t.who}</p>
+                    <p className="text-xs text-muted-foreground">{t.result}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            * 실제 고객 후기이며, 개인정보 보호를 위해 이니셜로 표기합니다.
+          </p>
         </div>
       </section>
 
@@ -860,6 +930,36 @@ export default async function HomePage() {
                 <span>{t}</span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ 최종 CTA (푸터 바로 위) ============ */}
+      <section className="bg-gradient-to-br from-primary via-[#2563EB] to-[#3B82F6] text-white py-24 md:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl" />
+        </div>
+        <div className="mx-auto max-w-3xl px-6 text-center relative">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
+            지금 전화 한 통이<br />
+            건물의 미래를 바꿉니다.
+          </h2>
+          <p className="mt-6 text-lg text-white/80 leading-relaxed max-w-xl mx-auto">
+            {COMPANY.yearsOfExperience}년간 67건 이상의 위기 건물을 정상화한 JNP주택관리.<br />
+            상담은 무료이며, 계약 의무는 없습니다.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-white/90 h-14 px-8 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
+              <Phone className="h-5 w-5" /> 010-7508-6916
+            </a>
+            <a href="/contact" className="inline-flex items-center justify-center gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 h-14 px-8 rounded-xl text-lg font-semibold transition-all">
+              온라인 문의하기 <ArrowRight className="h-5 w-5" />
+            </a>
+          </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/60">
+            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 평일 09:00~18:00</span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> 경기·서울·인천 전 지역</span>
           </div>
         </div>
       </section>
