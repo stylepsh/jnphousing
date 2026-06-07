@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
   ShieldCheck, TrendingUp, Pin, Calendar, Phone,
-  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Clock, X,
+  Wrench, Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Clock, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
@@ -169,6 +169,59 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ============ 진입 3분할 (위탁임대 / 주택관리 / 세입자존) ============ */}
+      <section className="bg-[#F7F8FB] border-b border-[#E8EBF0] py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <p className="text-center text-sm font-semibold text-foreground/70 mb-7">어떤 도움이 필요하세요?</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* 위탁임대관리 (임대인) */}
+            <a href="#expertise" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300 scroll-mt-20">
+              <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Building2 className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-[11px] font-semibold text-primary/60 mb-1">임대인</p>
+              <h3 className="font-bold text-lg text-foreground">위탁임대관리</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                공실·수금·명도·정산까지 임대 운영을 통째로 대행. <strong className="text-foreground">맡기면 매달 수익</strong>이 들어옵니다.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                자세히 보기 <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+
+            {/* 주택관리 (시설) */}
+            <a href="#facility" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+              <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Wrench className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-[11px] font-semibold text-primary/60 mb-1">건물주</p>
+              <h3 className="font-bold text-lg text-foreground">주택관리</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                엘리베이터·청소·전기·소방·급배수·<strong className="text-foreground">건물 하자</strong>까지 시설을 일괄 관리합니다.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                서비스 보기 <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+
+            {/* 세입자존 (임차인) */}
+            <a href="/tenant/complaint" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+              <div className="h-12 w-12 rounded-xl bg-[#F0F2F6] flex items-center justify-center mb-5 group-hover:bg-[#E6E9EF] transition-colors">
+                <MessageCircle className="h-6 w-6 text-foreground/70" />
+              </div>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-1">입주민</p>
+              <h3 className="font-bold text-lg text-foreground">세입자존</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                입주민이라면 여기서 <strong className="text-foreground">민원·AS 접수</strong>와 공지·서류 확인을 하세요.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-foreground/70">
+                민원 접수하기 <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ============ BRAND PROMISE ============ */}
       <section className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-6xl px-6">
@@ -317,7 +370,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 6종 시설관리 카테고리 — 실제 이미지 ============ */}
-      <section className="bg-white py-24 md:py-32 border-y border-border/40">
+      <section id="facility" className="bg-white py-24 md:py-32 border-y border-border/40 scroll-mt-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl mb-14">
             <p className="text-overline text-primary mb-4">시설관리 서비스</p>
