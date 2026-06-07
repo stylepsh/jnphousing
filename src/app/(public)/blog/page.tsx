@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "HUG 대위변제·전세사기·공실 관리 등 부동산 위탁임대 전문 콘텐츠.",
   openGraph: {
     title: "JNP 블로그",
-    description: "위탁임대 27년 노하우의 전문 가이드와 사례 분석",
+    description: "위탁임대 전문 노하우의 전문 가이드와 사례 분석",
     images: [`/api/og?title=${encodeURIComponent("블로그")}&subtitle=${encodeURIComponent("위탁임대 가이드·사례 분석")}`],
   },
   alternates: { canonical: "/blog" },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function BlogIndexPage() {
   return (
     <>
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20 relative overflow-hidden">
+      <section className="bg-primary text-white py-16 md:py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(49,130,246,0.25),transparent_60%)] animate-gradient" />
         <div className="relative mx-auto max-w-5xl px-6">
           <Breadcrumbs items={[{ name: "블로그" }]} className="text-white/70 mb-5" />
@@ -31,7 +31,7 @@ export default function BlogIndexPage() {
             위탁임대 가이드 · 사례
           </h1>
           <p className="mt-3 text-blue-100 max-w-2xl">
-            HUG 대위변제·전세사기·공실 관리·임차인 분쟁 — JNP 27년 운영 노하우를 글로 정리합니다.
+            HUG 대위변제·전세사기·공실 관리·임차인 분쟁 — JNP 운영 노하우를 글로 정리합니다.
           </p>
         </div>
       </section>

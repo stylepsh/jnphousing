@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   description: "JNP주택관리 임차인·임대인·부동산 회원의 실제 후기",
   openGraph: {
     title: "JNP 고객 후기",
-    description: "27년 위탁임대의 신뢰",
-    images: [`/api/og?title=${encodeURIComponent("고객 후기")}&subtitle=${encodeURIComponent("27년 위탁임대의 신뢰")}`],
+    description: "위탁임대의 신뢰",
+    images: [`/api/og?title=${encodeURIComponent("고객 후기")}&subtitle=${encodeURIComponent("위탁임대의 신뢰")}`],
   },
   alternates: { canonical: "/reviews" },
 };
@@ -44,7 +44,7 @@ export default function ReviewsPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20">
+      <section className="bg-primary text-white py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <Breadcrumbs items={[{ name: "고객 후기" }]} className="text-white/70 mb-5" />
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">

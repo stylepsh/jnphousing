@@ -8,12 +8,12 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { STAFF } from "@/lib/data/staff";
 
 export const metadata: Metadata = {
-  title: "팀 소개 — 27년 노하우의 운영팀",
+  title: "팀 소개 — 운영팀",
   description: "JNP주택관리 대표 박재흥과 분야별 협력 네트워크.",
   openGraph: {
     title: "JNP 팀 소개",
-    description: "27년 노하우의 운영팀",
-    images: [`/api/og?title=${encodeURIComponent("팀 소개")}&subtitle=${encodeURIComponent("27년 노하우의 운영팀")}`],
+    description: "운영팀",
+    images: [`/api/og?title=${encodeURIComponent("팀 소개")}&subtitle=${encodeURIComponent("운영팀")}`],
   },
   alternates: { canonical: "/team" },
 };
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function TeamPage() {
   return (
     <>
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20">
+      <section className="bg-primary text-white py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <Breadcrumbs
             items={[{ name: "회사소개", href: "/about" }, { name: "팀 소개" }]}
@@ -33,7 +33,7 @@ export default function TeamPage() {
           <h1 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">팀 소개</h1>
           <p className="mt-3 text-blue-100">
             JNP주택관리를 움직이는 사람들.
-            27년 운영 경력 + 분야별 협력 네트워크가 위기 자산을 정상화합니다.
+            오랜 운영 경력 + 분야별 협력 네트워크가 위기 자산을 정상화합니다.
           </p>
         </div>
       </section>

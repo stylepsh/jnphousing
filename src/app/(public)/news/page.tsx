@@ -54,7 +54,7 @@ export default async function NewsPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20">
+      <section className="bg-primary text-white py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
             <Megaphone className="h-3.5 w-3.5" /> 공지사항

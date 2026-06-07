@@ -46,7 +46,7 @@ export default async function CertificationsPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20">
+      <section className="bg-primary text-white py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <Breadcrumbs items={[{ name: "회사소개", href: "/about" }, { name: "인증·자격증" }]} className="text-white/70 mb-5" />
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
@@ -100,7 +100,7 @@ export default async function CertificationsPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={c.image_url} alt={c.title} className="w-full aspect-[3/4] object-cover rounded-lg mb-3 border border-border" />
                     ) : (
-                      <div className="w-full aspect-[3/4] bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg mb-3 flex items-center justify-center border border-border">
+                      <div className="w-full aspect-[3/4] bg-primary/5 rounded-lg mb-3 flex items-center justify-center border border-border">
                         <ShieldCheck className="h-12 w-12 text-primary/40" />
                       </div>
                     )}
