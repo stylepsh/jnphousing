@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Menu, X, ChevronDown, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
@@ -39,23 +38,13 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 export function Header() {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [mobileGroup, setMobileGroup] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // 홈 최상단(스크롤 전)에서는 투명 배경 + 흰 텍스트, 그 외엔 흰 배경 + 어두운 텍스트
-  const transparent = isHome && !scrolled;
+  // 히어로가 밝은 흰 배경이라 헤더는 항상 솔리드(흰 배경 + 어두운 텍스트)로 고정.
+  const transparent = false;
 
   function openWithDelay(label: string) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
