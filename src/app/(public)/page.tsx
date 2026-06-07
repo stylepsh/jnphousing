@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
   ShieldCheck, TrendingUp, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
-  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Star, Clock,
+  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Star, Clock, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
@@ -199,6 +199,65 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ============ 맡기기 전 → 맡긴 후 (전단지) ============ */}
+      <section className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <p className="text-overline text-primary mb-4">맡기는 순간</p>
+            <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+              건물이 이렇게 달라집니다
+            </h2>
+            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+              방치하던 골칫거리에서 <strong className="text-foreground">매달 들어오는 자산</strong>으로.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5 items-stretch">
+            {/* 맡기기 전 */}
+            <div className="rounded-2xl border border-[#E8EBF0] bg-white p-7">
+              <p className="text-sm font-bold text-muted-foreground mb-5">맡기기 전</p>
+              <ul className="space-y-3.5">
+                {[
+                  "몇 달째 비어 있는 공실",
+                  "쌓여만 가는 관리비·공과금",
+                  "안 나가는 세입자, 명도 분쟁",
+                  "임차권등기로 손도 못 대는 세대",
+                  "무단 점유자 때문에 골치",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-[15px] text-foreground/70">
+                    <span className="h-5 w-5 rounded-full bg-[#F0F2F6] flex items-center justify-center shrink-0 mt-0.5"><X className="h-3 w-3 text-muted-foreground" /></span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* 맡긴 후 */}
+            <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-7">
+              <p className="text-sm font-bold text-primary mb-5">맡긴 후</p>
+              <ul className="space-y-3.5">
+                {[
+                  "공실 채워 매달 임대료 정산",
+                  "관리비 부담 대신 수익 발생",
+                  "명도·분쟁 전문 대응으로 해결",
+                  "임차권등기 세대까지 운영",
+                  "불법 점유 합법 절차로 퇴거",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-[15px] font-medium text-foreground">
+                    <span className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5"><CheckCircle className="h-3.5 w-3.5 text-primary" /></span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <p className="mt-10 text-center text-lg md:text-xl font-bold text-foreground">
+            방치하면 손실, <span className="text-primary">맡기면 매달 수익</span>입니다.
+          </p>
         </div>
       </section>
 
