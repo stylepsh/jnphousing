@@ -253,6 +253,27 @@ export default async function HomePage() {
             </div>
           </div>
 
+          {/* 수익 예시 — 먼저 맡겼더니 돈이 들어온다 */}
+          <div className="mt-10 grid sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 animate-fade-in">
+              <p className="text-sm font-semibold text-primary mb-2">방치 건물 수익화 예시</p>
+              <p className="text-sm text-muted-foreground">공실 <span className="font-semibold text-foreground">50세대</span> × 월 <span className="font-semibold text-foreground">50만원</span></p>
+              <p className="mt-3 text-3xl md:text-4xl font-black text-primary tracking-tight tabular-nums">
+                월 <CountUp end={2500} className="tabular-nums" />만원
+              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground">공실을 채워 <strong className="text-foreground">매월 임대료로 정산</strong> — 턴키 운영</p>
+            </div>
+            <div className="rounded-2xl border border-[#E8EBF0] bg-white p-6 animate-fade-in" style={{ animationDelay: "90ms" }}>
+              <p className="text-sm font-semibold text-foreground mb-2">실제 운영 — 인천 박○○ 님</p>
+              <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">286세대</span> × 월평균 50만원</p>
+              <p className="mt-3 text-3xl md:text-4xl font-black text-foreground tracking-tight tabular-nums">
+                월 임대 <CountUp end={286} className="tabular-nums" />세대 규모
+              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground">대형 건물도 <strong className="text-foreground">통째로 맡아</strong> 안정적으로 운영 중</p>
+            </div>
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">※ 수익은 건물 상태·세대수에 따라 다르며, 무료 검토 후 안내드립니다.</p>
+
           <p className="mt-10 text-center text-lg md:text-xl font-bold text-foreground">
             방치하면 손실, <span className="text-primary">맡기면 매달 수익</span>입니다.
           </p>
@@ -637,7 +658,7 @@ export default async function HomePage() {
 
           {/* 데스크톱: 가로 진행 + 연결선 */}
           <div className="hidden md:block relative">
-            <div className="absolute top-6 left-[10%] right-[10%] h-px bg-border/60" />
+            <div className="absolute top-7 left-[10%] right-[10%] h-0.5 bg-primary/15" />
             <div className="grid grid-cols-5 gap-3 relative">
               {[
                 { step: "01", title: "문의 접수",  desc: "전화·카톡·온라인 폼 청취" },
@@ -645,12 +666,12 @@ export default async function HomePage() {
                 { step: "03", title: "위탁 계약",  desc: "수수료·범위·기간 명문화" },
                 { step: "04", title: "관리 운영",  desc: "수금·민원·공실·분쟁 일괄 대응" },
                 { step: "05", title: "월 정산",    desc: "수익·지출·진행상황 보고서 발송" },
-              ].map(s => (
-                <div key={s.step} className="text-center">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm relative z-10 mb-5">
+              ].map((s, i) => (
+                <div key={s.step} className="text-center animate-fade-in group" style={{ animationDelay: `${i * 130}ms` }}>
+                  <div className="mx-auto h-14 w-14 rounded-full bg-primary text-white flex items-center justify-center font-bold relative z-10 mb-5 shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5">
                     {s.step}
                   </div>
-                  <h3 className="font-bold text-base mb-2">{s.title}</h3>
+                  <h3 className="font-bold text-base mb-2 transition-colors group-hover:text-primary">{s.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed px-2">{s.desc}</p>
                 </div>
               ))}
