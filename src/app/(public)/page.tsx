@@ -5,17 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
-  ShieldCheck, TrendingUp, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
-  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Star, Clock, X,
+  ShieldCheck, TrendingUp, Pin, Calendar, Phone,
+  Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Clock, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
-import { CaseCarousel } from "@/components/shared/CaseCarousel";
 import { BeforeAfterCard } from "@/components/shared/BeforeAfterCard";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
-import { CASE_STUDIES } from "@/lib/data/cases";
 import { TRANSFORMATIONS } from "@/lib/data/transformations";
 import { HERO_IMAGES, SAMPLE_PROPERTIES, CATEGORY_IMAGES } from "@/lib/data/site-images";
 import type { Property } from "@/types/database";
@@ -297,59 +295,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ 이런 고민이 있으신가요? (공감) ============ */}
-      <section className="bg-background py-24 md:py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="max-w-2xl mb-14">
-            <p className="text-overline text-primary mb-4">고객의 고민</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-              이런 고민이 있으신가요?
-            </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
-              임대인이라면 누구나 겪는 문제들. JNP가 대신 맡아 해결합니다.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: Building2, title: "장기 공실", quote: "공실이 몇 달째 그대로예요. 광고를 올려도 문의가 없어요." },
-              { icon: Wallet, title: "월세 연체·수금", quote: "월세가 자꾸 밀려요. 매번 독촉 전화하기도 지칩니다." },
-              { icon: Wrench, title: "끝없는 시설관리", quote: "누수·보일러·청소… 연락 올 때마다 직접 뛰어다녀요." },
-              { icon: MessageCircle, title: "세입자 민원", quote: "한밤중에도 민원 전화가 와요. 일상이 안 됩니다." },
-              { icon: ShieldCheck, title: "HUG 보증사고", quote: "HUG 대위변제 통보가 왔는데, 뭘 해야 할지 모르겠어요." },
-            ].map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.title} className="bg-white rounded-2xl p-7 border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300 group">
-                  <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">{c.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">&quot;{c.quote}&quot;</p>
-                </div>
-              );
-            })}
-
-            {/* 6번 — 경매 건물 (전문 서비스, 앰버 차별화) */}
-            <a href="/auction" className="bg-white rounded-2xl p-7 border border-amber-200 hover:border-amber-400 hover:shadow-xl transition-all duration-300 group cursor-pointer relative overflow-hidden block">
-              <div className="absolute top-3 right-3">
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">전문 서비스</span>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Gavel className="h-6 w-6 text-amber-600" />
-              </div>
-              <h3 className="font-bold text-lg mb-2">경매 건물 공실 방치</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                &quot;어차피 경매 넘어갈 건데... 공실을 그냥 놔두고 있어요. 매달 비용만 나가요.&quot;
-              </p>
-              <span className="mt-4 text-sm font-semibold text-amber-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                전문 상담 받기 <ArrowRight className="h-3.5 w-3.5" />
-              </span>
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* ============ 6종 시설관리 카테고리 — 실제 이미지 ============ */}
       <section className="bg-white py-24 md:py-32 border-y border-border/40">
         <div className="mx-auto max-w-7xl px-6">
@@ -584,49 +529,41 @@ export default async function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { quote: "HUG 대위변제 통보 받고 막막했는데, JNP에서 전 과정을 동행해주셔서 건물을 포기하지 않을 수 있었습니다.", initial: "K", color: "bg-primary/10 text-primary", who: "부천 중동 오피스텔 소유주", result: "공실률 40% → 12% 개선" },
-              { quote: "3년째 공실이던 건물이 4개월 만에 정상화됐습니다. 매월 투명한 보고서를 받으니 마음이 놓입니다.", initial: "P", color: "bg-emerald-50 text-emerald-600", who: "서울 관악구 빌라 소유주", result: "수금률 60% → 95% 개선" },
-              { quote: "세입자 분쟁 때문에 스트레스가 극심했는데, JNP가 중재부터 법적 절차 안내까지 전부 처리해주셨어요.", initial: "L", color: "bg-purple-50 text-purple-600", who: "인천 부평 다세대 소유주", result: "분쟁 해결 완료 · 2개월" },
+              { initial: "K", who: "부천 중동 김○○ 님", ask: "HUG 대위변제 통보 받았는데 어떻게 해야 하나요…", reply: "통보서부터 같이 보고, 전 과정 동행해 드릴게요.", quote: "전 과정 동행해주셔서 건물을 포기하지 않았어요. 정말 감사합니다 🙏", result: "공실률 40% → 12% 개선" },
+              { initial: "P", who: "서울 관악구 박○○ 님", ask: "3년째 공실인데… 이런 건물도 되나요?", reply: "단계적 수선 + 임차인 매칭으로 충분히 가능합니다.", quote: "4개월 만에 정상화됐어요. 매월 투명한 보고서까지 받으니 마음이 놓입니다.", result: "수금률 60% → 95% 개선" },
+              { initial: "L", who: "인천 부평 이○○ 님", ask: "세입자 분쟁 때문에 잠을 못 자요…", reply: "현장 중재부터 법적 절차 안내까지 저희가 맡습니다.", quote: "중재부터 절차까지 전부 처리해주셔서 스트레스가 사라졌습니다.", result: "분쟁 해결 완료 · 2개월" },
             ].map((t, i) => (
-              <div key={i} className="bg-white rounded-2xl p-8 border border-blue-100 shadow-sm">
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  ))}
+              <div key={i} className="rounded-2xl overflow-hidden border border-[#E8EBF0] shadow-sm bg-white">
+                {/* 채팅방 헤더 */}
+                <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#A7BBD0]">
+                  <div className="h-8 w-8 rounded-xl bg-white/85 flex items-center justify-center text-xs font-bold text-primary">{t.initial}</div>
+                  <span className="text-sm font-semibold text-[#1c2b4a]">{t.who}</span>
                 </div>
-                <blockquote className="text-foreground/85 leading-relaxed mb-6">&quot;{t.quote}&quot;</blockquote>
-                <div className="flex items-center gap-3 pt-4 border-t border-border/60">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${t.color}`}>{t.initial}</div>
-                  <div>
-                    <p className="text-sm font-semibold">{t.who}</p>
-                    <p className="text-xs text-muted-foreground">{t.result}</p>
+                {/* 대화 */}
+                <div className="bg-[#B2C7DA] px-3.5 py-5 space-y-3 min-h-[180px]">
+                  <div className="flex items-end gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-primary text-white text-[9px] font-bold flex items-center justify-center shrink-0">JNP</div>
+                    <div className="max-w-[78%] bg-white rounded-2xl rounded-tl-md px-3 py-2 text-[13px] leading-snug text-foreground shadow-sm">{t.reply}</div>
                   </div>
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] bg-[#FEE500] rounded-2xl rounded-tr-md px-3 py-2 text-[13px] leading-snug text-[#3C1E1E] shadow-sm">{t.quote}</div>
+                  </div>
+                </div>
+                {/* 결과 */}
+                <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white border-t border-[#E8EBF0]">
+                  <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-xs font-medium text-foreground/70">{t.result}</span>
                 </div>
               </div>
             ))}
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            * 실제 고객 후기이며, 개인정보 보호를 위해 이니셜로 표기합니다.
+            * 실제 상담 내용을 바탕으로 재구성했으며, 개인정보 보호를 위해 이니셜로 표기합니다.
           </p>
         </div>
       </section>
 
-      {/* ============ Case Studies ============ */}
-      <section className="bg-[#f5f7fb] py-24 md:py-32 border-y border-border/40">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-14 max-w-2xl">
-            <p className="text-overline text-primary mb-4">해결 사례</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-              실제 해결 사례
-            </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
-              JNP가 처리한 위탁임대 사건. 개인정보 보호를 위해 가명·요약 처리.
-            </p>
-          </div>
-          <CaseCarousel cases={CASE_STUDIES} />
-        </div>
-      </section>
 
       {/* ============ 5단계 프로세스 ============ */}
       <section className="bg-background py-24 md:py-32">
