@@ -529,25 +529,85 @@ export default async function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { initial: "K", who: "부천 중동 김○○ 님", ask: "HUG 대위변제 통보 받았는데 어떻게 해야 하나요…", reply: "통보서부터 같이 보고, 전 과정 동행해 드릴게요.", quote: "전 과정 동행해주셔서 건물을 포기하지 않았어요. 정말 감사합니다 🙏", result: "공실률 40% → 12% 개선" },
-              { initial: "P", who: "서울 관악구 박○○ 님", ask: "3년째 공실인데… 이런 건물도 되나요?", reply: "단계적 수선 + 임차인 매칭으로 충분히 가능합니다.", quote: "4개월 만에 정상화됐어요. 매월 투명한 보고서까지 받으니 마음이 놓입니다.", result: "수금률 60% → 95% 개선" },
-              { initial: "L", who: "인천 부평 이○○ 님", ask: "세입자 분쟁 때문에 잠을 못 자요…", reply: "현장 중재부터 법적 절차 안내까지 저희가 맡습니다.", quote: "중재부터 절차까지 전부 처리해주셔서 스트레스가 사라졌습니다.", result: "분쟁 해결 완료 · 2개월" },
+              {
+                initial: "K", who: "부천 중동 김○○ 님", result: "공실률 40% → 12% 개선",
+                msgs: [
+                  { r: "owner", t: "HUG 대위변제 통보를 받았는데… 뭘 해야 할지 막막해요." },
+                  { r: "jnp", t: "통보서부터 같이 보겠습니다. 처음부터 끝까지 동행해 드릴게요." },
+                  { r: "owner", t: "건물 포기해야 하나 싶었거든요." },
+                  { r: "jnp", t: "포기 안 하셔도 됩니다. 임차인 정리·재임대까지 저희가 맡습니다 🙂" },
+                  { r: "owner", t: "덕분에 건물 지켰습니다. 정말 감사합니다 🙏" },
+                ],
+              },
+              {
+                initial: "P", who: "서울 관악구 박○○ 님", result: "수금률 60% → 95% 개선",
+                msgs: [
+                  { r: "owner", t: "3년째 공실이에요… 이런 건물도 가능할까요?" },
+                  { r: "jnp", t: "단계적 수선 + 다채널 광고로 충분히 가능합니다." },
+                  { r: "owner", t: "광고를 올려도 문의가 없었거든요." },
+                  { r: "jnp", t: "채널·가격 전략부터 다시 잡겠습니다. 4개월 목표로 가보시죠." },
+                  { r: "owner", t: "정말 4개월 만에 다 찼어요. 매월 보고서까지 받으니 안심돼요." },
+                ],
+              },
+              {
+                initial: "L", who: "인천 부평 이○○ 님", result: "분쟁 해결 완료 · 2개월",
+                msgs: [
+                  { r: "owner", t: "세입자 분쟁 때문에 잠을 못 자요…" },
+                  { r: "jnp", t: "현장 중재부터 법적 절차 안내까지 저희가 맡습니다." },
+                  { r: "owner", t: "직접 연락하는 게 너무 스트레스였어요." },
+                  { r: "jnp", t: "이제 연락은 저희한테 오게 하세요. 사장님은 결과만 받으시면 됩니다." },
+                  { r: "owner", t: "2개월 만에 정리됐어요. 살 것 같습니다." },
+                ],
+              },
+              {
+                initial: "J", who: "서울 양천 정○○ 님", result: "방치 → 매월 임대수익 발생",
+                msgs: [
+                  { r: "owner", t: "경매 넘어갈 건물인데… 그냥 비워두고 있어요." },
+                  { r: "jnp", t: "낙찰 전까지도 수익화 가능합니다. 방치하면 관리비만 나가요." },
+                  { r: "owner", t: "어차피 넘어갈 텐데 의미가 있나요?" },
+                  { r: "jnp", t: "그 기간을 수익으로 바꿔드립니다. 우선 무료로 검토해 드릴게요." },
+                  { r: "owner", t: "맡기고 나서 매달 입금이 들어와서 놀랐습니다." },
+                ],
+              },
+              {
+                initial: "C", who: "경기 부천 최○○ 님", result: "명도 완료 + 재임대",
+                msgs: [
+                  { r: "owner", t: "무단 점유자가 안 나가요. 어떻게 하죠?" },
+                  { r: "jnp", t: "제휴 법무사와 함께 합법 절차로 신속히 정리해 드립니다." },
+                  { r: "owner", t: "괜히 분쟁이 커질까 겁났어요." },
+                  { r: "jnp", t: "안전하게 진행하니 걱정 마세요. 명도 후 재임대까지 맡겠습니다." },
+                  { r: "owner", t: "깔끔하게 정리되고 새 임차인까지 들어왔어요." },
+                ],
+              },
+              {
+                initial: "H", who: "서울 성북 한○○ 님", result: "민원·시설 일괄 위탁",
+                msgs: [
+                  { r: "owner", t: "누수·보일러·청소… 연락 올 때마다 제가 뛰어다녀요." },
+                  { r: "jnp", t: "시설·하자·청소 전부 저희가 맡습니다. 월 보고서만 받으세요." },
+                  { r: "owner", t: "한밤중 민원 전화가 제일 힘들었어요." },
+                  { r: "jnp", t: "이제 입주민 민원도 저희 창구로 받습니다 🙂" },
+                  { r: "owner", t: "전화에서 해방됐어요. 진작 맡길걸 그랬습니다." },
+                ],
+              },
             ].map((t, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden border border-[#E8EBF0] shadow-sm bg-white">
+              <div key={i} className="rounded-2xl overflow-hidden border border-[#E8EBF0] shadow-sm bg-white animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
                 {/* 채팅방 헤더 */}
                 <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#A7BBD0]">
-                  <div className="h-8 w-8 rounded-xl bg-white/85 flex items-center justify-center text-xs font-bold text-primary">{t.initial}</div>
+                  <div className="h-8 w-8 rounded-full bg-white/90 flex items-center justify-center text-xs font-bold text-primary">{t.initial}</div>
                   <span className="text-sm font-semibold text-[#1c2b4a]">{t.who}</span>
                 </div>
-                {/* 대화 */}
-                <div className="bg-[#B2C7DA] px-3.5 py-5 space-y-3 min-h-[180px]">
-                  <div className="flex items-end gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-primary text-white text-[9px] font-bold flex items-center justify-center shrink-0">JNP</div>
-                    <div className="max-w-[78%] bg-white rounded-2xl rounded-tl-md px-3 py-2 text-[13px] leading-snug text-foreground shadow-sm">{t.reply}</div>
-                  </div>
-                  <div className="flex justify-end">
-                    <div className="max-w-[85%] bg-[#FEE500] rounded-2xl rounded-tr-md px-3 py-2 text-[13px] leading-snug text-[#3C1E1E] shadow-sm">{t.quote}</div>
-                  </div>
+                {/* 대화 — JNP 노랑(우), 소유주 흰색(좌) */}
+                <div className="bg-[#B2C7DA] px-3.5 py-4 space-y-2.5">
+                  {t.msgs.map((m, j) => m.r === "owner" ? (
+                    <div key={j} className="flex items-end gap-1.5">
+                      <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[9px] font-bold text-primary shrink-0">{t.initial}</div>
+                      <div className="max-w-[78%] bg-white rounded-2xl rounded-bl-md px-3 py-2 text-[13px] leading-snug text-foreground shadow-sm">{m.t}</div>
+                    </div>
+                  ) : (
+                    <div key={j} className="flex justify-end">
+                      <div className="max-w-[80%] bg-[#FEE500] rounded-2xl rounded-br-md px-3 py-2 text-[13px] leading-snug text-[#3C1E1E] shadow-sm">{m.t}</div>
+                    </div>
+                  ))}
                 </div>
                 {/* 결과 */}
                 <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white border-t border-[#E8EBF0]">
@@ -633,78 +693,6 @@ export default async function HomePage() {
               <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 현장 진단 무료</span>
               <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 견적 무료</span>
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ 인증·신뢰 ============ */}
-      <section className="bg-[#f5f7fb] py-20 border-y border-border/40">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="max-w-2xl mx-auto text-center mb-12">
-            <p className="text-overline text-primary mb-4">공식 등록·인증</p>
-            <h2 className="font-bold tracking-tight" style={{ fontSize: "clamp(24px, 3vw, 32px)", letterSpacing: "-0.025em" }}>
-              공식 등록 · 인증
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/40 rounded-2xl overflow-hidden">
-            {[
-              { label: "사업자등록", value: COMPANY.legal.registrationNumber, sub: "부천세무서" },
-              { label: "전문 분야", value: "위탁임대", sub: COMPANY.business.category },
-              { label: "운영 시작", value: "1999", sub: "년부터 운영" },
-              { label: "관리 자산", value: `${COMPANY_STATS.operatedBuildings}+`, sub: `${COMPANY_STATS.managedUnits}+ 세대` },
-            ].map((c) => (
-              <div key={c.label} className="bg-white p-6 md:p-7 text-center">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">{c.label}</p>
-                <p className="text-xl md:text-2xl font-bold text-primary tracking-tight">{c.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{c.sub}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            * HUG 협력업체 인증 · 부동산 협회 등록증 등 추가 인증서는{" "}
-            <Link href="/about" className="underline hover:text-primary">회사소개</Link> 페이지 참조
-          </p>
-        </div>
-      </section>
-
-      {/* ============ QR 안내 (입주민) ============ */}
-      <section className="bg-background py-20 md:py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="rounded-3xl bg-[#F7F8FB] border border-[#E8EBF0] p-8 md:p-14 text-foreground relative overflow-hidden">
-            <div className="relative grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <p className="text-overline text-primary mb-3">입주민 안내</p>
-                <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", letterSpacing: "-0.025em" }}>
-                  건물에서 본 QR을<br />스캔하셨나요?
-                </h2>
-                <p className="mt-5 text-muted-foreground leading-relaxed text-base">
-                  입주민 페이지에서 민원·AS를 접수하고,
-                  공지사항과 계약 서류를 한 곳에서 확인하세요.
-                </p>
-              </div>
-              <div className="grid gap-3">
-                <Button asChild size="lg" className="bg-primary text-white hover:bg-[#15233f] justify-start h-auto py-5 px-6 font-semibold">
-                  <Link href="/tenant/complaint" className="flex items-center gap-4">
-                    <MessageCircle className="h-5 w-5" />
-                    <div className="text-left flex-1">
-                      <div>민원/AS 접수</div>
-                      <div className="text-xs opacity-80 font-normal mt-0.5">전화 없이 간편 온라인 접수</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="bg-white border-[#D9DEE8] text-foreground hover:bg-[#F0F2F6] justify-start h-auto py-5 px-6 font-semibold">
-                  <Link href="/tenant" className="flex items-center gap-4">
-                    <FileText className="h-5 w-5" />
-                    <div className="text-left flex-1">
-                      <div>공지사항·서류</div>
-                      <div className="text-xs opacity-70 font-normal mt-0.5">계약서·안내문·서식 다운로드</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
