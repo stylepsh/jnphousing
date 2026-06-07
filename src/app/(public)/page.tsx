@@ -21,9 +21,9 @@ import { HERO_IMAGES, SAMPLE_PROPERTIES, CATEGORY_IMAGES } from "@/lib/data/site
 import type { Property } from "@/types/database";
 
 export const metadata: Metadata = {
-  title: "JNP주택관리 — 위탁임대·건물관리 전문 27년차",
+  title: "JNP주택관리 — 위탁임대·건물관리 전문",
   description:
-    "부천·경기·서울·인천 위탁임대 27년. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-7508-6916",
+    "부천·경기·서울·인천 위탁임대 전문. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-7508-6916",
   keywords: [
     "부천 위탁임대", "부천 주택관리", "위탁임대관리",
     "HUG 대위변제", "전세사기", "보증사고",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "JNP주택관리", "제이앤피", "경기 임대관리",
   ],
   openGraph: {
-    title: "JNP주택관리 · 위탁임대 27년 전문",
+    title: "JNP주택관리 · 위탁임대 전문",
     description: "부천 본점 / HUG 대위변제·전세사기·부실 건물 정상화 / 운영 32+ 건물 · 관리 480+ 세대",
     url: "https://jnphousing.co.kr",
     siteName: "JNP주택관리",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "JNP주택관리 · 위탁임대 27년 전문",
+    title: "JNP주택관리 · 위탁임대 전문",
     description: "부천 위탁임대 / HUG 대위변제 · 전세사기 · 부실 건물 정상화",
   },
   alternates: { canonical: "https://jnphousing.co.kr" },
@@ -341,83 +341,43 @@ export default async function HomePage() {
             </Button>
           </div>
 
-          {properties.length === 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-              {SAMPLE_PROPERTIES.map((p, idx) => (
-                <Link key={idx} href="/properties" className="block animate-fade-in">
-                  <div className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-2.5 py-1 rounded-full bg-white/95 text-xs font-semibold text-[#0a1730] backdrop-blur">
-                        {PROPERTY_TYPE_LABEL[p.type] ?? p.type}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <h3 className="font-bold text-xl tracking-tight">{p.name}</h3>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-white/85">
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {p.region}
+          {(() => {
+            const cards = properties.length === 0
+              ? SAMPLE_PROPERTIES.map((p, idx) => ({ key: String(idx), href: "/properties", name: p.name, type: p.type, loc: p.region, units: p.units }))
+              : properties.map((p) => ({ key: p.id, href: `/properties/${p.id}`, name: p.name, type: p.type, loc: p.address ?? "", units: p.total_units }));
+            return (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
+                {cards.map((p) => (
+                  <Link key={p.key} href={p.href} className="block animate-fade-in group">
+                    <div className="h-full rounded-2xl border border-[#E8EBF0] bg-white p-6 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="h-11 w-11 rounded-xl bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-xs font-semibold text-foreground/60">
+                          {PROPERTY_TYPE_LABEL[p.type] ?? p.type}
                         </span>
-                        <span>•</span>
-                        <span>{p.units}세대</span>
                       </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-              {properties.map((p, idx) => (
-                <Link key={p.id} href={`/properties/${p.id}`} className="block animate-fade-in">
-                  <div className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900">
-                    {p.thumbnail_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.thumbnail_url}
-                        alt={p.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={SAMPLE_PROPERTIES[idx % SAMPLE_PROPERTIES.length].image}
-                        alt={p.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-2.5 py-1 rounded-full bg-white/95 text-xs font-semibold text-[#0a1730] backdrop-blur">
-                        {PROPERTY_TYPE_LABEL[p.type] ?? p.type}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <h3 className="font-bold text-xl tracking-tight">{p.name}</h3>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-white/85">
-                        {p.address && (
+                      <h3 className="font-bold text-lg tracking-tight text-foreground">{p.name}</h3>
+                      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        {p.loc && (
                           <span className="inline-flex items-center gap-1 line-clamp-1">
-                            <MapPin className="h-3 w-3 shrink-0" /> {p.address}
+                            <MapPin className="h-3.5 w-3.5 shrink-0" /> {p.loc}
                           </span>
                         )}
-                        <span>•</span>
-                        <span className="shrink-0">{p.total_units}세대</span>
+                        {p.loc && <span>·</span>}
+                        <span className="shrink-0">{p.units}세대</span>
+                      </div>
+                      <div className="mt-5 pt-4 border-t border-[#F0F2F6] flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">JNP 위탁 운영 중</span>
+                        <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                  </Link>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -694,7 +654,7 @@ export default async function HomePage() {
             {[
               { label: "사업자등록", value: COMPANY.legal.registrationNumber, sub: "부천세무서" },
               { label: "전문 분야", value: "위탁임대", sub: COMPANY.business.category },
-              { label: "운영 경력", value: `${COMPANY_STATS.yearsAsTeam}년`, sub: "1999년 시작" },
+              { label: "운영 시작", value: "1999", sub: "년부터 운영" },
               { label: "관리 자산", value: `${COMPANY_STATS.operatedBuildings}+`, sub: `${COMPANY_STATS.managedUnits}+ 세대` },
             ].map((c) => (
               <div key={c.label} className="bg-white p-6 md:p-7 text-center">
