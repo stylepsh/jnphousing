@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
-  ShieldCheck, TrendingUp, Megaphone, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
+  ShieldCheck, TrendingUp, Pin, Calendar, Phone, Wallet, Wrench, Gavel,
   Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Star, Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +17,7 @@ import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
 import { CASE_STUDIES } from "@/lib/data/cases";
 import { TRANSFORMATIONS } from "@/lib/data/transformations";
-import { HERO_IMAGES, SAMPLE_PROPERTIES, CATEGORY_IMAGES, CTA_IMAGE } from "@/lib/data/site-images";
+import { HERO_IMAGES, SAMPLE_PROPERTIES, CATEGORY_IMAGES } from "@/lib/data/site-images";
 import type { Property } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -107,89 +107,68 @@ export default async function HomePage() {
     <>
       <LocalBusinessJsonLd />
 
-      {/* ============ HERO — 풀스크린 빌딩 이미지 ============ */}
-      <section className="relative min-h-[680px] md:min-h-[820px] flex items-center text-white overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={HERO_IMAGES.primary}
-          alt="JNP주택관리가 운영하는 모던 주거 건물"
-          className="absolute inset-0 w-full h-full object-cover"
-          fetchPriority="high"
-        />
-        {/* 블루 그라데이션 오버레이 — 대기업 신뢰감 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1B4DDB]/90 via-[#2563EB]/75 to-[#3B82F6]/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1340B8]/75 via-transparent to-transparent" />
-
-        <div className="relative mx-auto max-w-7xl w-full px-6 py-24 md:py-32 lg:py-40">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-xs font-medium tracking-wide mb-8 animate-fade-in">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
+      {/* ============ HERO — 흰 배경 분할형 ============ */}
+      <section className="bg-white border-b border-[#E8EBF0]">
+        <div className="mx-auto max-w-7xl px-6 py-16 md:py-24 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* 좌: 텍스트 */}
+          <div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-xs font-medium text-foreground/70 mb-7">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
               상담 무료 · 계약 의무 없음
             </div>
 
-            <h1
-              className="font-bold tracking-tighter leading-[1.08] animate-fade-in"
-              style={{
-                fontSize: "clamp(34px, 6.5vw, 68px)",
-                letterSpacing: "-0.035em",
-                fontFeatureSettings: '"ss01"',
-              }}
-            >
+            <h1 className="font-bold tracking-tight text-foreground leading-[1.14]" style={{ fontSize: "clamp(32px, 5vw, 56px)", letterSpacing: "-0.035em" }}>
               혼자 감당하기 힘든 건물,<br />
-              <span className="bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">이제 JNP가 책임집니다.</span>
+              <span className="text-primary">이제 JNP가 책임집니다.</span>
             </h1>
 
-            {/* 서브카피 — 키워드 인라인 뱃지 + 한 줄 */}
-            <div className="mt-7 max-w-2xl animate-fade-in" style={{ animationDelay: "120ms" }}>
-              <div className="flex flex-wrap gap-2">
-                {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
-                  <span key={k} className="text-sm bg-white/10 rounded-full px-2.5 py-0.5 text-white/85">{k}</span>
-                ))}
-                <a href="/auction" className="text-sm bg-amber-400/20 text-amber-200 border border-amber-300/30 rounded-full px-2.5 py-0.5 font-bold hover:bg-amber-400/30 transition-colors">경매 건물</a>
-              </div>
-              <p className="mt-4 text-base md:text-lg text-white/80 leading-relaxed">
-                27년 현장 경험으로, 포기하고 싶었던 건물을 다시 살립니다.
-              </p>
+            <p className="mt-6 text-base md:text-lg text-foreground/65 leading-relaxed max-w-xl">
+              임대인의 골치 아픈 건물을 대신 운영해, 손 안 대고 수익을 받게 해드리는 위탁운영 회사입니다.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
+                <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-foreground/60">{k}</span>
+              ))}
+              <a href="/auction" className="text-xs px-2.5 py-1 rounded-full border border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors">경매 건물 ›</a>
             </div>
 
-            <div className="mt-9 flex flex-wrap gap-3 animate-fade-in" style={{ animationDelay: "240ms" }}>
-              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-white text-[#1B4DDB] hover:bg-blue-50 h-14 px-7 rounded-xl text-base font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-[#15233f] h-12 px-7 rounded-xl text-base font-semibold transition-all">
                 <Phone className="h-5 w-5" /> 지금 무료 상담
               </a>
-              <a href="#transformation" className="inline-flex items-center justify-center gap-2 bg-white/10 text-white border border-white/30 hover:bg-white/20 h-14 px-7 rounded-xl text-base font-semibold transition-all">
+              <a href="#transformation" className="inline-flex items-center justify-center gap-2 bg-white text-foreground border border-[#D9DEE8] hover:bg-[#F4F6FA] h-12 px-7 rounded-xl text-base font-semibold transition-all">
                 해결 사례 보기 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
 
-            {/* 신뢰 배지 한 줄 */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-8 text-xs text-white/65 animate-fade-in" style={{ animationDelay: "300ms" }}>
-              <span>🏢 운영 건물 {COMPANY_STATS.operatedBuildings}+</span>
-              <span>👨‍👩‍👧‍👦 관리 세대 {COMPANY_STATS.managedUnits}+</span>
-              <span>⚖️ 분쟁 해결 {COMPANY_STATS.resolvedDisputes}+</span>
-              <span>📅 경력 {COMPANY.yearsOfExperience}년</span>
+            <div className="mt-10 grid grid-cols-3 gap-6 max-w-md border-t border-[#E8EBF0] pt-6">
+              {[
+                { end: COMPANY_STATS.operatedBuildings, suffix: "+", label: "운영 건물" },
+                { end: COMPANY_STATS.managedUnits,      suffix: "+", label: "관리 세대" },
+                { end: COMPANY_STATS.resolvedDisputes,  suffix: "+", label: "분쟁 해결" },
+              ].map((s, i) => (
+                <div key={i}>
+                  <p className="text-2xl md:text-3xl font-bold tabular-nums tracking-tight text-foreground">
+                    <CountUp end={s.end} className="tabular-nums" />{s.suffix}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* 통계 그리드 — 모바일 2x2, 카운트업 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mt-16 md:mt-24 max-w-4xl animate-fade-in" style={{ animationDelay: "360ms" }}>
-            {[
-              { end: COMPANY_STATS.operatedBuildings, suffix: "+", label: "운영 건물" },
-              { end: COMPANY_STATS.managedUnits,      suffix: "+", label: "관리 세대" },
-              { end: COMPANY_STATS.resolvedDisputes,  suffix: "+", label: "해결 분쟁" },
-              { end: COMPANY.yearsOfExperience,       suffix: "년", label: "운영 경력" },
-            ].map((s, i) => (
-              <div key={i} className="border-l-2 border-white/20 pl-4">
-                <p className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight">
-                  <CountUp end={s.end} className="tabular-nums" />{s.suffix}
-                </p>
-                <p className="text-[11px] md:text-xs text-white/60 mt-1">{s.label}</p>
-              </div>
-            ))}
+          {/* 우: 이미지 */}
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={HERO_IMAGES.primary}
+              alt="JNP주택관리가 운영하는 주거 건물"
+              className="rounded-3xl w-full aspect-[5/4] object-cover border border-[#E8EBF0]"
+              fetchPriority="high"
+            />
           </div>
         </div>
-
-        {/* 하단 페이드 */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
       </section>
 
       {/* ============ BRAND PROMISE ============ */}
@@ -443,7 +422,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 위탁임대 — 위기 자산 회복 ============ */}
-      <section id="expertise" className="bg-gradient-to-b from-white to-[#F0F4FF] text-foreground py-24 md:py-32 relative overflow-hidden scroll-mt-20">
+      <section id="expertise" className="bg-[#F7F8FB] text-foreground py-24 md:py-32 relative overflow-hidden scroll-mt-20">
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="max-w-2xl mb-16">
             <p className="text-overline text-primary mb-4">전문 해결 영역</p>
@@ -451,7 +430,7 @@ export default async function HomePage() {
               위기 자산을 정상화하는 6가지 전문 영역
             </h2>
             <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
-              일반 관리회사가 손대지 않는 영역. {COMPANY.yearsOfExperience}년 현장 노하우로 직접 해결합니다.
+              일반 관리회사가 손대지 않는 영역. JNP가 직접 해결합니다.
             </p>
           </div>
 
@@ -462,7 +441,7 @@ export default async function HomePage() {
               { tag: "중재",    title: "세입자 분쟁 해결",        desc: "이러지도 저러지도 못하는 임차인 갈등을 현장 중재 + 법적 절차 안내로 정리" },
               { tag: "현금흐름", title: "임차 수익 흐름화",        desc: "소유권은 있지만 운영이 막힌 자산을 안정적 임대 수익으로 전환" },
               { tag: "법무동행", title: "변호사·법무 자문",        desc: "변호사비 부담 없이 시작. 실제 자문 네트워크 함께 동원" },
-              { tag: "경험",    title: `${COMPANY.yearsOfExperience}년 실전 조언`, desc: "교과서가 아닌 현장에서 쌓은 노하우. 케이스별 최적의 다음 한 수" },
+              { tag: "경험",    title: "현장 실전 조언", desc: "교과서가 아닌 현장에서 쌓은 노하우. 케이스별 최적의 다음 한 수" },
             ].map((s, i) => (
               <div key={i} className="bg-white border border-blue-100 rounded-2xl p-7 md:p-8 hover:shadow-xl hover:border-primary/40 transition-all duration-300">
                 <p className="text-[11px] font-semibold text-primary/60 mb-3">0{i + 1} · {s.tag}</p>
@@ -489,142 +468,65 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ 경매 건물 전문 서비스 (핵심 차별화) ============ */}
-      <section id="auction-service" className="relative py-24 md:py-32 overflow-hidden">
-        {/* 배경: 좌측에 짙은 블루 그라디언트, 우측에 밝은 블루 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B5B] via-[#1B4DDB] to-[#3B82F6]" />
-        {/* 패턴 오버레이 */}
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
-
-        <div className="relative mx-auto max-w-7xl px-6">
+      {/* ============ 경매 건물 전문 서비스 ============ */}
+      <section id="auction-service" className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32">
+        <div className="mx-auto max-w-7xl px-6">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-            {/* 좌측: 텍스트 영역 */}
-            <div className="text-white">
-              {/* 뱃지 */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-sm font-medium mb-8">
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            {/* 좌측: 텍스트 */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#E8EBF0] text-sm font-medium text-foreground/70 mb-7">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
                 경매 건물 전문 서비스
               </div>
-
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]">
-                경매 진행 중인 건물,<br/>
-                <span className="text-amber-300">공실로 손해만</span><br/>
-                보고 계십니까?
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.15] text-foreground">
+                경매 진행 중인 건물,<br />
+                <span className="text-primary">공실로 손해만</span> 보고 계십니까?
               </h2>
-
-              <div className="mt-8 space-y-4 text-base md:text-lg text-white/80 leading-relaxed">
-                <p>
-                  임차권등기 · HUG 대위변제 · 명도 문제 · 장기 공실 때문에<br className="hidden md:block" />
-                  건물을 사실상 <strong className="text-white">방치</strong>하고 계신 임대인분들이 많습니다.
-                </p>
-                <p>
-                  하지만 경매가 진행 중인 건물이라고 해서<br className="hidden md:block" />
-                  반드시 <strong className="text-white">수익 창출이 불가능한 것은 아닙니다.</strong>
-                </p>
+              <div className="mt-7 space-y-4 text-base md:text-lg text-foreground/65 leading-relaxed">
+                <p>임차권등기 · HUG 대위변제 · 명도 · 장기 공실 때문에 건물을 사실상 <strong className="text-foreground">방치</strong>하고 계신 임대인분들이 많습니다.</p>
+                <p>하지만 경매가 진행 중이라고 해서 반드시 <strong className="text-foreground">수익 창출이 불가능한 것은 아닙니다.</strong></p>
               </div>
-
-              {/* 경고 박스 */}
-              <div className="mt-8 p-5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm">
-                <p className="text-amber-300 font-semibold text-lg mb-2">
-                  &quot;어차피 경매 넘어갈 건데...&quot;
-                </p>
-                <p className="text-white/75 text-sm leading-relaxed">
-                  그 생각으로 공실을 방치하는 동안, 매달 관리비·공과금·청소비 등의 비용이<br/>
-                  지속적으로 발생하고 있습니다. <strong className="text-white">생각보다 큰 손실</strong>이 될 수 있습니다.
-                </p>
+              <div className="mt-7 p-5 rounded-xl bg-white border border-[#E8EBF0]">
+                <p className="text-primary font-semibold text-lg mb-2">&quot;어차피 경매 넘어갈 건데...&quot;</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">방치하는 동안에도 관리비·공과금·청소비는 매달 발생합니다. <strong className="text-foreground">생각보다 큰 손실</strong>이 될 수 있습니다.</p>
               </div>
-
-              {/* CTA */}
-              <div className="mt-10 flex flex-col sm:flex-row gap-3">
-                <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-14 px-8 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
-                  <Phone className="h-5 w-5" />
-                  010-9893-6882
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-[#15233f] h-12 px-7 rounded-xl text-base font-semibold transition-all">
+                  <Phone className="h-5 w-5" /> 010-9893-6882
                 </a>
-                <a href="/contact" className="inline-flex items-center justify-center gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 h-14 px-8 rounded-xl text-lg font-semibold transition-all">
-                  온라인 문의하기
-                  <ArrowRight className="h-5 w-5" />
+                <a href="/auction" className="inline-flex items-center justify-center gap-2 bg-white text-foreground border border-[#D9DEE8] hover:bg-[#F4F6FA] h-12 px-7 rounded-xl text-base font-semibold transition-all">
+                  자세히 보기 <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
-              <p className="mt-4 text-xs text-white/50">
-                ※ 건물 주소 또는 연락처를 문자로 남겨주시면 검토 후 연락드립니다.
-              </p>
+              <p className="mt-4 text-xs text-muted-foreground">※ 건물 주소·연락처를 문자로 남겨주시면 검토 후 연락드립니다.</p>
             </div>
 
             {/* 우측: 체크리스트 카드 */}
-            <div className="relative">
-              {/* 카드 배경 글로우 */}
-              <div className="absolute -inset-4 bg-white/5 rounded-3xl blur-xl" />
-
-              <div className="relative bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 md:p-10">
-                <h3 className="text-white text-xl font-bold mb-6">
-                  이런 건물을 전문적으로 검토합니다
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle className="h-4 w-4 text-amber-300" />
+            <div className="bg-white rounded-2xl border border-[#E8EBF0] p-8 md:p-10 shadow-sm">
+              <h3 className="text-foreground text-xl font-bold mb-6">이런 건물을 전문적으로 검토합니다</h3>
+              <div className="space-y-3">
+                {[
+                  { t: "임차권등기 세대가 많은 건물", d: "등기 정리와 임차인 관리를 동시에" },
+                  { t: "HUG 대위변제 진행 건물", d: "보증사고 이후 자산 정리 전문" },
+                  { t: "공실이 다수 발생한 건물", d: "낙찰 전까지 공실 수익화" },
+                  { t: "관리가 어려운 건물", d: "명도·시설·세입자 문제 종합 대응" },
+                  { t: "경매 진행 중인 건물", d: "낙찰 전 기간 동안 수익 극대화" },
+                ].map((c) => (
+                  <div key={c.t} className="flex items-start gap-3 p-3.5 rounded-xl bg-[#F7F8FB] border border-[#E8EBF0]">
+                    <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold">임차권등기 세대가 많은 건물</p>
-                      <p className="text-white/55 text-sm mt-0.5">등기 정리와 임차인 관리를 동시에</p>
+                      <p className="text-foreground font-semibold">{c.t}</p>
+                      <p className="text-muted-foreground text-sm mt-0.5">{c.d}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle className="h-4 w-4 text-amber-300" />
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold">HUG 대위변제 진행 건물</p>
-                      <p className="text-white/55 text-sm mt-0.5">보증사고 이후 자산 정리 전문</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle className="h-4 w-4 text-amber-300" />
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold">공실이 다수 발생한 건물</p>
-                      <p className="text-white/55 text-sm mt-0.5">낙찰 전까지 공실 수익화</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle className="h-4 w-4 text-amber-300" />
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold">관리가 어려운 건물</p>
-                      <p className="text-white/55 text-sm mt-0.5">명도·시설·세입자 문제 종합 대응</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/8 border border-white/10 hover:bg-white/12 transition-colors">
-                    <div className="h-8 w-8 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle className="h-4 w-4 text-amber-300" />
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold">경매 진행 중인 건물</p>
-                      <p className="text-white/55 text-sm mt-0.5">낙찰 전 기간 동안 수익 극대화</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-white/15">
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    이미 포기하셨던 건물이라도<br/>
-                    <strong className="text-white">한 번쯤은 확인해 보시기 바랍니다.</strong>
-                  </p>
-                  <p className="mt-3 text-amber-300 text-xs font-medium">
-                    ※ 경매 진행 건물, 임차권등기 다수 건물, 공실 다수 건물 우선 상담
-                  </p>
-                </div>
+                ))}
+              </div>
+              <div className="mt-7 pt-5 border-t border-[#E8EBF0]">
+                <p className="text-foreground/70 text-sm leading-relaxed">이미 포기하셨던 건물이라도 <strong className="text-foreground">한 번쯤은 확인해 보시기 바랍니다.</strong></p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -812,36 +714,35 @@ export default async function HomePage() {
       {/* ============ QR 안내 (입주민) ============ */}
       <section className="bg-background py-20 md:py-24">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="rounded-3xl bg-[#0a1730] p-8 md:p-14 text-white relative overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/[0.04]" />
+          <div className="rounded-3xl bg-[#F7F8FB] border border-[#E8EBF0] p-8 md:p-14 text-foreground relative overflow-hidden">
             <div className="relative grid md:grid-cols-2 gap-10 items-center">
               <div>
-                <p className="text-overline text-white/55 mb-3">입주민 안내</p>
-                <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", letterSpacing: "-0.025em" }}>
+                <p className="text-overline text-primary mb-3">입주민 안내</p>
+                <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", letterSpacing: "-0.025em" }}>
                   건물에서 본 QR을<br />스캔하셨나요?
                 </h2>
-                <p className="mt-5 text-white/75 leading-relaxed text-base">
+                <p className="mt-5 text-muted-foreground leading-relaxed text-base">
                   입주민 페이지에서 민원·AS를 접수하고,
                   공지사항과 계약 서류를 한 곳에서 확인하세요.
                 </p>
               </div>
               <div className="grid gap-3">
-                <Button asChild size="lg" className="bg-white text-[#0a1730] hover:bg-white/90 justify-start h-auto py-5 px-6 font-semibold">
+                <Button asChild size="lg" className="bg-primary text-white hover:bg-[#15233f] justify-start h-auto py-5 px-6 font-semibold">
                   <Link href="/tenant/complaint" className="flex items-center gap-4">
                     <MessageCircle className="h-5 w-5" />
                     <div className="text-left flex-1">
                       <div>민원/AS 접수</div>
-                      <div className="text-xs opacity-70 font-normal mt-0.5">전화 없이 간편 온라인 접수</div>
+                      <div className="text-xs opacity-80 font-normal mt-0.5">전화 없이 간편 온라인 접수</div>
                     </div>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="bg-transparent border-white/25 text-white hover:bg-white/5 justify-start h-auto py-5 px-6 font-semibold">
+                <Button asChild size="lg" variant="outline" className="bg-white border-[#D9DEE8] text-foreground hover:bg-[#F0F2F6] justify-start h-auto py-5 px-6 font-semibold">
                   <Link href="/tenant" className="flex items-center gap-4">
                     <FileText className="h-5 w-5" />
                     <div className="text-left flex-1">
                       <div>공지사항·서류</div>
-                      <div className="text-xs opacity-65 font-normal mt-0.5">계약서·안내문·서식 다운로드</div>
+                      <div className="text-xs opacity-70 font-normal mt-0.5">계약서·안내문·서식 다운로드</div>
                     </div>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -904,46 +805,36 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ============ 부동산 파트너 CTA — 풀스크린 이미지 ============ */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={CTA_IMAGE}
-          alt="JNP 위탁임대 상담"
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-[#0a1730]/92" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1730] via-[#0a1730]/95 to-[#0a1730]/85" />
-
-        <div className="relative mx-auto max-w-5xl px-6 text-center text-white">
-          <p className="text-overline text-white/55 mb-4">부동산 파트너</p>
-          <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+      {/* ============ 부동산 파트너 CTA ============ */}
+      <section className="bg-white border-t border-[#E8EBF0] py-24 md:py-32">
+        <div className="mx-auto max-w-5xl px-6 text-center">
+          <p className="text-overline text-primary mb-4">부동산 파트너</p>
+          <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
             공실 매물 정보,<br className="md:hidden" />
             부동산 회원께 실시간 공개합니다
           </h2>
-          <p className="mt-6 text-base md:text-lg text-white/75 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-base md:text-lg text-foreground/65 max-w-2xl mx-auto leading-relaxed">
             JNP 관리 건물의 실시간 공실 현황을 가입 후 바로 열람.
             <br className="hidden md:block" />
             보증금·월세·이미지·상세 정보까지 모두 제공됩니다.
           </p>
           <div className="mt-10 flex flex-wrap gap-3 justify-center">
-            <Button asChild size="lg" className="bg-white text-[#0a1730] hover:bg-white/90 h-12 px-7 font-semibold">
+            <Button asChild size="lg" className="h-12 px-7 font-semibold">
               <Link href="/agency/signup">부동산 가입 신청 <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10 h-12 px-7 font-semibold">
+            <Button asChild size="lg" variant="outline" className="h-12 px-7 font-semibold">
               <Link href="/agency/login">기존 회원 로그인</Link>
             </Button>
           </div>
 
-          <div className="mt-14 grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+          <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             {[
               "실시간 공실 현황",
               "보증금·월세 즉시 확인",
               "이미지·상세 정보 제공",
             ].map((t) => (
-              <div key={t} className="flex items-center justify-center gap-2 text-sm text-white/80">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <div key={t} className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                 <span>{t}</span>
               </div>
             ))}
@@ -952,7 +843,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 최종 CTA (푸터 바로 위) ============ */}
-      <section className="bg-gradient-to-br from-primary via-[#2563EB] to-[#3B82F6] text-white py-24 md:py-32 relative overflow-hidden">
+      <section className="bg-primary text-white py-24 md:py-32 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl" />
@@ -963,7 +854,7 @@ export default async function HomePage() {
             건물의 미래를 바꿉니다.
           </h2>
           <p className="mt-6 text-lg text-white/80 leading-relaxed max-w-xl mx-auto">
-            {COMPANY.yearsOfExperience}년간 67건 이상의 위기 건물을 정상화한 JNP주택관리.<br />
+            67건 이상의 위기 건물을 정상화한 JNP주택관리.<br />
             상담은 무료이며, 계약 의무는 없습니다.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">

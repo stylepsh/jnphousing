@@ -71,24 +71,23 @@
 }
 
 :root {
-  /* JNP brand tokens — Primary Royal Blue #1B4DDB (대기업 신뢰감 리브랜딩) */
-  --brand: #1b4ddb;
+  /* JNP brand tokens — Primary Navy #1C2B4A 단색 (대기업 전문 톤, 흰 배경 기반) */
+  --brand: #1c2b4a;
   --brand-foreground: #ffffff;
-  --brand-accent: #3b82f6;
+  --brand-accent: #1c2b4a;
 
-  /* 신규 브랜드 팔레트 */
-  --primary-light: #ebf1ff;       /* 아이스 블루 — 섹션 배경 */
-  --primary-dark: #1340b8;        /* 진한 블루 — hover */
-  --brand-teal: #00b8a9;          /* 틸 — 정상화·성장 포인트 */
-  --accent-warm: #f59e0b;         /* 앰버 — 긴급 CTA·전화 */
+  /* 보조 — 섹션 구분용 옅은 회색만 사용 (잡색 금지) */
+  --primary-light: #f4f6fa;       /* 옅은 회색 — 섹션 교차 배경 */
+  --primary-dark: #15233f;        /* 진한 네이비 — hover */
+  --surface-soft: #f7f8fb;        /* 카드/배경 소프트 */
 
-  --background: #fafbfe;
+  --background: #ffffff;
   --foreground: #0f1a2e;
   --card: #ffffff;
   --card-foreground: #0f1a2e;
   --popover: #ffffff;
   --popover-foreground: #0f1a2e;
-  --primary: #1b4ddb;
+  --primary: #1c2b4a;
   --primary-foreground: #ffffff;
   --secondary: #eef2f7;
   --secondary-foreground: #1c2b4a;
