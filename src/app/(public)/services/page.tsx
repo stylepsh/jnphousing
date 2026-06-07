@@ -158,7 +158,7 @@ export default function ServicesPage() {
                   특히 이런 분께 강합니다
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  다른 관리회사가 손을 못 대는 영역. 27년 현장 경험으로 케이스별 동행합니다.
+                  다른 관리회사가 손을 못 대는 영역. 오랜 현장 경험으로 케이스별 동행합니다.
                 </p>
                 <div className="mt-6 grid sm:grid-cols-2 gap-3">
                   {[
@@ -167,7 +167,7 @@ export default function ServicesPage() {
                     { tag: "중재", title: "장기 분쟁 임차인 해결", desc: "퇴거 거부·민원 누적 케이스 현장 중재 및 법적 절차 안내" },
                     { tag: "현금흐름", title: "임차 굴림 → 가족 생활비", desc: "소유권 있는 자산을 안정 수익으로 전환, 매월 고정 현금흐름 구축" },
                     { tag: "동행", title: "변호사·법무 자문 연결", desc: "변호사비·법무 비용 부담 없이 시작 가능, 실 자문 네트워크 동원" },
-                    { tag: "조언", title: "실전 케이스별 경험 조언", desc: "교과서 아닌 27년 현장 노하우로 다음 한 수 가이드" },
+                    { tag: "조언", title: "실전 케이스별 경험 조언", desc: "교과서 아닌 현장 노하우로 다음 한 수 가이드" },
                   ].map((item) => (
                     <div key={item.title} className="rounded-lg bg-white border border-border p-4">
                       <span className="inline-block text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{item.tag}</span>

@@ -49,7 +49,7 @@ const TIMELINE_DEFAULT: TimelineItem[] = [
   {
     year: 2026,
     title: `${COMPANY.legalName} 설립`,
-    text: "위탁임대 전문 사업자로 출발. 27년 현장 경험에 디지털 운영 시스템을 더해 투명하고 책임 있는 위탁관리를 시작합니다.",
+    text: "위탁임대 전문 사업자로 출발. 오랜 현장 경험에 디지털 운영 시스템을 더해 투명하고 책임 있는 위탁관리를 시작합니다.",
   },
 ];
 
@@ -118,8 +118,7 @@ export default async function AboutPage() {
   return (
     <>
       {/* ============ HERO ============ */}
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-20 md:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(37,99,235,0.25),transparent_60%)]" />
+      <section className="bg-primary text-white py-20 md:py-28 relative overflow-hidden">
         <div className="relative mx-auto max-w-5xl px-6">
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">About Us</p>
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">회사소개</h1>
@@ -226,7 +225,7 @@ export default async function AboutPage() {
                 <p className="font-bold text-lg tracking-tight">{COMPANY.representative} <span className="text-base font-medium text-muted-foreground">대표</span></p>
                 <p className="text-sm text-muted-foreground mt-0.5">{COMPANY.legalName}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5 justify-center md:justify-start">
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">건설업 27년</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">건설업 경력</span>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">HUG 대응 전문</span>
                 </div>
               </div>

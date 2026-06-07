@@ -35,7 +35,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 const DEFAULT_FAQ: FaqItem[] = [
   { id: "d1", category: "general", display_order: 1,
     question: "JNP주택관리는 어떤 회사인가요?",
-    answer: `${COMPANY.legalName}은 부천 본점 기반의 위탁임대관리 전문회사로, 27년차 실전 노하우를 바탕으로 HUG 대위변제·부실 건물·세입자 분쟁까지 처리합니다.\n사업자등록번호: ${COMPANY.legal.registrationNumber}` },
+    answer: `${COMPANY.legalName}은 부천 본점 기반의 위탁임대관리 전문회사로, 오랜 실전 노하우를 바탕으로 HUG 대위변제·부실 건물·세입자 분쟁까지 처리합니다.\n사업자등록번호: ${COMPANY.legal.registrationNumber}` },
   { id: "d2", category: "general", display_order: 2,
     question: "주택관리와 위탁임대관리의 차이가 뭔가요?",
     answer: "주택관리는 시설·청소·보안 등 건물 운영 자체를 책임지는 서비스입니다. 위탁임대관리는 임차인 모집·임대료 수금·정산·민원 대응까지 임대인의 거의 모든 역할을 대행합니다." },
@@ -47,7 +47,7 @@ const DEFAULT_FAQ: FaqItem[] = [
     answer: "기본 1년 단위이며, 양 당사자 협의로 연장합니다. 중도 해지 조항은 계약서에 명시합니다." },
   { id: "d5", category: "dispute", display_order: 1,
     question: "HUG 대위변제가 발생했는데 도움을 받을 수 있나요?",
-    answer: "네. HUG 대위변제 통보를 받은 임대인을 위한 후속 절차 동행 전문 서비스를 운영합니다. 자산 정리·임차인 정리·법적 절차까지 27년 경험으로 함께합니다. 010-7508-6916 로 연락 주세요." },
+    answer: "네. HUG 대위변제 통보를 받은 임대인을 위한 후속 절차 동행 전문 서비스를 운영합니다. 자산 정리·임차인 정리·법적 절차까지 풍부한 경험으로 함께합니다. 010-7508-6916 로 연락 주세요." },
   { id: "d6", category: "dispute", display_order: 2,
     question: "세입자와 분쟁이 있는데 중재가 가능한가요?",
     answer: "현장 중재·법무 자문 연결까지 동행합니다. 변호사 비용 부담을 줄일 수 있도록 자문 네트워크를 활용합니다." },
@@ -93,7 +93,7 @@ export default async function FaqPage() {
   return (
     <>
       <FAQPageJsonLd items={items.map(i => ({ question: i.question, answer: i.answer }))} />
-      <section className="bg-gradient-to-br from-primary via-primary to-slate-800 text-white py-16 md:py-20">
+      <section className="bg-primary text-white py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
             <HelpCircle className="h-3.5 w-3.5" /> FAQ
@@ -145,7 +145,7 @@ export default async function FaqPage() {
             ))}
           </div>
 
-          <div className="mt-12 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-6 md:p-8 text-center">
+          <div className="mt-12 rounded-2xl bg-primary/5 border border-primary/20 p-6 md:p-8 text-center">
             <MessageCircle className="h-10 w-10 mx-auto mb-3 text-primary" />
             <h3 className="text-xl font-bold tracking-tight">원하는 답이 없으신가요?</h3>
             <p className="mt-2 text-sm text-muted-foreground">
