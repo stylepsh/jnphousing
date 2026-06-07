@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
+import { DashboardMock } from "@/components/shared/DashboardMock";
 import { BeforeAfterCard } from "@/components/shared/BeforeAfterCard";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
@@ -156,24 +157,46 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* 우: 이미지 */}
-          <div className="relative">
+          {/* 우: 건물 사진 + 떠있는 데이터 카드 */}
+          <div className="relative lg:pr-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={HERO_IMAGES.primary}
               alt="JNP주택관리가 운영하는 주거 건물"
-              className="rounded-3xl w-full aspect-[5/4] object-cover border border-[#E8EBF0]"
+              className="rounded-3xl w-full aspect-[4/3] object-cover border border-[#E8EBF0]"
               fetchPriority="high"
             />
+
+            {/* 떠있는 수익 배지 (우상단) */}
+            <div className="hidden sm:flex absolute -top-4 right-2 md:-right-2 items-center gap-3 rounded-2xl bg-white border border-[#E8EBF0] shadow-xl shadow-primary/10 px-4 py-3 animate-fade-in">
+              <span className="h-9 w-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5 text-emerald-600" />
+              </span>
+              <div>
+                <p className="text-[11px] text-muted-foreground leading-none mb-1">이번 달 임대수익</p>
+                <p className="text-base font-bold text-foreground leading-none tabular-nums">+2,500만원 <span className="text-emerald-600 text-xs align-middle">▲</span></p>
+              </div>
+            </div>
+
+            {/* 떠있는 대시보드 목업 (좌하단) */}
+            <DashboardMock className="hidden sm:block absolute -bottom-8 -left-5 md:-left-8 w-56 md:w-64" />
+
+            {/* 떠있는 상태 배지 (우하단) */}
+            <div className="hidden sm:flex absolute bottom-6 right-2 md:-right-2 items-center gap-2 rounded-2xl bg-white border border-[#E8EBF0] shadow-xl shadow-primary/10 px-4 py-2.5 animate-fade-in" style={{ animationDelay: "120ms" }}>
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">공실 0 · 연체 0</span>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ============ 진입 3분할 (위탁임대 / 주택관리 / 세입자존) ============ */}
-      <section className="bg-[#F7F8FB] border-b border-[#E8EBF0] py-12 md:py-16">
+      <section className="bg-[#F7F8FB] border-b border-[#E8EBF0] py-16 md:py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-center text-sm font-semibold text-foreground/70 mb-7">어떤 도움이 필요하세요?</p>
-          <div className="grid md:grid-cols-3 gap-4">
+          <h2 className="text-center font-bold tracking-tight text-foreground mb-12" style={{ fontSize: "clamp(24px, 3.5vw, 38px)", letterSpacing: "-0.03em" }}>
+            어떤 도움이 필요하세요?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-5">
             {/* 위탁임대관리 (임대인) */}
             <a href="#expertise" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300 scroll-mt-20">
               <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
@@ -222,31 +245,50 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ BRAND PROMISE ============ */}
+      {/* ============ BRAND PROMISE — 네이비 블록 + 대시보드 목업 ============ */}
       <section className="bg-background py-24 md:py-32">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            <div>
-              <p className="text-overline text-primary mb-4">약속</p>
-              <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-                건물 한 채를<br />
-                기업처럼 운영합니다.
-              </h2>
-            </div>
-            <div className="space-y-6 text-base md:text-[17px] leading-relaxed text-foreground/85">
-              <p>
-                JNP주택관리는 단순한 청소·관리 회사가 아닙니다.
-                건물 하나를 <strong className="text-foreground">소기업처럼</strong> 운영하는 위탁 사업자입니다.
-              </p>
-              <p>
-                전기·통신·청소·소방·승강기·급배수 6종 시설관리부터
-                공실 마케팅, 임대료 수금, HUG 대위변제 대응까지 — 임대인은
-                <strong className="text-foreground"> 월간 보고서</strong>만 받아보시면 됩니다.
-              </p>
-              <div className="pt-4">
-                <Link href="/about" className="inline-flex items-center text-sm font-semibold text-primary hover:gap-3 transition-all gap-2">
-                  회사 철학 더보기 <ArrowRight className="h-4 w-4" />
-                </Link>
+          <div className="rounded-3xl bg-primary text-white overflow-hidden">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center p-8 md:p-12 lg:p-16">
+              {/* 좌: 카피 */}
+              <div>
+                <p className="text-sm font-semibold text-white/55 mb-4">약속</p>
+                <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+                  건물 한 채를<br />
+                  기업처럼 운영합니다.
+                </h2>
+                <div className="mt-7 space-y-5 text-base md:text-[17px] leading-relaxed text-white/80">
+                  <p>
+                    JNP주택관리는 단순한 청소·관리 회사가 아닙니다.
+                    건물 하나를 <strong className="text-white">소기업처럼</strong> 운영하는 위탁 사업자입니다.
+                  </p>
+                  <p>
+                    시설관리·공실 마케팅·임대료 수금·HUG 대위변제 대응까지 —
+                    임대인은 <strong className="text-white">월간 보고서</strong>만 받아보시면 됩니다.
+                  </p>
+                </div>
+                <div className="mt-8 flex flex-wrap gap-6">
+                  {[
+                    { v: "98%", l: "평균 수금률" },
+                    { v: "6종", l: "시설관리 직접 운영" },
+                    { v: "월 1회", l: "투명 정산 보고" },
+                  ].map((s) => (
+                    <div key={s.l}>
+                      <p className="text-2xl font-bold tabular-nums leading-tight">{s.v}</p>
+                      <p className="text-xs text-white/55 mt-1">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-7">
+                  <Link href="/about" className="inline-flex items-center text-sm font-semibold text-white hover:gap-3 transition-all gap-2">
+                    회사 철학 더보기 <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* 우: 대시보드 목업 */}
+              <div className="relative">
+                <DashboardMock className="w-full max-w-sm mx-auto" />
               </div>
             </div>
           </div>
