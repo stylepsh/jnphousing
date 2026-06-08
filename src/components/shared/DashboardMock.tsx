@@ -36,7 +36,7 @@ function Chip({ kind, label, icon: Icon }: { kind: ChipKind; label: string; icon
 
 function Row({ initial, icon: Icon, tone = "blue", name, note, right }: { initial?: string; icon?: React.ComponentType<{ className?: string }>; tone?: Tone; name: string; note?: string; right: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-2.5">
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-2">
       {initial && <span className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0", TILE[tone])}>{initial}</span>}
       {Icon && <span className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", TILE[tone])}><Icon className="h-3.5 w-3.5" /></span>}
       <div className="flex-1 min-w-0">
@@ -219,8 +219,8 @@ export function DashboardMock({ className }: { className?: string }) {
           </div>
         </div>
 
-        {/* 화면 전환 (페이드) */}
-        <div key={i} className="animate-fade-in min-h-[252px]">
+        {/* 화면 전환 (페이드) — 고정 높이로 박스 크기 일정 유지 */}
+        <div key={i} className="animate-fade-in h-[300px] overflow-hidden">
           <Comp />
         </div>
       </div>
