@@ -59,6 +59,8 @@ export function PoolList({ items }: { items: PoolItem[] }) {
   const [regionSearch, setRegionSearch] = useState("");
   // 최소 N건 이상 임대인만 (잡건 배제, 기본 3)
   const [minPerOwner, setMinPerOwner] = useState(3);
+  // 샘플 기준: 임대인별 / 지역별
+  const [sampleMode, setSampleMode] = useState<"owner" | "region">("owner");
   // 임대인 카드 다중 선택 (샘플링 대상 한정)
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   // 드래그 박스
@@ -68,6 +70,11 @@ export function PoolList({ items }: { items: PoolItem[] }) {
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const ownerKey = (p: PoolItem) => p.owner_name || OWNER_FALLBACK;
+  // 지역 키 = 주소 앞 3토큰 (시 구 동)
+  const regionKey = (p: PoolItem) => {
+    const parts = (p.address || "").trim().split(/\s+/);
+    return parts.slice(0, 3).join(" ") || "(지역 미상)";
+  };
 
   // 1) 검색 (소유주명 AND 지역)
   const searchedItems = useMemo(() => {
@@ -98,6 +105,17 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     [allGroups, minPerOwner],
   );
   const filteredItems = useMemo(() => filteredGroups.flatMap(([, l]) => l), [filteredGroups]);
+
+  // 지역별 그룹 (칩 + 지역별 샘플링용) — 현재 표시 풀 기준
+  const regionGroups = useMemo(() => {
+    const m = new Map<string, PoolItem[]>();
+    for (const p of filteredItems) {
+      const k = regionKey(p);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(p);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length);
+  }, [filteredItems]);
 
   // 4) 단일 임대인 필터
   const groups = useMemo(() => {
@@ -135,7 +153,17 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     setSelected(new Set(visibleItems.map((i) => i.id)));
   }
 
-  // ===== 탐색답사: 임대인별 N건 샘플링 =====
+  // ===== 탐색답사: N건 샘플링 (임대인별 / 지역별) =====
+  function sampleN(arr: PoolItem[], n: number, into: Set<string>) {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    shuffled.slice(0, Math.min(n, arr.length)).forEach((p) => into.add(p.id));
+  }
+
+  function doSample(n: number) {
+    if (sampleMode === "region") return sampleByRegion(n);
+    return samplePerOwner(n);
+  }
+
   function samplePerOwner(n: number) {
     const source =
       selectedOwners.size > 0
@@ -146,14 +174,23 @@ export function PoolList({ items }: { items: PoolItem[] }) {
       return;
     }
     const sampled = new Set<string>();
-    for (const [, list] of source) {
-      const shuffled = [...list].sort(() => Math.random() - 0.5);
-      shuffled.slice(0, Math.min(n, list.length)).forEach((p) => sampled.add(p.id));
-    }
+    for (const [, list] of source) sampleN(list, n, sampled);
     setSelected(sampled);
     toast.success(
       `임대인 ${source.length}명${selectedOwners.size > 0 ? " (선택분)" : ""} × 최대 ${n}건 = ${sampled.size}건 샘플링`,
     );
+  }
+
+  function sampleByRegion(n: number) {
+    const source = regionGroups;
+    if (source.length === 0) {
+      toast.error("샘플링할 지역이 없습니다. 최소건수·검색 조건을 확인하세요.");
+      return;
+    }
+    const sampled = new Set<string>();
+    for (const [, list] of source) sampleN(list, n, sampled);
+    setSelected(sampled);
+    toast.success(`지역 ${source.length}곳 × 최대 ${n}건 = ${sampled.size}건 샘플링`);
   }
 
   // ===== 임대인 카드 다중 선택 =====
@@ -367,12 +404,34 @@ export function PoolList({ items }: { items: PoolItem[] }) {
               )}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <button onClick={() => samplePerOwner(3)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[11px] font-bold hover:bg-indigo-200">
-                <Shuffle className="w-3 h-3" /> 탐색답사 (임대인별 3건)
-              </button>
-              <button onClick={() => samplePerOwner(5)} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[11px] font-bold hover:bg-indigo-100">
-                5건씩
-              </button>
+              {/* 샘플 기준 토글 */}
+              <div className="inline-flex items-center rounded-md border border-indigo-200 overflow-hidden text-[11px] font-bold">
+                <button
+                  onClick={() => setSampleMode("owner")}
+                  className={cn("px-2 py-0.5", sampleMode === "owner" ? "bg-indigo-600 text-white" : "bg-white text-indigo-700 hover:bg-indigo-50")}
+                >
+                  임대인별
+                </button>
+                <button
+                  onClick={() => setSampleMode("region")}
+                  className={cn("px-2 py-0.5 border-l border-indigo-200", sampleMode === "region" ? "bg-indigo-600 text-white" : "bg-white text-indigo-700 hover:bg-indigo-50")}
+                >
+                  지역별
+                </button>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700">
+                <Shuffle className="w-3 h-3" /> 탐색답사
+              </span>
+              {[2, 3, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => doSample(n)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[11px] font-bold hover:bg-indigo-200"
+                  title={`${sampleMode === "region" ? "지역" : "임대인"}별 최대 ${n}건 샘플링`}
+                >
+                  {n}건씩
+                </button>
+              ))}
               <div className="inline-flex items-center gap-1 text-[11px] bg-white px-1.5 py-0.5 rounded-md border border-blue-200">
                 <Filter className="w-3 h-3 text-blue-700" />
                 <span className="text-blue-700 font-bold">최소</span>
@@ -420,6 +479,39 @@ export function PoolList({ items }: { items: PoolItem[] }) {
           </div>
         )}
       </div>
+
+      {/* ── 지역 빠른 필터 칩 ── */}
+      {regionGroups.length > 1 && (
+        <div className="rounded-xl border bg-card p-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <MapPin className="w-3.5 h-3.5 text-teal-600" />
+            <span className="text-[11px] font-bold text-muted-foreground">
+              지역 {regionGroups.length}곳 · 칩을 누르면 그 지역만 (지역별 샘플과 함께 쓰면 동선 답사에 편리)
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {regionGroups.slice(0, 18).map(([region, list]) => {
+              const active = regionSearch.trim() === region;
+              return (
+                <button
+                  key={region}
+                  onClick={() => setRegionSearch(active ? "" : region)}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition",
+                    active ? "bg-teal-600 text-white border-teal-600" : "bg-background hover:bg-muted border-border",
+                  )}
+                >
+                  {region}
+                  <span className={cn("font-bold", active ? "text-teal-100" : "text-muted-foreground")}>{list.length}</span>
+                </button>
+              );
+            })}
+            {regionGroups.length > 18 && (
+              <span className="text-[11px] text-muted-foreground self-center">외 {regionGroups.length - 18}곳…(검색으로 좁히기)</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── 임대인 카드 그리드 + 드래그 선택 ── */}
       {filteredGroups.length > 1 && (
