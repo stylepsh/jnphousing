@@ -27,6 +27,8 @@ import {
   ChevronDown,
   Gavel,
   ClipboardList,
+  Scale,
+  Workflow,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -79,7 +81,9 @@ const NAV: NavGroup[] = [
     group: "경매",
     items: [
       { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
+      { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
       { href: "/admin/auction/survey", label: "경매 답사 관리", icon: ClipboardList },
+      { href: "/admin/auction/cases", label: "경매/법무 사건", icon: Scale },
     ],
   },
   {

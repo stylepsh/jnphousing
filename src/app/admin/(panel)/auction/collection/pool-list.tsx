@@ -3,10 +3,11 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, MapPin, ChevronDown } from "lucide-react";
+import { Trash2, MapPin, ChevronDown, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWon } from "@/lib/money";
 import { rejectAuctionProperties } from "./actions";
+import { selectForSurvey } from "../pipeline/actions";
 
 export interface PoolItem {
   id: string;
@@ -65,6 +66,20 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     });
   }
 
+  function handleSelectForPipeline(ids: string[]) {
+    if (ids.length === 0) return;
+    startTransition(async () => {
+      const res = await selectForSurvey(ids);
+      if (!res.ok) {
+        toast.error(res.error ?? "선정 실패");
+        return;
+      }
+      toast.success(`${res.count}건 답사 선정 — 파이프라인 배정 대기로 이동`);
+      setSelected(new Set());
+      router.refresh();
+    });
+  }
+
   function handleReject(ids: string[]) {
     if (ids.length === 0) return;
     if (!confirm(`${ids.length}건을 후보 풀에서 제외할까요? (데이터는 보존됩니다)`)) return;
@@ -94,11 +109,20 @@ export function PoolList({ items }: { items: PoolItem[] }) {
         <div className="sticky top-0 z-10 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
           <span className="text-sm font-bold">{selected.size}건 선택됨</span>
           <Button
+            size="sm"
+            disabled={pending}
+            onClick={() => handleSelectForPipeline(Array.from(selected))}
+            className="ml-auto gap-1"
+          >
+            <Workflow className="w-3.5 h-3.5" />
+            답사 선정(파이프라인)
+          </Button>
+          <Button
             variant="destructive"
             size="sm"
             disabled={pending}
             onClick={() => handleReject(Array.from(selected))}
-            className="ml-auto gap-1"
+            className="gap-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
             선택 제외
