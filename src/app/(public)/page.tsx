@@ -57,6 +57,18 @@ const NEWS_CATEGORY: Record<string, string> = {
   general: "일반", press: "보도", update: "업데이트", holiday: "휴무", important: "중요",
 };
 
+// 컬러 아이콘 타일 (기능별 색 — 앱 아이콘 스타일)
+const ICON_TONE: Record<string, { tile: string; icon: string }> = {
+  blue: { tile: "bg-blue-100", icon: "text-blue-600" },
+  teal: { tile: "bg-teal-100", icon: "text-teal-600" },
+  violet: { tile: "bg-violet-100", icon: "text-violet-600" },
+  emerald: { tile: "bg-emerald-100", icon: "text-emerald-600" },
+  amber: { tile: "bg-amber-100", icon: "text-amber-600" },
+  rose: { tile: "bg-rose-100", icon: "text-rose-600" },
+  indigo: { tile: "bg-indigo-100", icon: "text-indigo-600" },
+  sky: { tile: "bg-sky-100", icon: "text-sky-600" },
+};
+
 async function fetchRecentNotices(): Promise<RecentNotice[]> {
   try {
     const supabase = await createClient();
@@ -167,8 +179,8 @@ export default async function HomePage() {
           <div className="grid md:grid-cols-3 gap-5">
             {/* 위탁임대관리 (임대인) */}
             <a href="#expertise" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300 scroll-mt-20">
-              <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                <Building2 className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center mb-5">
+                <Building2 className="h-6 w-6 text-blue-600" />
               </div>
               <p className="text-[11px] font-semibold text-primary/60 mb-1">임대인</p>
               <h3 className="font-bold text-lg text-foreground">위탁임대관리</h3>
@@ -182,8 +194,8 @@ export default async function HomePage() {
 
             {/* 주택관리 (시설) */}
             <a href="#facility" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
-              <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                <Wrench className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-teal-100 flex items-center justify-center mb-5">
+                <Wrench className="h-6 w-6 text-teal-600" />
               </div>
               <p className="text-[11px] font-semibold text-primary/60 mb-1">건물주</p>
               <h3 className="font-bold text-lg text-foreground">주택관리</h3>
@@ -197,8 +209,8 @@ export default async function HomePage() {
 
             {/* 세입자존 (임차인) */}
             <a href="/tenant/complaint" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
-              <div className="h-12 w-12 rounded-xl bg-[#F0F2F6] flex items-center justify-center mb-5 group-hover:bg-[#E6E9EF] transition-colors">
-                <MessageCircle className="h-6 w-6 text-foreground/70" />
+              <div className="h-12 w-12 rounded-xl bg-violet-100 flex items-center justify-center mb-5">
+                <MessageCircle className="h-6 w-6 text-violet-600" />
               </div>
               <p className="text-[11px] font-semibold text-muted-foreground mb-1">입주민</p>
               <h3 className="font-bold text-lg text-foreground">세입자존</h3>
@@ -218,8 +230,8 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="rounded-3xl bg-primary text-white overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center p-8 md:p-12 lg:p-16">
-              {/* 좌: 카피 */}
-              <div>
+              {/* 카피 (우측) */}
+              <div className="lg:order-2">
                 <p className="text-sm font-semibold text-white/55 mb-4">약속</p>
                 <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
                   건물 한 채를<br />
@@ -254,8 +266,8 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* 우: 대시보드 목업 */}
-              <div className="relative">
+              {/* 대시보드 목업 (좌측) */}
+              <div className="relative lg:order-1">
                 <DashboardMock className="w-full max-w-sm mx-auto" />
               </div>
             </div>
@@ -359,16 +371,17 @@ export default async function HomePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: Clock,       title: "시간을 돌려드립니다", desc: "민원·수금·시설 전화, 더는 안 받으셔도 됩니다. 매월 보고서 한 장만 받으세요." },
-              { icon: TrendingUp,  title: "실수령액이 오릅니다", desc: "공실을 줄이고 밀린 임대료를 회수해, 손에 들어오는 돈을 늘려드립니다." },
-              { icon: ShieldCheck, title: "위기도 대신 처리합니다", desc: "HUG 대위변제·경매·세입자 분쟁 같은 어려운 상황까지 직접 해결합니다." },
-              { icon: FileText,    title: "전부 투명하게 보여드립니다", desc: "매월 사진·정산 내역이 담긴 보고서로, 무엇을 했는지 다 확인하실 수 있습니다." },
+              { icon: Clock,       tone: "sky",     title: "시간을 돌려드립니다", desc: "민원·수금·시설 전화, 더는 안 받으셔도 됩니다. 매월 보고서 한 장만 받으세요." },
+              { icon: TrendingUp,  tone: "emerald", title: "실수령액이 오릅니다", desc: "공실을 줄이고 밀린 임대료를 회수해, 손에 들어오는 돈을 늘려드립니다." },
+              { icon: ShieldCheck, tone: "amber",   title: "위기도 대신 처리합니다", desc: "HUG 대위변제·경매·세입자 분쟁 같은 어려운 상황까지 직접 해결합니다." },
+              { icon: FileText,    tone: "violet",  title: "전부 투명하게 보여드립니다", desc: "매월 사진·정산 내역이 담긴 보고서로, 무엇을 했는지 다 확인하실 수 있습니다." },
             ].map((b) => {
               const Icon = b.icon;
+              const t = ICON_TONE[b.tone];
               return (
                 <div key={b.title} className="bg-white rounded-2xl p-7 border border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group">
-                  <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                    <Icon className="h-6 w-6 text-primary" />
+                  <div className={`h-12 w-12 rounded-xl ${t.tile} flex items-center justify-center mb-5`}>
+                    <Icon className={`h-6 w-6 ${t.icon}`} />
                   </div>
                   <h3 className="font-bold text-lg tracking-tight text-foreground">{b.title}</h3>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{b.desc}</p>
@@ -395,10 +408,11 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
             {Object.entries(CATEGORY_IMAGES).map(([key, c], idx) => {
               const Icon = [Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown][idx] ?? Building2;
+              const t = ICON_TONE[["blue", "sky", "amber", "teal", "rose", "indigo"][idx] ?? "blue"];
               return (
                 <div key={key} className="bg-white rounded-2xl p-6 md:p-7 border border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
-                  <div className="h-14 w-14 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                    <Icon className="h-7 w-7 text-primary" />
+                  <div className={`h-14 w-14 rounded-xl ${t.tile} flex items-center justify-center mb-5`}>
+                    <Icon className={`h-7 w-7 ${t.icon}`} />
                   </div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">0{idx + 1}</p>
                   <h3 className="font-bold text-lg tracking-tight text-foreground">{c.label}</h3>
@@ -430,20 +444,21 @@ export default async function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: Scale, name: "분쟁해결 전담팀", desc: "소유주·세입자 양측 사이에서 중재하고, 명도·법적 절차까지 대신 진행합니다.", tags: ["임차인과 분쟁 중", "임차보증금 미반환", "불법 점유자"] },
-              { icon: Wrench, name: "건물관리 전담팀", desc: "매주 청소·방역·시설 점검으로 방치된 건물을 정상 가동 상태로 되돌립니다.", tags: ["건물 슬럼화", "공실 누적", "시설 노후"] },
-              { icon: Briefcase, name: "위탁운용 전담팀", desc: "위기 자산을 안정적인 임대 수익 흐름으로 전환하고 끝까지 동행합니다.", tags: ["HUG 대위변제", "경매 직전", "수익 흐름화"] },
-            ].map((t) => {
-              const Icon = t.icon;
+              { icon: Scale, tone: "amber", name: "분쟁해결 전담팀", desc: "소유주·세입자 양측 사이에서 중재하고, 명도·법적 절차까지 대신 진행합니다.", tags: ["임차인과 분쟁 중", "임차보증금 미반환", "불법 점유자"] },
+              { icon: Wrench, tone: "blue", name: "건물관리 전담팀", desc: "매주 청소·방역·시설 점검으로 방치된 건물을 정상 가동 상태로 되돌립니다.", tags: ["건물 슬럼화", "공실 누적", "시설 노후"] },
+              { icon: Briefcase, tone: "teal", name: "위탁운용 전담팀", desc: "위기 자산을 안정적인 임대 수익 흐름으로 전환하고 끝까지 동행합니다.", tags: ["HUG 대위변제", "경매 직전", "수익 흐름화"] },
+            ].map((team) => {
+              const Icon = team.icon;
+              const tn = ICON_TONE[team.tone];
               return (
-                <div key={t.name} className="bg-white rounded-2xl p-7 border border-[#E8EBF0] hover:border-primary/40 hover:shadow-xl transition-all duration-300">
-                  <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5">
-                    <Icon className="h-6 w-6 text-primary" />
+                <div key={team.name} className="bg-white rounded-2xl p-7 border border-[#E8EBF0] hover:border-primary/40 hover:shadow-xl transition-all duration-300">
+                  <div className={`h-12 w-12 rounded-xl ${tn.tile} flex items-center justify-center mb-5`}>
+                    <Icon className={`h-6 w-6 ${tn.icon}`} />
                   </div>
-                  <h3 className="font-bold text-lg tracking-tight text-foreground">{t.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-2.5 leading-relaxed">{t.desc}</p>
+                  <h3 className="font-bold text-lg tracking-tight text-foreground">{team.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-2.5 leading-relaxed">{team.desc}</p>
                   <div className="mt-5 pt-5 border-t border-[#F0F2F6] flex flex-wrap gap-2">
-                    {t.tags.map((tag) => (
+                    {team.tags.map((tag) => (
                       <span key={tag} className="text-[11px] px-2 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-foreground/65">{tag}</span>
                     ))}
                   </div>
