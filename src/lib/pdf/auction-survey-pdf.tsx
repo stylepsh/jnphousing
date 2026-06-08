@@ -41,19 +41,24 @@ const styles = StyleSheet.create({
   groupCount: { fontSize: 8, color: "#475569" },
   // 표
   trHead: { flexDirection: "row", backgroundColor: "#f1f5f9", borderBottomWidth: 1, borderColor: "#cbd5e1" },
-  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 30, alignItems: "center" },
+  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 36, alignItems: "center" },
   th: { fontSize: 7, fontWeight: "bold", color: "#475569", paddingVertical: 3, paddingHorizontal: 3 },
   td: { fontSize: 7.5, paddingVertical: 3, paddingHorizontal: 3 },
   cNo: { width: 18, textAlign: "center" },
-  cAddr: { width: 200 },
-  cOwner: { width: 60 },
-  cOcc: { width: 78 },
-  cMail: { width: 34, textAlign: "center" },
-  cOpen: { width: 44, textAlign: "center" },
-  cCode: { width: 70 },
+  cAddr: { width: 188 },
+  cOwner: { width: 52 },
+  cOcc: { width: 66, textAlign: "center" },
+  cMail: { width: 30, textAlign: "center" },
+  cMeter: { width: 30, textAlign: "center" },
+  cNotice: { width: 30, textAlign: "center" },
+  cDoor: { width: 30, textAlign: "center" },
+  cCode: { width: 60 },
+  cMgmt: { width: 88 },
   cMemo: { flex: 1 },
   checkbox: { fontSize: 7.5 },
   caseMono: { fontSize: 7, color: "#1d4ed8" },
+  mgmtLabel: { fontSize: 6, color: "#94a3b8" },
+  mgmtLine: { borderBottomWidth: 0.5, borderColor: "#cbd5e1", height: 7, marginTop: 2 },
   footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
   signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
 });
@@ -88,8 +93,15 @@ function Row({ it, no }: { it: SurveyPdfItem; no: number }) {
       </Text>
       <Text style={[styles.td, styles.cOcc, styles.checkbox]}>☐공실 ☐거주 ☐재방</Text>
       <Text style={[styles.td, styles.cMail, styles.checkbox]}>O / X</Text>
-      <Text style={[styles.td, styles.cOpen, styles.checkbox]}>Y / N</Text>
+      <Text style={[styles.td, styles.cMeter, styles.checkbox]}>O / X</Text>
+      <Text style={[styles.td, styles.cNotice, styles.checkbox]}>O / X</Text>
+      <Text style={[styles.td, styles.cDoor, styles.checkbox]}>Y / N</Text>
       <Text style={[styles.td, styles.cCode]}>비번:</Text>
+      <View style={[styles.td, styles.cMgmt]}>
+        <Text style={styles.mgmtLabel}>관리실명</Text>
+        <View style={styles.mgmtLine} />
+        <View style={styles.mgmtLine} />
+      </View>
       <Text style={[styles.td, styles.cMemo]}> </Text>
     </View>
   );
@@ -128,8 +140,11 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
               <Text style={[styles.th, styles.cOwner]}>임대인/채권</Text>
               <Text style={[styles.th, styles.cOcc]}>점유상태</Text>
               <Text style={[styles.th, styles.cMail]}>우편</Text>
-              <Text style={[styles.th, styles.cOpen]}>개문</Text>
+              <Text style={[styles.th, styles.cMeter]}>계량기</Text>
+              <Text style={[styles.th, styles.cNotice]}>안내문</Text>
+              <Text style={[styles.th, styles.cDoor]}>개문</Text>
               <Text style={[styles.th, styles.cCode]}>현관비번</Text>
+              <Text style={[styles.th, styles.cMgmt]}>관리실</Text>
               <Text style={[styles.th, styles.cMemo]}>비고</Text>
             </View>
             {list.map((it, i) => (
