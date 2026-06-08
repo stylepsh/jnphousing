@@ -39,22 +39,31 @@ import Link from "next/link";
 const MAX_IMAGES = 5;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const schema = z.object({
-  property_id: z.string().min(1, "건물을 선택해 주세요."),
-  unit_number: z.string().min(1, "호수를 입력해 주세요.").max(20),
-  tenant_name: z.string().min(2, "이름을 입력해 주세요.").max(40),
-  tenant_phone: z
-    .string()
-    .min(9, "연락처를 정확히 입력해 주세요.")
-    .max(20)
-    .regex(/^[0-9\-+\s]+$/, "숫자, -, +, 공백만 사용 가능합니다."),
-  category: z.enum(["as", "facility", "noise", "complaint", "etc"]),
-  title: z.string().min(2, "제목을 입력해 주세요.").max(100),
-  content: z.string().min(10, "내용을 10자 이상 입력해 주세요.").max(2000),
-  consent: z
-    .boolean()
-    .refine((v) => v === true, "개인정보 수집에 동의해 주세요."),
-});
+const schema = z
+  .object({
+    property_id: z.string().default(""),
+    building_name_input: z.string().max(100, "100자 이내로 입력해 주세요.").default(""),
+    unit_number: z.string().min(1, "호수를 입력해 주세요.").max(20),
+    tenant_name: z.string().min(2, "이름을 입력해 주세요.").max(40),
+    tenant_phone: z
+      .string()
+      .min(9, "연락처를 정확히 입력해 주세요.")
+      .max(20)
+      .regex(/^[0-9\-+\s]+$/, "숫자, -, +, 공백만 사용 가능합니다."),
+    category: z.enum(["as", "facility", "noise", "complaint", "etc"]),
+    title: z.string().min(2, "제목을 입력해 주세요.").max(100),
+    content: z.string().min(10, "내용을 10자 이상 입력해 주세요.").max(2000),
+    consent: z
+      .boolean()
+      .refine((v) => v === true, "개인정보 수집에 동의해 주세요."),
+  })
+  .superRefine((val, ctx) => {
+    // 건물: 목록 선택 또는 직접 입력 중 하나는 필수
+    if (!val.property_id && !val.building_name_input.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["property_id"], message: "건물을 선택하거나 직접 입력해 주세요." });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["building_name_input"], message: "건물명을 입력해 주세요." });
+    }
+  });
 
 type FormValues = z.input<typeof schema>;
 
@@ -75,11 +84,14 @@ export function ComplaintForm({ properties, defaultPropertyId }: Props) {
   const [images, setImages] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
+  // 건물 목록이 없거나 선택할 게 없으면 바로 직접 입력 모드
+  const [customBuilding, setCustomBuilding] = useState(properties.length === 0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       property_id: defaultPropertyId ?? "",
+      building_name_input: "",
       unit_number: "",
       tenant_name: "",
       tenant_phone: "",
@@ -89,6 +101,17 @@ export function ComplaintForm({ properties, defaultPropertyId }: Props) {
       consent: false,
     },
   });
+
+  function toggleBuildingMode() {
+    setCustomBuilding((prev) => {
+      const next = !prev;
+      // 모드 전환 시 다른 입력값은 비워 검증 충돌 방지
+      if (next) form.setValue("property_id", "");
+      else form.setValue("building_name_input", "");
+      form.clearErrors(["property_id", "building_name_input"]);
+      return next;
+    });
+  }
 
   function handleImageAdd(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -145,11 +168,12 @@ export function ComplaintForm({ properties, defaultPropertyId }: Props) {
 
       const supabase = createClient();
       const property = properties.find((p) => p.id === parsed.property_id);
+      const buildingName = property?.name ?? (parsed.building_name_input.trim() || null);
       const { data, error } = await supabase
         .from("complaints")
         .insert({
-          property_id: parsed.property_id,
-          building_name: property?.name ?? null,
+          property_id: parsed.property_id || null,
+          building_name: buildingName,
           unit_number: parsed.unit_number,
           tenant_name: parsed.tenant_name,
           tenant_phone: parsed.tenant_phone,
@@ -180,36 +204,66 @@ export function ComplaintForm({ properties, defaultPropertyId }: Props) {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="property_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base">건물 선택 <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="건물을 선택하세요" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {properties.length === 0 ? (
-                      <div className="p-3 text-sm text-muted-foreground">
-                        등록된 건물이 없습니다.
-                      </div>
-                    ) : (
-                      properties.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-medium">건물 <span className="text-destructive">*</span></span>
+              {properties.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleBuildingMode}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {customBuilding ? "목록에서 선택하기" : "목록에 없나요? 직접 입력"}
+                </button>
+              )}
+            </div>
+
+            {!customBuilding ? (
+              <FormField
+                control={form.control}
+                name="property_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="건물을 선택하세요" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {properties.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="building_name_input"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        className="h-12 text-base"
+                        placeholder="건물명을 직접 입력하세요 (예: 행복빌라, OO오피스텔)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      관리 건물 목록에 없어도 건물명을 적어주시면 접수됩니다.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+          </div>
 
           <div className="grid sm:grid-cols-2 gap-5">
             <FormField
