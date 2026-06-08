@@ -14,7 +14,7 @@ import { CountUp } from "@/components/shared/CountUp";
 import { DashboardMock } from "@/components/shared/DashboardMock";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
-import { HERO_IMAGES, CATEGORY_IMAGES } from "@/lib/data/site-images";
+import { CATEGORY_IMAGES } from "@/lib/data/site-images";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물관리 전문",
@@ -136,18 +136,12 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* 우: 건물 사진 + 떠있는 데이터 카드 */}
-          <div className="relative lg:pr-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={HERO_IMAGES.primary}
-              alt="JNP주택관리가 운영하는 주거 건물"
-              className="rounded-3xl w-full aspect-[4/3] object-cover border border-[#E8EBF0]"
-              fetchPriority="high"
-            />
+          {/* 우: JNP 관리 OS 화면 (건물 사진 없이 풀 너비) */}
+          <div className="relative">
+            <DashboardMock className="w-full" />
 
-            {/* 떠있는 수익 배지 (우상단) */}
-            <div className="hidden sm:flex absolute -top-4 right-2 md:-right-2 items-center gap-3 rounded-2xl bg-white border border-[#E8EBF0] shadow-xl shadow-primary/10 px-4 py-3 animate-fade-in">
+            {/* 떠있는 수익 배지 (좌하단, 화면 밖으로) */}
+            <div className="hidden sm:flex absolute -bottom-5 -left-3 md:-left-5 items-center gap-3 rounded-2xl bg-white border border-[#E8EBF0] shadow-xl shadow-primary/10 px-4 py-3 animate-fade-in">
               <span className="h-9 w-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </span>
@@ -157,14 +151,9 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* 떠있는 대시보드 목업 (좌하단) */}
-            <DashboardMock className="hidden sm:block absolute -bottom-8 -left-5 md:-left-8 w-56 md:w-64" />
-
-            {/* 떠있는 상태 배지 (우하단) */}
-            <div className="hidden sm:flex absolute bottom-6 right-2 md:-right-2 items-center gap-2 rounded-2xl bg-white border border-[#E8EBF0] shadow-xl shadow-primary/10 px-4 py-2.5 animate-fade-in" style={{ animationDelay: "120ms" }}>
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">공실 0 · 연체 0</span>
-            </div>
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+              JNP 관리 OS — 정산·민원·서류·시설관리를 한 화면에서 운영
+            </p>
           </div>
         </div>
       </section>

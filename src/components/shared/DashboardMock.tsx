@@ -3,100 +3,34 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle2, Clock, Sparkles, Bug, ArrowUpDown, Flame,
-  Scale, Wrench, Briefcase,
+  Scale, Wrench, Briefcase, MessageSquare, FileText, Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/* ── 화면 1: 소유주별 월세 정산 현황 ───────────────────────── */
-function SettlementScreen() {
-  const rows = [
-    { initial: "박", name: "인천 박○○ 소유주님", amount: "1,200만원", done: true },
-    { initial: "김", name: "일산 김○○ 님", amount: "2,170만원", done: true },
-    { initial: "정", name: "부천 정○○ 님", amount: "950만원", done: true },
-    { initial: "이", name: "서울 이○○ 님", amount: "2,700만원", done: false },
-  ];
+type ChipKind = "done" | "active" | "wait";
+function Chip({ kind, label, icon: Icon }: { kind: ChipKind; label: string; icon?: React.ComponentType<{ className?: string }> }) {
+  const styles: Record<ChipKind, string> = {
+    done: "text-emerald-600 bg-emerald-50",
+    active: "text-primary bg-primary/8",
+    wait: "text-foreground/55 bg-[#EEF1F5]",
+  };
   return (
-    <div className="space-y-2">
-      {rows.map((r) => (
-        <div key={r.name} className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-2.5">
-          <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">{r.initial}</span>
-          <span className="text-[12.5px] font-medium text-foreground truncate flex-1">{r.name}</span>
-          <span className="text-[12.5px] tabular-nums font-semibold text-foreground/80">{r.amount}</span>
-          {r.done ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">
-              <CheckCircle2 className="h-3 w-3" /> 정산완료
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/8 rounded-full px-2 py-0.5 shrink-0">
-              <Clock className="h-3 w-3" /> 정산예정
-            </span>
-          )}
-        </div>
-      ))}
-      <SummaryBar leftLabel="이번 달 총 정산" leftValue="7,020만원" rightLabel="수금률" rightValue="98%" pct={98} />
-    </div>
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2 py-0.5 shrink-0", styles[kind])}>
+      {Icon && <Icon className="h-3 w-3" />}{label}
+    </span>
   );
 }
 
-/* ── 화면 2: 매주 1회 건물 정상화 관리 ───────────────────── */
-function WeeklyCareScreen() {
-  const rows = [
-    { icon: Sparkles, name: "공용부 청소", note: "지하·계단·복도", done: true },
-    { icon: Bug, name: "정기 방역", note: "해충·악취 차단", done: true },
-    { icon: ArrowUpDown, name: "엘리베이터 점검", note: "정상 가동 확인", done: true },
-    { icon: Flame, name: "소방시설 점검", note: "이번 주 예정", done: false },
-  ];
+function Row({ initial, icon: Icon, name, note, right }: { initial?: string; icon?: React.ComponentType<{ className?: string }>; name: string; note?: string; right: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      {rows.map((r) => {
-        const Icon = r.icon;
-        return (
-          <div key={r.name} className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-2.5">
-            <span className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Icon className="h-3.5 w-3.5 text-primary" /></span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-medium text-foreground truncate leading-tight">{r.name}</p>
-              <p className="text-[10.5px] text-muted-foreground truncate">{r.note}</p>
-            </div>
-            {r.done ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">
-                <CheckCircle2 className="h-3 w-3" /> 완료
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/8 rounded-full px-2 py-0.5 shrink-0">
-                <Clock className="h-3 w-3" /> 예정
-              </span>
-            )}
-          </div>
-        );
-      })}
-      <SummaryBar leftLabel="이번 주 관리" leftValue="주 1회 정기" rightLabel="사진 보고" rightValue="첨부" pct={75} />
-    </div>
-  );
-}
-
-/* ── 화면 3: 전담팀 처리 현황 ──────────────────────────── */
-function TeamScreen() {
-  const rows = [
-    { icon: Scale, name: "분쟁해결 전담팀", note: "임차인 분쟁·보증금", status: "처리 중 2건" },
-    { icon: Wrench, name: "건물관리 전담팀", note: "시설·청소·방역", status: "정상 가동" },
-    { icon: Briefcase, name: "위탁운용 전담팀", note: "HUG·경매 대응", status: "진행 3건" },
-  ];
-  return (
-    <div className="space-y-2">
-      {rows.map((r) => {
-        const Icon = r.icon;
-        return (
-          <div key={r.name} className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-3">
-            <span className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-primary" /></span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">{r.name}</p>
-              <p className="text-[10.5px] text-muted-foreground truncate">{r.note}</p>
-            </div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/8 rounded-full px-2 py-0.5 shrink-0">{r.status}</span>
-          </div>
-        );
-      })}
-      <SummaryBar leftLabel="전담팀 운영" leftValue="3개 팀 가동" rightLabel="평균 해결" rightValue="2개월" pct={100} />
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#F7F8FB] px-3 py-2.5">
+      {initial && <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">{initial}</span>}
+      {Icon && <span className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Icon className="h-3.5 w-3.5 text-primary" /></span>}
+      <div className="flex-1 min-w-0">
+        <p className="text-[12.5px] font-medium text-foreground truncate leading-tight">{name}</p>
+        {note && <p className="text-[10.5px] text-muted-foreground truncate">{note}</p>}
+      </div>
+      {right}
     </div>
   );
 }
@@ -121,21 +55,102 @@ function SummaryBar({ leftLabel, leftValue, rightLabel, rightValue, pct }: { lef
   );
 }
 
+/* ── 1. 월세 정산 현황 ─────────────────────────────── */
+function SettlementScreen() {
+  return (
+    <div className="space-y-2">
+      <Row initial="박" name="인천 박○○ 소유주님" right={<span className="flex items-center gap-2"><span className="text-[12.5px] tabular-nums font-semibold text-foreground/80">1,200만원</span><Chip kind="done" label="정산완료" icon={CheckCircle2} /></span>} />
+      <Row initial="김" name="일산 김○○ 님" right={<span className="flex items-center gap-2"><span className="text-[12.5px] tabular-nums font-semibold text-foreground/80">2,170만원</span><Chip kind="done" label="정산완료" icon={CheckCircle2} /></span>} />
+      <Row initial="정" name="부천 정○○ 님" right={<span className="flex items-center gap-2"><span className="text-[12.5px] tabular-nums font-semibold text-foreground/80">950만원</span><Chip kind="done" label="정산완료" icon={CheckCircle2} /></span>} />
+      <Row initial="이" name="서울 이○○ 님" right={<span className="flex items-center gap-2"><span className="text-[12.5px] tabular-nums font-semibold text-foreground/80">2,700만원</span><Chip kind="active" label="정산예정" icon={Clock} /></span>} />
+      <SummaryBar leftLabel="이번 달 총 정산" leftValue="7,020만원" rightLabel="수금률" rightValue="98%" pct={98} />
+    </div>
+  );
+}
+
+/* ── 2. 임차인 민원 접수 ───────────────────────────── */
+function ComplaintIntakeScreen() {
+  return (
+    <div className="space-y-2">
+      <Row icon={MessageSquare} name="302호 · 천장 누수" note="방금 접수" right={<Chip kind="wait" label="접수" icon={Inbox} />} />
+      <Row icon={MessageSquare} name="501호 · 보일러 고장" note="5분 전" right={<Chip kind="active" label="처리중" icon={Clock} />} />
+      <Row icon={MessageSquare} name="1층 · 공용 조명 점멸" note="12분 전" right={<Chip kind="active" label="처리중" icon={Clock} />} />
+      <Row icon={MessageSquare} name="203호 · 도어락 교체" note="22분 전" right={<Chip kind="wait" label="접수" icon={Inbox} />} />
+      <SummaryBar leftLabel="오늘 접수" leftValue="4건" rightLabel="평균 응답" rightValue="12분" pct={85} />
+    </div>
+  );
+}
+
+/* ── 3. 민원 처리 완료 ─────────────────────────────── */
+function ComplaintDoneScreen() {
+  return (
+    <div className="space-y-2">
+      <Row icon={Wrench} name="302호 천장 누수" note="방수 보수 완료" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={Wrench} name="501호 보일러 교체" note="당일 출동 처리" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={Wrench} name="공용 조명 LED 교체" note="사진 보고 첨부" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={Wrench} name="203호 도어락 설치" note="입주민 확인 완료" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <SummaryBar leftLabel="이번 달 처리" leftValue="24건" rightLabel="처리율" rightValue="100%" pct={100} />
+    </div>
+  );
+}
+
+/* ── 4. 서류 발급·접수 ─────────────────────────────── */
+function DocumentScreen() {
+  return (
+    <div className="space-y-2">
+      <Row icon={FileText} name="임대차 계약서" note="박○○ 님" right={<Chip kind="done" label="발급완료" icon={CheckCircle2} />} />
+      <Row icon={FileText} name="월 정산 내역서" note="6월분" right={<Chip kind="done" label="발급완료" icon={CheckCircle2} />} />
+      <Row icon={FileText} name="전입세대 확인서" note="302호" right={<Chip kind="done" label="발급완료" icon={CheckCircle2} />} />
+      <Row icon={FileText} name="보증금 영수증" note="501호" right={<Chip kind="active" label="요청 접수" icon={Clock} />} />
+      <SummaryBar leftLabel="이번 달 발급" leftValue="38건" rightLabel="처리 소요" rightValue="당일" pct={92} />
+    </div>
+  );
+}
+
+/* ── 5. 이번 주 건물관리 ───────────────────────────── */
+function WeeklyCareScreen() {
+  return (
+    <div className="space-y-2">
+      <Row icon={Sparkles} name="공용부 청소" note="지하·계단·복도" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={Bug} name="정기 방역" note="해충·악취 차단" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={ArrowUpDown} name="엘리베이터 점검" note="정상 가동 확인" right={<Chip kind="done" label="완료" icon={CheckCircle2} />} />
+      <Row icon={Flame} name="소방시설 점검" note="이번 주 예정" right={<Chip kind="active" label="예정" icon={Clock} />} />
+      <SummaryBar leftLabel="이번 주 관리" leftValue="주 1회 정기" rightLabel="사진 보고" rightValue="첨부" pct={75} />
+    </div>
+  );
+}
+
+/* ── 6. 전담팀 처리 현황 ───────────────────────────── */
+function TeamScreen() {
+  return (
+    <div className="space-y-2">
+      <Row icon={Scale} name="분쟁해결 전담팀" note="임차인 분쟁·보증금" right={<Chip kind="active" label="처리 중 2건" />} />
+      <Row icon={Wrench} name="건물관리 전담팀" note="시설·청소·방역" right={<Chip kind="done" label="정상 가동" />} />
+      <Row icon={Briefcase} name="위탁운용 전담팀" note="HUG·경매 대응" right={<Chip kind="active" label="진행 3건" />} />
+      <SummaryBar leftLabel="전담팀 운영" leftValue="3개 팀 가동" rightLabel="평균 해결" rightValue="2개월" pct={100} />
+    </div>
+  );
+}
+
 const SCREENS = [
-  { tag: "정산", title: "월세 정산 현황", Comp: SettlementScreen },
-  { tag: "관리", title: "이번 주 건물관리", Comp: WeeklyCareScreen },
-  { tag: "전담팀", title: "전담팀 처리 현황", Comp: TeamScreen },
+  { title: "월세 정산 현황", Comp: SettlementScreen },
+  { title: "임차인 민원 접수", Comp: ComplaintIntakeScreen },
+  { title: "민원 처리 현황", Comp: ComplaintDoneScreen },
+  { title: "서류 발급·접수", Comp: DocumentScreen },
+  { title: "이번 주 건물관리", Comp: WeeklyCareScreen },
+  { title: "전담팀 처리 현황", Comp: TeamScreen },
 ];
 
 /**
  * JNP 관리 OS 코드 목업 — 영상처럼 여러 화면이 순환된다.
- * 정산 → 주간 관리 → 전담팀 처리. 사진 대신 쓰는 프리미엄 "제품 화면".
+ * 정산 → 민원 접수 → 민원 처리 → 서류 → 주간 관리 → 전담팀.
+ * 사진 대신 쓰는 프리미엄 "제품 화면".
  */
 export function DashboardMock({ className }: { className?: string }) {
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setI((v) => (v + 1) % SCREENS.length), 3000);
+    const id = setInterval(() => setI((v) => (v + 1) % SCREENS.length), 2800);
     return () => clearInterval(id);
   }, []);
 
@@ -158,7 +173,7 @@ export function DashboardMock({ className }: { className?: string }) {
           <p className="text-sm font-bold text-foreground">{active.title}</p>
           <div className="flex items-center gap-1.5">
             {SCREENS.map((s, idx) => (
-              <span key={s.tag} className={cn("h-1.5 rounded-full transition-all duration-300", idx === i ? "w-4 bg-primary" : "w-1.5 bg-[#D9DEE8]")} />
+              <span key={s.title} className={cn("h-1.5 rounded-full transition-all duration-300", idx === i ? "w-4 bg-primary" : "w-1.5 bg-[#D9DEE8]")} />
             ))}
           </div>
         </div>
