@@ -13,7 +13,7 @@ async function fetchPending(): Promise<PoolItem[]> {
     const { data } = await supabase
       .from("auction_property")
       .select(
-        "id, case_number, court, address, owner_name, creditor, creditor_type, category, appraisal_value, minimum_bid, auction_date",
+        "id, case_number, court, address, owner_name, creditor, creditor_type, category, appraisal_value, minimum_bid, auction_date, dividend_deadline",
       )
       .eq("survey_status", "pending")
       .order("created_at", { ascending: false });
