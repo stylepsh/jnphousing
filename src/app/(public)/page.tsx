@@ -5,20 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
-  ShieldCheck, TrendingUp, Pin, Calendar, Phone, Briefcase,
+  ShieldCheck, TrendingUp, Pin, Calendar, Phone,
   Wrench, Clock, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { DashboardMock } from "@/components/shared/DashboardMock";
+import { CoreServicesCarousel } from "@/components/shared/CoreServicesCarousel";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물관리 전문",
   description:
-    "부천·경기·서울·인천 위탁임대 전문. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-7508-6916",
+    "전국 어디든 위탁임대 전문. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-7508-6916",
   keywords: [
     "부천 위탁임대", "부천 주택관리", "위탁임대관리",
     "HUG 대위변제", "전세사기", "보증사고",
@@ -67,6 +68,12 @@ const ICON_TONE: Record<string, { tile: string; icon: string }> = {
   indigo: { tile: "bg-indigo-100", icon: "text-indigo-600" },
   sky: { tile: "bg-sky-100", icon: "text-sky-600" },
 };
+
+// 경매 고민 섹션 배경 이미지.
+// 👉 동양인 40대 남성이 고민하는 4K 실사 사진을 준비해 이 값에 넣으세요.
+//    예) public/auction-worry.jpg 에 넣고 "/auction-worry.jpg"
+//    또는 외부 URL("https://...jpg"). 비워두면 시네마틱 다크 배경만 표시됩니다.
+const WORRY_IMG = "";
 
 async function fetchRecentNotices(): Promise<RecentNotice[]> {
   try {
@@ -404,81 +411,54 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-5 items-stretch">
-            {/* 1. 위탁운용 — 메인(네이비) */}
-            <div id="expertise" className="scroll-mt-20 rounded-3xl bg-primary text-white p-8 flex flex-col shadow-xl shadow-primary/20">
-              <div className="flex items-center justify-between mb-6">
-                <span className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center"><Briefcase className="h-6 w-6 text-white" /></span>
-                <span className="text-[11px] font-bold tracking-wide bg-white/15 rounded-full px-3 py-1">임대인 · 메인</span>
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight">위탁 운용</h3>
-              <p className="mt-2.5 text-sm text-white/70 leading-relaxed">방치된 건물을 대신 운영해 <strong className="text-white">매달 수익</strong>으로 바꿉니다. HUG·경매·공실까지 직접.</p>
-              <ul className="mt-6 space-y-3 flex-1">
-                {["임대료 수금 · 월 정산", "HUG 대위변제 대응", "경매 · 공실 건물 수익화", "부실 건물 정상화", "세입자 분쟁 · 명도 해결"].map((t) => (
-                  <li key={t} className="flex items-start gap-2.5 text-[15px] font-medium">
-                    <CheckCircle2 className="h-5 w-5 text-white/90 shrink-0 mt-0.5" /> {t}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-7 pt-5 border-t border-white/15 flex items-center justify-between gap-3">
-                <span className="text-sm font-bold">→ 매달 수익 정산</span>
-                <a href="tel:01075086916" className="inline-flex items-center gap-1.5 bg-white text-primary rounded-xl px-4 py-2 text-sm font-bold hover:bg-white/90 transition-colors">
-                  <Phone className="h-4 w-4" /> 무료 상담
-                </a>
-              </div>
-            </div>
+          {/* 메뉴 앵커 (위탁임대관리 / 주택관리) */}
+          <span id="expertise" className="block -mt-24 pt-24" aria-hidden />
+          <span id="facility" className="block -mt-24 pt-24" aria-hidden />
 
-            {/* 2. 주택관리 — 시설 */}
-            <div id="facility" className="scroll-mt-20 rounded-3xl bg-white border border-[#E8EBF0] p-8 flex flex-col hover:shadow-xl hover:border-primary/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <span className="h-12 w-12 rounded-2xl bg-teal-100 flex items-center justify-center"><Wrench className="h-6 w-6 text-teal-600" /></span>
-                <span className="text-[11px] font-bold tracking-wide text-foreground/50 bg-[#F4F6FA] rounded-full px-3 py-1">건물주</span>
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight text-foreground">주택 관리</h3>
-              <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">청소부터 소방·승강기까지 <strong className="text-foreground">6종 시설을 매주 직접</strong> 관리합니다.</p>
-              <ul className="mt-6 space-y-3 flex-1">
-                {["공용부 청소 · 정기 방역", "전기 · 소방 안전점검", "승강기 · 급배수 설비", "통신 · CCTV 관리", "건물 하자 · 누수 긴급대응"].map((t) => (
-                  <li key={t} className="flex items-start gap-2.5 text-[15px] font-medium text-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-teal-500 shrink-0 mt-0.5" /> {t}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-7 pt-5 border-t border-[#F0F2F6] flex items-center justify-between gap-3">
-                <span className="text-sm font-bold text-foreground">6종 직접 관리</span>
-                <Link href="/services/housing" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:gap-2.5 transition-all">
-                  서비스 보기 <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* 3. 임차인 응대 */}
-            <div className="rounded-3xl bg-white border border-[#E8EBF0] p-8 flex flex-col hover:shadow-xl hover:border-primary/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <span className="h-12 w-12 rounded-2xl bg-violet-100 flex items-center justify-center"><MessageCircle className="h-6 w-6 text-violet-600" /></span>
-                <span className="text-[11px] font-bold tracking-wide text-foreground/50 bg-[#F4F6FA] rounded-full px-3 py-1">입주민</span>
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight text-foreground">임차인 응대</h3>
-              <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">민원·서류·분쟁까지 <strong className="text-foreground">입주민 창구를 대신</strong> 맡아 빠르게 처리합니다.</p>
-              <ul className="mt-6 space-y-3 flex-1">
-                {["민원 · AS 온라인 접수", "24시간 소통 창구 운영", "계약 · 정산 서류 발급", "세입자 분쟁 중재", "입주 · 퇴거 정산 처리"].map((t) => (
-                  <li key={t} className="flex items-start gap-2.5 text-[15px] font-medium text-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-violet-500 shrink-0 mt-0.5" /> {t}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-7 pt-5 border-t border-[#F0F2F6] flex items-center justify-between gap-3">
-                <span className="text-sm font-bold text-foreground">빠른 전담 응대</span>
-                <Link href="/tenant/complaint" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:gap-2.5 transition-all">
-                  민원 접수 <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
+          <CoreServicesCarousel />
 
           {/* 하단 출동 안내 */}
           <p className="mt-10 text-center text-sm text-foreground/55 inline-flex items-center justify-center gap-1.5 w-full">
-            <MapPin className="h-3.5 w-3.5" /> {COMPANY.serviceArea} 전 지역 출동 · 상담 무료 · 계약 의무 없음
+            <MapPin className="h-3.5 w-3.5" /> 전국 어디든 출동 · 상담 무료 · 계약 의무 없음
           </p>
+        </div>
+      </section>
+
+      {/* ============ 경매 — 고민하는 임대인 (풀블리드) ============ */}
+      <section className="relative bg-[#0c1322] text-white overflow-hidden">
+        {/* 배경 이미지 (설정 시) */}
+        {WORRY_IMG && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={WORRY_IMG} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
+        )}
+        {/* 시네마틱 오버레이 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0c1322] via-[#0c1322]/90 to-[#0c1322]/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0c1322] via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-7xl px-6 py-28 md:py-40">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold text-white/55 mb-5 inline-flex items-center gap-2">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-400" /> 경매 직전 · 방치된 건물
+            </p>
+            <h2 className="font-bold tracking-tight leading-[1.18]" style={{ fontSize: "clamp(28px, 4.5vw, 50px)", letterSpacing: "-0.03em" }}>
+              혼자 감당하기엔<br />너무 무거운 짐입니다.
+            </h2>
+            <div className="mt-9 space-y-4 text-lg md:text-2xl text-white/80 leading-relaxed font-medium">
+              <p>&ldquo;대출 이자도 못 내는데… 어디서 돈을 빌리지?&rdquo;</p>
+              <p>&ldquo;임차인들은 전세보증금 돌려달라고 매일 난리인데…&rdquo;</p>
+              <p>&ldquo;관리비도 밀려서 건물은 그대로 방치되고 있는데…&rdquo;</p>
+            </div>
+            <p className="mt-10 text-xl md:text-3xl font-bold leading-snug">
+              그 짐, <span className="text-amber-300">JNP가 대신 짊어집니다.</span>
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-3">
+              <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-white text-[#0c1322] hover:bg-white/90 h-12 px-7 rounded-xl text-base font-bold transition-all">
+                <Phone className="h-5 w-5" /> 010-9893-6882 경매 상담
+              </a>
+              <a href="/auction" className="inline-flex items-center justify-center gap-2 bg-white/10 text-white border border-white/25 hover:bg-white/20 h-12 px-7 rounded-xl text-base font-semibold transition-all">
+                경매 서비스 보기 <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -618,24 +598,40 @@ export default async function HomePage() {
                 ],
               },
             ].map((t, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden border border-[#E8EBF0] shadow-sm bg-white animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
-                {/* 채팅방 헤더 */}
-                <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#A7BBD0]">
-                  <div className="h-8 w-8 rounded-full bg-white/90 flex items-center justify-center text-xs font-bold text-primary">{t.initial}</div>
-                  <span className="text-sm font-semibold text-[#1c2b4a]">{t.who}</span>
+              <div key={i} className="rounded-2xl overflow-hidden border border-[#E8EBF0] shadow-md bg-white animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+                {/* 카톡 채팅방 헤더 */}
+                <div className="flex items-center gap-2.5 px-4 py-3 bg-[#9DB2CA]">
+                  <div className="h-9 w-9 rounded-2xl bg-white flex items-center justify-center text-xs font-bold text-primary shadow-sm">{t.initial}</div>
+                  <div className="leading-tight min-w-0">
+                    <p className="text-[13px] font-bold text-[#16233c] truncate">{t.who}</p>
+                    <p className="text-[10px] text-[#16233c]/55">JNP주택관리와의 대화</p>
+                  </div>
+                  <span className="ml-auto text-[#16233c]/40 text-lg leading-none">☰</span>
                 </div>
                 {/* 대화 — JNP 노랑(우), 소유주 흰색(좌) */}
-                <div className="bg-[#B2C7DA] px-3.5 py-4 space-y-2.5">
-                  {t.msgs.map((m, j) => m.r === "owner" ? (
-                    <div key={j} className="flex items-end gap-1.5">
-                      <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center text-[9px] font-bold text-primary shrink-0">{t.initial}</div>
-                      <div className="max-w-[78%] bg-white rounded-2xl rounded-bl-md px-3 py-2 text-[13px] leading-snug text-foreground shadow-sm">{m.t}</div>
-                    </div>
-                  ) : (
-                    <div key={j} className="flex justify-end">
-                      <div className="max-w-[80%] bg-[#FEE500] rounded-2xl rounded-br-md px-3 py-2 text-[13px] leading-snug text-[#3C1E1E] shadow-sm">{m.t}</div>
-                    </div>
-                  ))}
+                <div className="bg-[#B2C7DA] px-3 py-4 space-y-2">
+                  <div className="flex justify-center pb-1.5">
+                    <span className="text-[10px] text-[#16233c]/60 bg-white/45 rounded-full px-3 py-0.5">상담 시작</span>
+                  </div>
+                  {t.msgs.map((m, j) => {
+                    const time = `오후 2:${(11 + j).toString().padStart(2, "0")}`;
+                    const last = j === t.msgs.length - 1;
+                    return m.r === "owner" ? (
+                      <div key={j} className="flex items-end gap-1.5">
+                        <div className="h-7 w-7 rounded-full bg-white flex items-center justify-center text-[9px] font-bold text-primary shrink-0 self-start shadow-sm">{t.initial}</div>
+                        <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-[13px] leading-snug text-foreground shadow-sm max-w-[74%]">{m.t}</div>
+                        <span className="text-[9px] text-[#16233c]/50 shrink-0 mb-0.5">{time}</span>
+                      </div>
+                    ) : (
+                      <div key={j} className="flex items-end justify-end gap-1">
+                        <div className="flex flex-col items-end shrink-0 mb-0.5">
+                          {last && <span className="text-[9px] font-semibold text-[#4a6da3]">읽음</span>}
+                          <span className="text-[9px] text-[#16233c]/50">{time}</span>
+                        </div>
+                        <div className="bg-[#FEE500] rounded-2xl rounded-tr-sm px-3 py-2 text-[13px] leading-snug text-[#3C1E1E] shadow-sm max-w-[74%]">{m.t}</div>
+                      </div>
+                    );
+                  })}
                 </div>
                 {/* 결과 */}
                 <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white border-t border-[#E8EBF0]">
@@ -839,7 +835,7 @@ export default async function HomePage() {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/60">
             <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 평일 09:00~18:00</span>
-            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> 경기·서울·인천 전 지역</span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> 전국 어디든 출동</span>
           </div>
         </div>
       </section>

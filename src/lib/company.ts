@@ -9,7 +9,7 @@ export const COMPANY = {
   representative: "박재흥",
 
   yearsOfExperience: 27,
-  serviceArea: "경기 · 서울 · 인천",
+  serviceArea: "전국",
 
   /** @deprecated lib/constants/stats.ts (COMPANY_STATS) 사용. */
   stats: {

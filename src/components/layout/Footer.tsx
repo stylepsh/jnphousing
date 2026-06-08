@@ -54,7 +54,7 @@ export function Footer() {
             <p className="text-sm text-slate-400 leading-relaxed">
               {COMPANY.business.summary} · {COMPANY.yearsOfExperience}년 노하우
               <br />
-              {COMPANY.serviceArea} 전 지역 서비스
+              전국 어디든 서비스
             </p>
 
             <div className="mt-6 space-y-3 text-sm">
