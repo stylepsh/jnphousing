@@ -5,19 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, ArrowRight, CheckCircle2, CheckCircle, MessageCircle, FileText, MapPin,
-  ShieldCheck, TrendingUp, Pin, Calendar, Phone,
+  ShieldCheck, TrendingUp, Pin, Calendar, Phone, Scale, Briefcase,
   Wrench, Wifi, Sparkles, Zap, Droplets, Flame, ArrowUpDown, Clock, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { DashboardMock } from "@/components/shared/DashboardMock";
-import { BeforeAfterCard } from "@/components/shared/BeforeAfterCard";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY_STATS } from "@/lib/constants/stats";
-import { TRANSFORMATIONS } from "@/lib/data/transformations";
-import { HERO_IMAGES, SAMPLE_PROPERTIES, CATEGORY_IMAGES } from "@/lib/data/site-images";
-import type { Property } from "@/types/database";
+import { HERO_IMAGES, CATEGORY_IMAGES } from "@/lib/data/site-images";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물관리 전문",
@@ -77,30 +74,8 @@ async function fetchRecentNotices(): Promise<RecentNotice[]> {
   }
 }
 
-const PROPERTY_TYPE_LABEL: Record<string, string> = {
-  officetel: "오피스텔", apartment: "아파트", villa: "빌라", commercial: "상가",
-};
-
-async function fetchTopProperties(): Promise<Property[]> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("properties")
-      .select("*")
-      .eq("is_published", true)
-      .order("display_order", { ascending: true })
-      .limit(6);
-    return (data ?? []) as Property[];
-  } catch {
-    return [];
-  }
-}
-
 export default async function HomePage() {
-  const [properties, recentNotices] = await Promise.all([
-    fetchTopProperties(),
-    fetchRecentNotices(),
-  ]);
+  const recentNotices = await fetchRecentNotices();
 
   return (
     <>
@@ -108,7 +83,7 @@ export default async function HomePage() {
 
       {/* ============ HERO — 흰 배경 분할형 ============ */}
       <section className="bg-white border-b border-[#E8EBF0]">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:py-24 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="mx-auto max-w-7xl px-6 py-20 md:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* 좌: 텍스트 */}
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-xs font-medium text-foreground/70 mb-7">
@@ -123,21 +98,25 @@ export default async function HomePage() {
 
             <p className="mt-6 text-base md:text-lg text-foreground/65 leading-relaxed max-w-xl">
               임대인의 골치 아픈 건물을 대신 운영해, 손 안 대고 수익을 받게 해드리는 위탁운영 회사입니다.
+              분쟁·HUG·공실·경매까지, <strong className="text-foreground">전담팀이 직접 해결</strong>합니다.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              {["HUG 대위변제", "악성 세입자", "공실 누적", "임대료 연체"].map((k) => (
-                <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-foreground/60">{k}</span>
-              ))}
-              <a href="/auction" className="text-xs px-2.5 py-1 rounded-full border border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors">경매 건물 ›</a>
+            <div className="mt-6">
+              <p className="text-xs font-semibold text-foreground/55 mb-2.5">이런 상황, JNP가 해결합니다</p>
+              <div className="flex flex-wrap gap-2">
+                {["임차인과 분쟁 중", "HUG 대위변제", "불법 점유자", "공실 누적", "건물 슬럼화", "경매 직전", "임차보증금 미반환"].map((k) => (
+                  <span key={k} className="text-xs px-2.5 py-1.5 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-foreground/70">{k}</span>
+                ))}
+                <a href="/auction" className="text-xs px-2.5 py-1.5 rounded-full border border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors">경매 건물 ›</a>
+              </div>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-[#15233f] h-12 px-7 rounded-xl text-base font-semibold transition-all">
                 <Phone className="h-5 w-5" /> 지금 무료 상담
               </a>
-              <a href="#transformation" className="inline-flex items-center justify-center gap-2 bg-white text-foreground border border-[#D9DEE8] hover:bg-[#F4F6FA] h-12 px-7 rounded-xl text-base font-semibold transition-all">
-                해결 사례 보기 <ArrowRight className="h-4 w-4" />
+              <a href="#expertise" className="inline-flex items-center justify-center gap-2 bg-white text-foreground border border-[#D9DEE8] hover:bg-[#F4F6FA] h-12 px-7 rounded-xl text-base font-semibold transition-all">
+                해결 영역 보기 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
 
@@ -271,7 +250,7 @@ export default async function HomePage() {
                   {[
                     { v: "98%", l: "평균 수금률" },
                     { v: "6종", l: "시설관리 직접 운영" },
-                    { v: "월 1회", l: "투명 정산 보고" },
+                    { v: "주 1회", l: "건물관리·정산 보고" },
                   ].map((s) => (
                     <div key={s.l}>
                       <p className="text-2xl font-bold tabular-nums leading-tight">{s.v}</p>
@@ -446,58 +425,43 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ 관리현장 — 실제 빌딩 사진 ============ */}
-      <section className="bg-background py-24 md:py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="flex items-end justify-between gap-4 mb-14 flex-wrap">
-            <div>
-              <p className="text-overline text-primary mb-4">관리 현장</p>
-              <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-                JNP가 운영하는 건물
-              </h2>
-            </div>
-            <Button asChild variant="ghost" className="font-semibold">
-              <Link href="/properties">전체 보기 <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
-            </Button>
+      {/* ============ 3대 전담팀 ============ */}
+      <section className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="max-w-2xl mb-14">
+            <p className="text-overline text-primary mb-4">전담 조직</p>
+            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+              어떤 상황이든,<br />전담팀이 해결합니다
+            </h2>
+            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+              분쟁·시설·자산운용을 나눠 맡는 3개 전담팀이 각자의 영역을 책임집니다.
+              한 사람이 다 떠안는 회사가 아닙니다.
+            </p>
           </div>
 
-          {(() => {
-            const cards = properties.length === 0
-              ? SAMPLE_PROPERTIES.map((p, idx) => ({ key: String(idx), href: "/properties", name: p.name, type: p.type, loc: p.region, units: p.units }))
-              : properties.map((p) => ({ key: p.id, href: `/properties/${p.id}`, name: p.name, type: p.type, loc: p.address ?? "", units: p.total_units }));
-            return (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-                {cards.map((p) => (
-                  <Link key={p.key} href={p.href} className="block animate-fade-in group">
-                    <div className="h-full rounded-2xl border border-[#E8EBF0] bg-white p-6 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="h-11 w-11 rounded-xl bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                          <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-xs font-semibold text-foreground/60">
-                          {PROPERTY_TYPE_LABEL[p.type] ?? p.type}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-lg tracking-tight text-foreground">{p.name}</h3>
-                      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                        {p.loc && (
-                          <span className="inline-flex items-center gap-1 line-clamp-1">
-                            <MapPin className="h-3.5 w-3.5 shrink-0" /> {p.loc}
-                          </span>
-                        )}
-                        {p.loc && <span>·</span>}
-                        <span className="shrink-0">{p.units}세대</span>
-                      </div>
-                      <div className="mt-5 pt-4 border-t border-[#F0F2F6] flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">JNP 위탁 운영 중</span>
-                        <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            );
-          })()}
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              { icon: Scale, name: "분쟁해결 전담팀", desc: "소유주·세입자 양측 사이에서 중재하고, 명도·법적 절차까지 대신 진행합니다.", tags: ["임차인과 분쟁 중", "임차보증금 미반환", "불법 점유자"] },
+              { icon: Wrench, name: "건물관리 전담팀", desc: "매주 청소·방역·시설 점검으로 방치된 건물을 정상 가동 상태로 되돌립니다.", tags: ["건물 슬럼화", "공실 누적", "시설 노후"] },
+              { icon: Briefcase, name: "위탁운용 전담팀", desc: "위기 자산을 안정적인 임대 수익 흐름으로 전환하고 끝까지 동행합니다.", tags: ["HUG 대위변제", "경매 직전", "수익 흐름화"] },
+            ].map((t) => {
+              const Icon = t.icon;
+              return (
+                <div key={t.name} className="bg-white rounded-2xl p-7 border border-[#E8EBF0] hover:border-primary/40 hover:shadow-xl transition-all duration-300">
+                  <div className="h-12 w-12 rounded-xl bg-primary/8 flex items-center justify-center mb-5">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-lg tracking-tight text-foreground">{t.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-2.5 leading-relaxed">{t.desc}</p>
+                  <div className="mt-5 pt-5 border-t border-[#F0F2F6] flex flex-wrap gap-2">
+                    {t.tags.map((tag) => (
+                      <span key={tag} className="text-[11px] px-2 py-1 rounded-full bg-[#F4F6FA] border border-[#E8EBF0] text-foreground/65">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -607,28 +571,6 @@ export default async function HomePage() {
                 <p className="text-foreground/70 text-sm leading-relaxed">이미 포기하셨던 건물이라도 <strong className="text-foreground">한 번쯤은 확인해 보시기 바랍니다.</strong></p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ Before/After ============ */}
-      <section id="transformation" className="bg-background py-24 md:py-32">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="max-w-2xl mb-14">
-            <p className="text-overline text-primary mb-4">정상화 실적</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
-              위기 건물의 정상화 결과
-            </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
-              실제 운영 데이터로 확인된 변화. 공실률·수금률·민원 처리속도 등 핵심 지표 개선.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
-            {TRANSFORMATIONS.map(t => (
-              <div key={t.id} className="animate-fade-in">
-                <BeforeAfterCard t={t} />
-              </div>
-            ))}
           </div>
         </div>
       </section>
