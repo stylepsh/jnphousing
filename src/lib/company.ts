@@ -40,8 +40,8 @@ export const COMPANY = {
   ],
 
   contact: {
-    phone: "010-7508-6916",
-    phoneHref: "tel:01075086916",
+    phone: "010-9893-6882",
+    phoneHref: "tel:01098936882",
     phoneLabel: "신규 위탁운영 관리 문의",
     email: "info@jnphousing.com",
     kakaoOpenChat: "https://open.kakao.com/o/scZWs5vi",

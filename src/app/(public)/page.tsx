@@ -19,7 +19,7 @@ import { COMPANY_STATS } from "@/lib/constants/stats";
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물관리 전문",
   description:
-    "전국 어디든 위탁임대 전문. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-7508-6916",
+    "전국 어디든 위탁임대 전문. HUG 대위변제·전세사기·부실 건물 정상화 전문. 운영 32+ 건물 / 480+ 세대. 무료 상담 010-9893-6882",
   keywords: [
     "부천 위탁임대", "부천 주택관리", "위탁임대관리",
     "HUG 대위변제", "전세사기", "보증사고",
@@ -130,7 +130,7 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-[#15233f] h-12 px-7 rounded-xl text-base font-semibold transition-all">
+              <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-[#15233f] h-12 px-7 rounded-xl text-base font-semibold transition-all">
                 <Phone className="h-5 w-5" /> 지금 무료 상담
               </a>
               <a href="#expertise" className="inline-flex items-center justify-center gap-2 bg-white text-foreground border border-[#D9DEE8] hover:bg-[#F4F6FA] h-12 px-7 rounded-xl text-base font-semibold transition-all">
@@ -705,7 +705,7 @@ export default async function HomePage() {
           {/* CTA — 무료 보장 3종 */}
           <div className="mt-16 text-center space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary/90 h-14 px-8 rounded-xl text-lg font-semibold transition-all hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5">
+              <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary/90 h-14 px-8 rounded-xl text-lg font-semibold transition-all hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5">
                 <Phone className="h-5 w-5" /> 지금 바로 전화하기
               </a>
               <a href="https://open.kakao.com/o/scZWs5vi" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] hover:bg-[#FDD800] h-14 px-8 rounded-xl text-lg font-semibold transition-all hover:shadow-xl hover:-translate-y-0.5">
@@ -826,8 +826,8 @@ export default async function HomePage() {
             상담은 무료이며, 계약 의무는 없습니다.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:01075086916" className="inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-white/90 h-14 px-8 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
-              <Phone className="h-5 w-5" /> 010-7508-6916
+            <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-white/90 h-14 px-8 rounded-xl text-lg font-bold transition-all hover:shadow-2xl hover:-translate-y-0.5">
+              <Phone className="h-5 w-5" /> 010-9893-6882
             </a>
             <a href="/contact" className="inline-flex items-center justify-center gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 h-14 px-8 rounded-xl text-lg font-semibold transition-all">
               온라인 문의하기 <ArrowRight className="h-5 w-5" />

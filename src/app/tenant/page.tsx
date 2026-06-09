@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Megaphone, FileDown, ChevronRight, Phone, Search, KeyRound, FileSignature, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getTenantSession } from "@/lib/tenant-session";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "입주민 서비스",
@@ -160,8 +161,8 @@ export default async function TenantHome({
             <p className="text-sm text-amber-800 mt-1">
               누수·정전·화재 등 긴급 상황은 관리실로 바로 연락 주세요.
             </p>
-            <a href="tel:010-0000-0000" className="inline-block mt-2 font-bold text-amber-900 underline">
-              010-XXXX-XXXX
+            <a href={COMPANY.contact.phoneHref} className="inline-block mt-2 font-bold text-amber-900 underline">
+              {COMPANY.contact.phone}
             </a>
           </div>
         </div>

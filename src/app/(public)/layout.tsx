@@ -26,7 +26,7 @@ export default function PublicLayout({
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-center gap-2 px-4 py-3">
-          <a href="tel:01075086916" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">
+          <a href="tel:01098936882" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">
             <Phone className="h-4 w-4" /> 전화 상담
           </a>
           <a href="https://open.kakao.com/o/scZWs5vi" target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">

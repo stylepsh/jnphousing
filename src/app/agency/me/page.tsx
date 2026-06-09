@@ -68,7 +68,7 @@ export default async function AgencyMePage() {
       <Card className="border-dashed">
         <CardContent className="py-6 text-sm text-muted-foreground">
           <p className="font-semibold text-foreground mb-1">정보 수정·비밀번호 변경</p>
-          <p>현재는 관리자에게 요청해 주세요 ({process.env.NODE_ENV === "production" ? "010-7508-6916" : "데모"}).</p>
+          <p>현재는 관리자에게 요청해 주세요 ({process.env.NODE_ENV === "production" ? "010-9893-6882" : "데모"}).</p>
           <p className="mt-1 text-xs">셀프 서비스 변경 기능은 곧 제공됩니다.</p>
         </CardContent>
       </Card>

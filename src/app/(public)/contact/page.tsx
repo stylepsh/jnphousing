@@ -32,7 +32,7 @@ export default function ContactPage() {
                   <div className="mb-8 p-5 rounded-xl bg-primary/5 border border-primary/15">
                     <p className="text-sm font-semibold mb-3">양식 작성이 번거로우시다면:</p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <a href="tel:01075086916" className="flex items-center justify-center gap-2 bg-primary text-white rounded-lg h-11 px-5 text-sm font-semibold hover:bg-primary/90 transition-colors">
+                      <a href="tel:01098936882" className="flex items-center justify-center gap-2 bg-primary text-white rounded-lg h-11 px-5 text-sm font-semibold hover:bg-primary/90 transition-colors">
                         <Phone className="h-4 w-4" /> 전화로 바로 상담하기
                       </a>
                       <a href="https://open.kakao.com/o/scZWs5vi" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] rounded-lg h-11 px-5 text-sm font-semibold hover:bg-[#FDD800] transition-colors">

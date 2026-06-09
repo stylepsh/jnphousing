@@ -208,7 +208,7 @@ export default async function AgencyFormsPage() {
         <p className="font-semibold mb-1">📌 안내</p>
         <ul className="text-xs space-y-1 ml-4 list-disc">
           <li>JNP주택관리가 제공하는 표준 양식입니다. 임차인 측 사정에 따라 조항을 조정해 사용하세요.</li>
-          <li>자료가 보이지 않는다면 관리자(010-7508-6916)에게 문의해 주세요.</li>
+          <li>자료가 보이지 않는다면 관리자(010-9893-6882)에게 문의해 주세요.</li>
         </ul>
       </div>
     </div>

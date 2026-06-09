@@ -111,7 +111,7 @@ export function BuildingSelectModal({ properties, forceShow }: BuildingSelectMod
             모든 건물 보기
           </button>
           <Button asChild size="sm" variant="outline">
-            <a href="tel:01075086916">전화 문의</a>
+            <a href="tel:01098936882">전화 문의</a>
           </Button>
         </div>
       </div>

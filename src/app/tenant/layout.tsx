@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Phone } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { COMPANY } from "@/lib/company";
 
 export default function TenantLayout({
   children,
@@ -21,7 +22,7 @@ export default function TenantLayout({
               🏠 입주민 서비스 영역
             </Link>
             <a
-              href="tel:02-0000-0000"
+              href={COMPANY.contact.phoneHref}
               className="flex items-center gap-1.5 text-xs bg-white/15 px-3 py-1 rounded-full hover:bg-white/25 transition"
             >
               <Phone className="h-3.5 w-3.5" />

@@ -26,7 +26,7 @@ const SERVICES: Svc[] = [
     desc: "방치된 건물을 대신 운영해 매달 수익으로 바꿉니다. HUG·경매·공실까지 직접.",
     items: ["임대료 수금 · 월 정산", "HUG 대위변제 대응", "경매 · 공실 건물 수익화", "부실 건물 정상화", "세입자 분쟁 · 명도 해결"],
     result: "매달 수익 정산",
-    cta: { kind: "phone", label: "무료 상담", href: "tel:01075086916" },
+    cta: { kind: "phone", label: "무료 상담", href: "tel:01098936882" },
   },
   {
     id: "facility",

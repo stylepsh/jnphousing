@@ -150,14 +150,14 @@ export function Header() {
         <div className="hidden lg:flex items-center gap-3 shrink-0">
           {/* 전화번호 — 항상 노출 */}
           <a
-            href="tel:01075086916"
+            href="tel:01098936882"
             className={cn(
               "flex items-center gap-1.5 text-sm font-bold transition-colors",
               transparent ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80",
             )}
           >
             <Phone className="h-4 w-4" />
-            010-7508-6916
+            010-9893-6882
           </a>
           <div className={cn("h-4 w-px", transparent ? "bg-white/30" : "bg-border")} />
           <Link href="/login" className={cn("text-sm transition-colors", transparent ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
@@ -171,7 +171,7 @@ export function Header() {
 
         {/* 모바일 토글 */}
         <div className="lg:hidden flex items-center gap-0.5">
-          <a href="tel:01075086916" className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
+          <a href="tel:01098936882" className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
             <Phone className="h-5 w-5" />
           </a>
           <ThemeToggle />

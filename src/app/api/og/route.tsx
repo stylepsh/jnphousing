@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
             letterSpacing: "0.05em",
           }}
         >
-          jnphousing.co.kr · 010-7508-6916
+          jnphousing.co.kr · 010-9893-6882
         </div>
       </div>
     ),
