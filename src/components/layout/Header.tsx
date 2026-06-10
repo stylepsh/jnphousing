@@ -130,7 +130,7 @@ export function Header() {
                           <div className="text-sm font-semibold text-foreground group-hover/item:text-primary transition-colors">
                             {item.label}
                             {item.badge && (
-                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold align-middle">{item.badge}</span>
+                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold align-middle">{item.badge}</span>
                             )}
                           </div>
                           {item.desc && (
@@ -223,7 +223,7 @@ export function Header() {
                         >
                           {item.label}
                           {item.badge && (
-                            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">{item.badge}</span>
+                            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{item.badge}</span>
                           )}
                           {item.desc && <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>}
                         </Link>

@@ -57,18 +57,6 @@ const NEWS_CATEGORY: Record<string, string> = {
   general: "일반", press: "보도", update: "업데이트", holiday: "휴무", important: "중요",
 };
 
-// 컬러 아이콘 타일 (기능별 색 — 앱 아이콘 스타일)
-const ICON_TONE: Record<string, { tile: string; icon: string }> = {
-  blue: { tile: "bg-blue-100", icon: "text-blue-600" },
-  teal: { tile: "bg-teal-100", icon: "text-teal-600" },
-  violet: { tile: "bg-violet-100", icon: "text-violet-600" },
-  emerald: { tile: "bg-emerald-100", icon: "text-emerald-600" },
-  amber: { tile: "bg-amber-100", icon: "text-amber-600" },
-  rose: { tile: "bg-rose-100", icon: "text-rose-600" },
-  indigo: { tile: "bg-indigo-100", icon: "text-indigo-600" },
-  sky: { tile: "bg-sky-100", icon: "text-sky-600" },
-};
-
 // 경매 고민 섹션 배경 이미지.
 // 👉 동양인 40대 남성이 고민하는 4K 실사 사진을 준비해 이 값에 넣으세요.
 //    예) public/auction-worry.jpg 에 넣고 "/auction-worry.jpg"
@@ -109,12 +97,12 @@ export default async function HomePage() {
               상담 무료 · 계약 의무 없음
             </div>
 
-            <h1 className="font-bold tracking-tight text-foreground leading-[1.14]" style={{ fontSize: "clamp(32px, 5vw, 56px)", letterSpacing: "-0.035em" }}>
+            <h1 className="heading-display text-foreground">
               혼자 감당하기 힘든 건물,<br />
               <span className="text-primary">이제 JNP가 책임집니다.</span>
             </h1>
 
-            <p className="mt-6 text-base md:text-lg text-foreground/65 leading-relaxed max-w-xl">
+            <p className="mt-6 text-lead max-w-xl">
               임대인의 골치 아픈 건물을 대신 운영해, 손 안 대고 수익을 받게 해드리는 위탁운영 회사입니다.
               분쟁·HUG·공실·경매까지, <strong className="text-foreground">전담팀이 직접 해결</strong>합니다.
             </p>
@@ -177,16 +165,16 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 진입 3분할 (위탁임대 / 주택관리 / 세입자존) ============ */}
-      <section className="bg-[#F7F8FB] border-b border-[#E8EBF0] py-16 md:py-24">
+      <section className="bg-[#F7F8FB] border-b border-[#E8EBF0] py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-center font-bold tracking-tight text-foreground mb-12" style={{ fontSize: "clamp(24px, 3.5vw, 38px)", letterSpacing: "-0.03em" }}>
+          <h2 className="heading-section-sm text-center text-foreground mb-12">
             어떤 도움이 필요하세요?
           </h2>
           <div className="grid md:grid-cols-3 gap-5">
             {/* 위탁임대관리 (임대인) */}
             <a href="#expertise" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300 scroll-mt-20">
-              <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center mb-5">
-                <Building2 className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 rounded-xl bg-primary/[0.06] flex items-center justify-center mb-5">
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
               <p className="text-[11px] font-semibold text-primary/60 mb-1">임대인</p>
               <h3 className="font-bold text-lg text-foreground">위탁임대관리</h3>
@@ -200,8 +188,8 @@ export default async function HomePage() {
 
             {/* 주택관리 (시설) */}
             <a href="#facility" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
-              <div className="h-12 w-12 rounded-xl bg-teal-100 flex items-center justify-center mb-5">
-                <Wrench className="h-6 w-6 text-teal-600" />
+              <div className="h-12 w-12 rounded-xl bg-primary/[0.06] flex items-center justify-center mb-5">
+                <Wrench className="h-6 w-6 text-primary" />
               </div>
               <p className="text-[11px] font-semibold text-primary/60 mb-1">건물주</p>
               <h3 className="font-bold text-lg text-foreground">주택관리</h3>
@@ -215,8 +203,8 @@ export default async function HomePage() {
 
             {/* 세입자존 (임차인) */}
             <a href="/tenant/complaint" className="group rounded-2xl border border-[#E8EBF0] bg-white p-7 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
-              <div className="h-12 w-12 rounded-xl bg-violet-100 flex items-center justify-center mb-5">
-                <MessageCircle className="h-6 w-6 text-violet-600" />
+              <div className="h-12 w-12 rounded-xl bg-primary/[0.06] flex items-center justify-center mb-5">
+                <MessageCircle className="h-6 w-6 text-primary" />
               </div>
               <p className="text-[11px] font-semibold text-muted-foreground mb-1">입주민</p>
               <h3 className="font-bold text-lg text-foreground">세입자존</h3>
@@ -232,14 +220,14 @@ export default async function HomePage() {
       </section>
 
       {/* ============ BRAND PROMISE — 네이비 블록 + 대시보드 목업 ============ */}
-      <section className="bg-background py-24 md:py-32">
+      <section className="bg-background section-pad">
         <div className="mx-auto max-w-6xl px-6">
           <div className="rounded-3xl bg-primary text-white overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center p-8 md:p-12 lg:p-16">
               {/* 카피 (우측) */}
               <div className="lg:order-2">
                 <p className="text-sm font-semibold text-white/55 mb-4">약속</p>
-                <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+                <h2 className="heading-section">
                   건물 한 채를<br />
                   기업처럼 운영합니다.
                 </h2>
@@ -282,14 +270,14 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 맡기기 전 → 맡긴 후 (전단지) ============ */}
-      <section className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32">
+      <section className="bg-[#F7F8FB] border-y border-[#E8EBF0] section-pad">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-overline text-primary mb-4">맡기는 순간</p>
-            <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section text-foreground">
               건물이 이렇게 달라집니다
             </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+            <p className="mt-5 text-lead">
               방치하던 골칫거리에서 <strong className="text-foreground">매달 들어오는 자산</strong>으로.
             </p>
           </div>
@@ -362,14 +350,14 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 내가 얻는 것 (고객 이익 중심) ============ */}
-      <section className="bg-white py-24 md:py-32 border-t border-border/40">
+      <section className="bg-white section-pad border-t border-border/40">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-3xl mb-14">
             <p className="text-overline text-primary mb-4">맡기면 달라집니다</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section">
               건물주님이 실제로 얻으시는 것
             </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+            <p className="mt-5 text-lead">
               JNP는 임대인의 골치 아픈 건물을 <strong className="text-foreground">대신 운영</strong>해,
               손 안 대고 수익을 받게 해드리는 <strong className="text-foreground">위탁운영 회사</strong>입니다.
             </p>
@@ -377,17 +365,16 @@ export default async function HomePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: Clock,       tone: "sky",     title: "시간을 돌려드립니다", desc: "민원·수금·시설 전화, 더는 안 받으셔도 됩니다. 매월 보고서 한 장만 받으세요." },
-              { icon: TrendingUp,  tone: "emerald", title: "실수령액이 오릅니다", desc: "공실을 줄이고 밀린 임대료를 회수해, 손에 들어오는 돈을 늘려드립니다." },
-              { icon: ShieldCheck, tone: "amber",   title: "위기도 대신 처리합니다", desc: "HUG 대위변제·경매·세입자 분쟁 같은 어려운 상황까지 직접 해결합니다." },
-              { icon: FileText,    tone: "violet",  title: "전부 투명하게 보여드립니다", desc: "매월 사진·정산 내역이 담긴 보고서로, 무엇을 했는지 다 확인하실 수 있습니다." },
+              { icon: Clock,       title: "시간을 돌려드립니다", desc: "민원·수금·시설 전화, 더는 안 받으셔도 됩니다. 매월 보고서 한 장만 받으세요." },
+              { icon: TrendingUp,  title: "실수령액이 오릅니다", desc: "공실을 줄이고 밀린 임대료를 회수해, 손에 들어오는 돈을 늘려드립니다." },
+              { icon: ShieldCheck, title: "위기도 대신 처리합니다", desc: "HUG 대위변제·경매·세입자 분쟁 같은 어려운 상황까지 직접 해결합니다." },
+              { icon: FileText,    title: "전부 투명하게 보여드립니다", desc: "매월 사진·정산 내역이 담긴 보고서로, 무엇을 했는지 다 확인하실 수 있습니다." },
             ].map((b) => {
               const Icon = b.icon;
-              const t = ICON_TONE[b.tone];
               return (
                 <div key={b.title} className="bg-white rounded-2xl p-7 border border-border/60 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group">
-                  <div className={`h-12 w-12 rounded-xl ${t.tile} flex items-center justify-center mb-5`}>
-                    <Icon className={`h-6 w-6 ${t.icon}`} />
+                  <div className="h-12 w-12 rounded-xl bg-primary/[0.06] flex items-center justify-center mb-5">
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-bold text-lg tracking-tight text-foreground">{b.title}</h3>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{b.desc}</p>
@@ -399,14 +386,14 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 3대 핵심 서비스 (위탁운용 / 주택관리 / 임차인) ============ */}
-      <section id="services-core" className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32 scroll-mt-20">
+      <section id="services-core" className="bg-[#F7F8FB] border-y border-[#E8EBF0] section-pad scroll-mt-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-overline text-primary mb-4">핵심 서비스</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section">
               건물 하나, JNP가 통째로 맡습니다
             </h2>
-            <p className="mt-5 text-foreground/65 text-base md:text-lg leading-relaxed">
+            <p className="mt-5 text-lead">
               임대 운용 · 시설관리 · 임차인 응대 — 흩어진 일을 한 회사가 한 번에 책임집니다.
             </p>
           </div>
@@ -437,9 +424,9 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-7xl px-6 py-28 md:py-40">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-white/55 mb-5 inline-flex items-center gap-2">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-400" /> 경매 직전 · 방치된 건물
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50" /> 경매 직전 · 방치된 건물
             </p>
-            <h2 className="font-bold tracking-tight leading-[1.18]" style={{ fontSize: "clamp(28px, 4.5vw, 50px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section">
               혼자 감당하기엔<br />너무 무거운 짐입니다.
             </h2>
             <div className="mt-9 space-y-4 text-lg md:text-2xl text-white/80 leading-relaxed font-medium">
@@ -447,8 +434,8 @@ export default async function HomePage() {
               <p>&ldquo;임차인들은 전세보증금 돌려달라고 매일 난리인데…&rdquo;</p>
               <p>&ldquo;관리비도 밀려서 건물은 그대로 방치되고 있는데…&rdquo;</p>
             </div>
-            <p className="mt-10 text-xl md:text-3xl font-bold leading-snug">
-              그 짐, <span className="text-amber-300">JNP가 대신 짊어집니다.</span>
+            <p className="mt-10 text-xl md:text-3xl font-bold leading-snug text-white/70">
+              그 짐, <span className="text-white">JNP가 대신 짊어집니다.</span>
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-3">
               <a href="tel:01098936882" className="inline-flex items-center justify-center gap-2 bg-white text-[#0c1322] hover:bg-white/90 h-12 px-7 rounded-xl text-base font-bold transition-all">
@@ -463,7 +450,7 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 경매 건물 전문 서비스 ============ */}
-      <section id="auction-service" className="bg-[#F7F8FB] border-y border-[#E8EBF0] py-24 md:py-32">
+      <section id="auction-service" className="bg-[#F7F8FB] border-y border-[#E8EBF0] section-pad">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* 좌측: 텍스트 */}
@@ -472,11 +459,11 @@ export default async function HomePage() {
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
                 경매 건물 전문 서비스
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.15] text-foreground">
+              <h2 className="heading-section text-foreground">
                 경매 진행 중인 건물,<br />
                 <span className="text-primary">공실로 손해만</span> 보고 계십니까?
               </h2>
-              <div className="mt-7 space-y-4 text-base md:text-lg text-foreground/65 leading-relaxed">
+              <div className="mt-7 space-y-4 text-lead">
                 <p>임차권등기 · HUG 대위변제 · 명도 · 장기 공실 때문에 건물을 사실상 <strong className="text-foreground">방치</strong>하고 계신 임대인분들이 많습니다.</p>
                 <p>하지만 경매가 진행 중이라고 해서 반드시 <strong className="text-foreground">수익 창출이 불가능한 것은 아닙니다.</strong></p>
               </div>
@@ -526,11 +513,11 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 고객 후기 ============ */}
-      <section className="bg-[#F8FAFF] py-24 md:py-32 border-y border-border/40">
+      <section className="bg-[#F8FAFF] section-pad border-y border-border/40">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-overline text-primary mb-4">고객 후기</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section">
               실제 건물주님들의 이야기
             </h2>
           </div>
@@ -650,11 +637,11 @@ export default async function HomePage() {
 
 
       {/* ============ 5단계 프로세스 ============ */}
-      <section className="bg-background py-24 md:py-32">
+      <section className="bg-background section-pad">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <p className="text-overline text-primary mb-4">진행 절차</p>
-            <h2 className="font-bold tracking-tight leading-[1.15]" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+            <h2 className="heading-section">
               위탁관리 5단계 절차
             </h2>
           </div>
@@ -713,9 +700,9 @@ export default async function HomePage() {
               </a>
             </div>
             <p className="text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 상담 후 계약 의무 없음</span>
-              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 현장 진단 무료</span>
-              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> 견적 무료</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> 상담 후 계약 의무 없음</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> 현장 진단 무료</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-primary" /> 견적 무료</span>
             </p>
           </div>
         </div>
@@ -728,7 +715,7 @@ export default async function HomePage() {
             <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
               <div>
                 <p className="text-overline text-primary mb-3">최근 소식</p>
-                <h2 className="font-bold tracking-tight" style={{ fontSize: "clamp(24px, 3vw, 32px)", letterSpacing: "-0.025em" }}>
+                <h2 className="heading-section-sm">
                   공지사항
                 </h2>
               </div>
@@ -774,14 +761,14 @@ export default async function HomePage() {
       )}
 
       {/* ============ 부동산 파트너 CTA ============ */}
-      <section className="bg-white border-t border-[#E8EBF0] py-24 md:py-32">
+      <section className="bg-white border-t border-[#E8EBF0] section-pad">
         <div className="mx-auto max-w-5xl px-6 text-center">
           <p className="text-overline text-primary mb-4">부동산 파트너</p>
-          <h2 className="font-bold tracking-tight leading-[1.15] text-foreground" style={{ fontSize: "clamp(28px, 4vw, 44px)", letterSpacing: "-0.03em" }}>
+          <h2 className="heading-section text-foreground">
             공실 매물 정보,<br className="md:hidden" />
             부동산 회원께 실시간 공개합니다
           </h2>
-          <p className="mt-6 text-base md:text-lg text-foreground/65 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-lead max-w-2xl mx-auto">
             JNP 관리 건물의 실시간 공실 현황을 가입 후 바로 열람.
             <br className="hidden md:block" />
             보증금·월세·이미지·상세 정보까지 모두 제공됩니다.
@@ -811,13 +798,9 @@ export default async function HomePage() {
       </section>
 
       {/* ============ 최종 CTA (푸터 바로 위) ============ */}
-      <section className="bg-primary text-white py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl" />
-        </div>
-        <div className="mx-auto max-w-3xl px-6 text-center relative">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
+      <section className="bg-primary text-white section-pad">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="heading-section">
             지금 전화 한 통이<br />
             건물의 미래를 바꿉니다.
           </h2>

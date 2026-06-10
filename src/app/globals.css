@@ -284,6 +284,53 @@
     font-size: 0.875rem;
     line-height: 1.45;
   }
+
+  /* 한국어 기업 사이트 타이포 기본 — 단어 중간 줄바꿈 방지 */
+  h1, h2, h3, h4, h5, h6, p, li, dt, dd, figcaption, blockquote {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+}
+
+/* ============ 기업 타이포 유틸리티 ============
+ * 공개 페이지 섹션 공통 스케일. 페이지마다 inline clamp 를 반복하지 않고
+ * 동일한 크기·자간·행간을 공유한다.
+ */
+.heading-display {            /* 히어로 전용 — 가장 큰 표제 */
+  font-size: clamp(2rem, 5vw, 3.5rem);      /* 32→56px */
+  line-height: 1.14;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.heading-section {            /* 섹션 표제 */
+  font-size: clamp(1.75rem, 4vw, 2.75rem);  /* 28→44px */
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.heading-section-sm {         /* 보조 섹션 표제 */
+  font-size: clamp(1.5rem, 3vw, 2rem);      /* 24→32px */
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.text-lead {                  /* 표제 아래 리드 문단 */
+  font-size: 1rem;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--foreground) 65%, transparent);
+}
+@media (min-width: 768px) {
+  .text-lead { font-size: 1.125rem; }
+}
+.section-pad {                /* 섹션 수직 여백 통일 */
+  padding-top: 6rem;          /* 96px */
+  padding-bottom: 6rem;
+}
+@media (min-width: 768px) {
+  .section-pad {
+    padding-top: 8rem;        /* 128px */
+    padding-bottom: 8rem;
+  }
 }
 
 /* Caption utility — 보조 정보 (12px) */
