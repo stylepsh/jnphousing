@@ -57,7 +57,28 @@ create trigger trg_member_applications_updated_at
 
 comment on table public.member_applications is '홈페이지 통합 회원가입 신청 — super 관리자만 승인';
 
--- ─── 2) landlord_users FK 재배선: landlords → owners ───
+-- ─── 2) landlord_users — 없으면 생성(004 미적용 환경), 있으면 FK 만 owners 로 재배선 ───
+create table if not exists public.landlord_users (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  landlord_id uuid not null unique references public.owners(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_landlord_users_landlord on public.landlord_users (landlord_id);
+
+alter table public.landlord_users enable row level security;
+
+drop policy if exists "landlord_users_self_select" on public.landlord_users;
+create policy "landlord_users_self_select"
+  on public.landlord_users for select
+  using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "landlord_users_admin_all" on public.landlord_users;
+create policy "landlord_users_admin_all"
+  on public.landlord_users for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- 기존 테이블이 landlords 를 참조 중이면 owners 로 재배선 (신규 생성 시엔 사실상 no-op)
 alter table public.landlord_users drop constraint if exists landlord_users_landlord_id_fkey;
 alter table public.landlord_users
   add constraint landlord_users_landlord_id_fkey
