@@ -71,6 +71,62 @@ export async function approveLandlordApplication(applicationId: string, ownerId:
   }
 }
 
+/** 직원 신청 승인 — admin_users 에 staff 로 등록되어 즉시 관리자 화면 사용 가능 */
+export async function approveStaffApplication(applicationId: string) {
+  try {
+    const ctx = await requireSuperAdmin();
+    if (!z.string().uuid().safeParse(applicationId).success) return { ok: false as const, error: "잘못된 ID" };
+
+    const supabase = createServiceClient();
+    const { data: appRow } = await supabase
+      .from("member_applications")
+      .select("id, role, user_id, status, name")
+      .eq("id", applicationId)
+      .maybeSingle();
+    const application = appRow as { id: string; role: string; user_id: string | null; status: string; name: string } | null;
+    if (!application || application.role !== "staff") return { ok: false as const, error: "직원 신청을 찾을 수 없습니다." };
+    if (!application.user_id) return { ok: false as const, error: "신청에 연결된 계정이 없습니다." };
+    if (application.status === "approved") return { ok: false as const, error: "이미 승인된 신청입니다." };
+
+    const { error: adminErr } = await supabase
+      .from("admin_users")
+      .upsert({ user_id: application.user_id, name: application.name, role: "staff" }, { onConflict: "user_id" });
+    if (adminErr) {
+      console.error("[approveStaffApplication] admin_users", adminErr);
+      return { ok: false as const, error: "직원 계정 등록 실패" };
+    }
+
+    const { error } = await supabase
+      .from("member_applications")
+      .update({
+        status: "approved",
+        approved_at: new Date().toISOString(),
+        approved_by: ctx.user.id,
+        reject_reason: null,
+      })
+      .eq("id", applicationId);
+    if (error) return { ok: false as const, error: "승인 처리 실패" };
+
+    await audit({
+      action: "member.approve",
+      resource_type: "member_application",
+      resource_id: applicationId,
+      before: { status: application.status },
+      after: { status: "approved", role: "staff" },
+      actor_id: ctx.user.id,
+      actor_role: "admin",
+      ip: await getClientIp(),
+    });
+
+    revalidate();
+    return { ok: true as const };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    console.error("[approveStaffApplication] unhandled", e);
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
 /** 임차인 신청 승인 — 확인 완료 표시 (실제 임차인 등록은 계약 등록 흐름에서) */
 export async function approveTenantApplication(applicationId: string) {
   try {

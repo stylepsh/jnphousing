@@ -79,6 +79,11 @@ export default function SignupHubPage() {
             </p>
           </div>
         </div>
+
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          JNP주택관리 직원이신가요?{" "}
+          <Link href="/signup/staff" className="text-primary font-semibold hover:underline">직원 계정 신청</Link>
+        </p>
       </div>
     </section>
   );

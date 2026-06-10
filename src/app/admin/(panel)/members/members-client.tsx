@@ -4,14 +4,14 @@ import { useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, Handshake, CheckCircle2, XCircle } from "lucide-react";
+import { Building2, Users, Handshake, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { approveLandlordApplication, approveTenantApplication, rejectApplication } from "./actions";
+import { approveLandlordApplication, approveTenantApplication, approveStaffApplication, rejectApplication } from "./actions";
 import { approveAgency, rejectAgency } from "../agencies/actions";
 
 export interface ApplicationRow {
   id: string;
-  role: "landlord" | "tenant";
+  role: "landlord" | "tenant" | "staff";
   name: string;
   phone: string;
   email: string | null;
@@ -55,6 +55,7 @@ export function MembersClient({
 
   const landlordApps = applications.filter((a) => a.role === "landlord");
   const tenantApps = applications.filter((a) => a.role === "tenant");
+  const staffApps = applications.filter((a) => a.role === "staff");
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) {
     startTransition(async () => {
@@ -75,6 +76,54 @@ export function MembersClient({
 
   return (
     <div className="space-y-8">
+      {/* 직원 계정 신청 — 승인 시 admin_users(staff) 즉시 등록 */}
+      <section>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5" /> 직원 신청 <span className="text-primary">{staffApps.filter((a) => a.status === "pending").length}</span>건 대기
+        </p>
+        <Card>
+          <CardContent className="p-0">
+            {staffApps.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">직원 계정 신청이 없습니다.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {staffApps.map((a) => {
+                  const badge = STATUS_BADGE[a.status];
+                  return (
+                    <li key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                      <div className="flex-1 min-w-[200px]">
+                        <p className="text-sm font-semibold">
+                          {a.name} <span className="font-normal text-muted-foreground">· {a.phone}{a.email ? ` · ${a.email}` : ""}</span>
+                        </p>
+                        {a.memo && <p className="text-xs text-muted-foreground mt-0.5">담당: {a.memo}</p>}
+                        {a.status === "rejected" && a.reject_reason && (
+                          <p className="text-xs text-red-600 mt-0.5">반려 사유: {a.reject_reason}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className={`text-xs ${badge.cls}`}>{badge.label}</Badge>
+                      <span className="text-xs text-muted-foreground">{a.created_at.slice(0, 10)}</span>
+                      {a.status === "pending" && (
+                        <div className="flex gap-2">
+                          <Button size="sm" disabled={pending} onClick={() => run(() => approveStaffApplication(a.id), "직원 계정을 승인했습니다. 바로 로그인 가능합니다.")} className="gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> 직원 승인
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={pending} onClick={() => reject(a.id)} className="gap-1 text-red-600 border-red-200 hover:bg-red-50">
+                            <XCircle className="h-3.5 w-3.5" /> 반려
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        <p className="text-xs text-muted-foreground mt-2">
+          ※ 승인 즉시 staff 권한으로 모든 업무 입력이 가능해집니다 (경매·회원 승인 제외). 반드시 실제 직원인지 확인 후 승인하세요.
+        </p>
+      </section>
+
       {/* 부동산 가입 신청 (기존 agencies 흐름) */}
       <section>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
