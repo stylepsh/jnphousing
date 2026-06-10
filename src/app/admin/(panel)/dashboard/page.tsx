@@ -16,6 +16,8 @@ import { OccupancyDonutChart } from "@/components/charts/OccupancyDonutChart";
 import { ChannelBarChart, type ChannelPoint } from "@/components/charts/ChannelBarChart";
 import type { Complaint, Inquiry } from "@/types/database";
 import type { RentInvoice, AgencyCommission, Lease } from "@/types/lease";
+import { CollectChecklist, type CollectRow } from "./collect-checklist";
+import { TodoWidget, type TodoWidgetRow } from "./todo-widget";
 
 const CATEGORY_LABEL: Record<string, string> = {
   as: "AS", facility: "시설", noise: "소음", complaint: "민원", etc: "기타",
@@ -49,6 +51,9 @@ function emptyDashboard() {
     billingTrend: [] as BillingPoint[],
     occupancy: { occupied: 0, vacant: 0, expiring: 0 },
     channelStats: [] as ChannelPoint[],
+    collectRows: [] as CollectRow[],
+    openTodos: [] as TodoWidgetRow[],
+    openTodoCount: 0,
   };
 }
 
@@ -60,6 +65,7 @@ async function getDashboardData() {
   const startIso = start.toISOString().slice(0, 10);
   const endIso = end.toISOString().slice(0, 10);
   const exp60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const todayIso = now.toISOString().slice(0, 10);
 
   const sixMonthsAgo = startOfMonth(subMonths(now, 5));
   const trendStartIso = sixMonthsAgo.toISOString().slice(0, 10);
@@ -74,6 +80,7 @@ async function getDashboardData() {
     trendInvRes, unitsRes, activeLeasesRes,
     channelStatsRes, channelsRes,
     pipelineRes,
+    collectInvRes, todosRes,
   ] = await Promise.all([
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
@@ -92,6 +99,14 @@ async function getDashboardData() {
     supabase.from("vacancy_ad_listings").select("channel_id, inquiry_count, status"),
     supabase.from("ad_channels").select("id, name").eq("is_active", true).order("display_order"),
     supabase.from("v_owner_pipeline").select("*"),
+    supabase.from("rent_invoices").select("id, due_date, amount_total, paid_total, status, lease_id")
+      .lte("due_date", todayIso)
+      .in("status", ["unpaid", "partial", "overdue"])
+      .order("due_date").limit(30),
+    supabase.from("team_todos").select("id, title, assignee, due_date", { count: "exact" })
+      .eq("status", "todo")
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .limit(5),
   ]);
 
   const invs = (invThisMonthRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "status">[];
@@ -147,6 +162,36 @@ async function getDashboardData() {
   const totalVacant = pipeline.reduce((s, p) => s + (p.vacant_count ?? 0), 0);
   const totalOccupied = pipeline.reduce((s, p) => s + (p.occupied_count ?? 0), 0);
 
+  // ====== 오늘 수금 체크리스트 — 호실·임차인 라벨 붙이기 ======
+  type CollectInv = Pick<RentInvoice, "id" | "due_date" | "amount_total" | "paid_total" | "status" | "lease_id">;
+  const collectInvs = (collectInvRes.data ?? []) as CollectInv[];
+  let collectRows: CollectRow[] = [];
+  if (collectInvs.length > 0) {
+    const leaseIds = Array.from(new Set(collectInvs.map((i) => i.lease_id)));
+    const { data: leaseRows } = await supabase.from("leases").select("id, unit_id, tenant_id").in("id", leaseIds);
+    const leaseMap = new Map(((leaseRows ?? []) as { id: string; unit_id: string; tenant_id: string }[]).map((l) => [l.id, l]));
+    const unitIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.unit_id)));
+    const tenantIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.tenant_id)));
+    const [{ data: unitRows }, { data: tenantRows }] = await Promise.all([
+      supabase.from("properties_units").select("id, unit_no, properties:property_id(name)").in("id", unitIds),
+      supabase.from("tenants").select("id, name").in("id", tenantIds),
+    ]);
+    const unitMap = new Map(((unitRows ?? []) as unknown as { id: string; unit_no: string; properties: { name: string } | null }[]).map((u) => [u.id, u]));
+    const tenantMap = new Map(((tenantRows ?? []) as { id: string; name: string }[]).map((t) => [t.id, t.name]));
+    collectRows = collectInvs.map((inv) => {
+      const lease = leaseMap.get(inv.lease_id);
+      const unit = lease ? unitMap.get(lease.unit_id) : null;
+      return {
+        invoiceId: inv.id,
+        dueDate: inv.due_date,
+        remaining: Math.max(0, inv.amount_total - inv.paid_total),
+        status: inv.status,
+        unitLabel: unit ? `${unit.properties?.name ?? "—"} · ${unit.unit_no}호` : "—",
+        tenantName: (lease && tenantMap.get(lease.tenant_id)) || "—",
+      };
+    }).filter((r) => r.remaining > 0);
+  }
+
   return {
     received: receivedRes.count ?? 0,
     inProgress: inProgressRes.count ?? 0,
@@ -164,6 +209,9 @@ async function getDashboardData() {
     billingTrend,
     occupancy: { occupied: occupiedCount, vacant: vacantCount, expiring: expiringUnitCount },
     channelStats,
+    collectRows,
+    openTodos: (todosRes.data ?? []) as TodoWidgetRow[],
+    openTodoCount: todosRes.count ?? 0,
   };
 }
 
@@ -257,6 +305,12 @@ export default async function DashboardPage() {
             icon={MessageSquareWarning} tone="rose" href="/admin/complaints" />
         </div>
       </section>
+
+      {/* ①-1 오늘 수금 체크 + 할 일 — 1인 운영의 매일 화면 */}
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <CollectChecklist rows={d.collectRows} todayIso={today.toISOString().slice(0, 10)} />
+        <TodoWidget rows={d.openTodos} totalOpen={d.openTodoCount} todayIso={today.toISOString().slice(0, 10)} />
+      </div>
 
       {/* ② 임대인 파이프라인 (회사 전체 롤업) */}
       <section className="mt-8">

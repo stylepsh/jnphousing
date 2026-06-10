@@ -29,11 +29,12 @@ import {
   ClipboardList,
   Scale,
   Workflow,
+  ListTodo,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries";
+type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries" | "openTodos";
 
 type NavLeaf = { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue" };
 type NavGroup = {
@@ -44,17 +45,15 @@ type NavGroup = {
 };
 
 const NAV: NavGroup[] = [
-  // ───────── ① 매일 (항상 노출) ─────────
-  // 소유주·수금/청구는 ③④에서 /admin/owners·/admin/billing 통합 페이지로 교체 예정.
-  // 그 전까지는 기존 페이지에 새 라벨로 연결(라우트 무변경).
+  // ───────── ① 매일 (항상 노출) — 업무 흐름 순: 할일 → 소유주(물건) → 수금 ─────────
   {
     group: "매일",
     pinned: true,
     items: [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
+      { href: "/admin/todos", label: "할 일", icon: ListTodo, badgeKey: "openTodos", badgeColor: "blue" },
       { href: "/admin/owners", label: "소유주", icon: UserSquare },
       { href: "/admin/rent", label: "수금·청구", icon: Wallet, badgeKey: "overdue", badgeColor: "red" },
-      { href: "/admin/tenants", label: "임차인", icon: Users },
     ],
   },
   {
@@ -62,6 +61,7 @@ const NAV: NavGroup[] = [
     pinned: true,
     items: [
       { href: "/admin/leases", label: "계약", icon: FileSignature, badgeKey: "expiring", badgeColor: "amber" },
+      { href: "/admin/tenants", label: "임차인", icon: Users },
       { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
       { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
     ],
@@ -72,9 +72,6 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/properties", label: "관리현장", icon: Building2 },
       { href: "/admin/vacancies", label: "공실 매물", icon: Home },
-      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
-      { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
-      { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
     ],
   },
   {
@@ -87,17 +84,20 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    group: "JNP 단기임대",
+    group: "장부·정산",
     items: [
-      { href: "/admin/dm", label: "JNP 대시보드", icon: LayoutDashboard },
-      { href: "/admin/dm/settlement", label: "월별 정산", icon: Wallet },
       { href: "/admin/ledger", label: "월별 손익", icon: Wallet },
+      { href: "/admin/dm", label: "JNP 단기임대", icon: LayoutDashboard },
+      { href: "/admin/dm/settlement", label: "월별 정산", icon: Wallet },
     ],
   },
-  // ───────── ③ 도구 (하단) ─────────
+  // ───────── ③ 더보기 — 가끔만 쓰는 화면 전부 (하단·접힘) ─────────
   {
-    group: "도구",
+    group: "더보기",
     items: [
+      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
+      { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
+      { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
       { href: "/admin/notifications", label: "알림 이력", icon: Bell },
       { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
       { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
@@ -127,6 +127,7 @@ interface BadgeCounts {
   expiring: number;
   pendingAgencies: number;
   newInquiries: number;
+  openTodos: number;
 }
 
 const BADGE_BG: Record<"red" | "amber" | "blue", string> = {

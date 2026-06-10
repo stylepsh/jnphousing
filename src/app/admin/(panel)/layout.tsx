@@ -18,6 +18,7 @@ export default async function AdminLayout({
     expiring: 0,
     pendingAgencies: 0,
     newInquiries: 0,
+    openTodos: 0,
   };
   let adminName = "관리자";
 
@@ -38,18 +39,20 @@ export default async function AdminLayout({
         const todayISO = new Date().toISOString().slice(0, 10);
         const expiryISO = sixtyDaysAgo.toISOString().slice(0, 10);
 
-        const [c1, c2, c3, c4, c5] = await Promise.all([
+        const [c1, c2, c3, c4, c5, c6] = await Promise.all([
           supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
           supabase.from("rent_invoices").select("*", { count: "exact", head: true }).in("status", ["overdue", "unpaid"]).lt("due_date", todayISO),
           supabase.from("leases").select("*", { count: "exact", head: true }).eq("status", "active").lte("end_date", expiryISO).gte("end_date", todayISO),
           supabase.from("agencies").select("*", { count: "exact", head: true }).eq("status", "pending"),
           supabase.from("inquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
+          supabase.from("team_todos").select("*", { count: "exact", head: true }).eq("status", "todo"),
         ]);
         counts.complaints = c1.count ?? 0;
         counts.overdue = c2.count ?? 0;
         counts.expiring = c3.count ?? 0;
         counts.pendingAgencies = c4.count ?? 0;
         counts.newInquiries = c5.count ?? 0;
+        counts.openTodos = c6.count ?? 0; // 015 미실행 시 error → count null → 0
       }
     } catch {
       // ignore
