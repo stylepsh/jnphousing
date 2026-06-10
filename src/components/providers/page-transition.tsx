@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
+import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import type { ReactNode } from "react";
 
 /**
@@ -19,7 +19,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   return (
     <LazyMotion features={domAnimation} strict>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div
+        <m.div
           key={pathname}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -30,7 +30,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
           }}
         >
           {children}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </LazyMotion>
   );
