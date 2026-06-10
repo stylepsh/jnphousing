@@ -79,7 +79,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {/* 하이라이트 6개 */}
         <section className="bg-slate-50 py-16 border-y border-border/60">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-center mb-10">
+            <h2 className="heading-section-sm text-center mb-10">
               {svc.title} 핵심 서비스
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
@@ -102,7 +102,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {/* 진행 절차 */}
         <section className="py-16 bg-background">
           <div className="mx-auto max-w-5xl px-6">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-center mb-10">진행 절차</h2>
+            <h2 className="heading-section-sm text-center mb-10">진행 절차</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {svc.process.map((p) => (
                 <div key={p.step} className="bg-white rounded-xl p-5 border border-border/60 hover:shadow-md transition-all">
@@ -120,7 +120,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {/* 요금 안내 */}
         <section className="bg-slate-50 py-16 border-y border-border/60">
           <div className="mx-auto max-w-3xl px-6">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">요금 안내</h2>
+            <h2 className="heading-section-sm mb-2">요금 안내</h2>
             <p className="text-sm text-muted-foreground mb-8">
               아래는 기준 가이드입니다. 자산 규모·관리 범위에 따라 협의로 조정합니다.
             </p>
@@ -146,7 +146,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {/* FAQ */}
         <section className="py-16 bg-background">
           <div className="mx-auto max-w-3xl px-6">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-8">자주 묻는 질문</h2>
+            <h2 className="heading-section-sm mb-8">자주 묻는 질문</h2>
             <Card>
               <CardContent className="p-0">
                 <Accordion type="single" collapsible>
@@ -176,7 +176,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         {relatedCases.length > 0 && (
           <section className="bg-slate-50 py-16 border-t border-border/60">
             <div className="mx-auto max-w-6xl px-6">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-8">관련 사례</h2>
+              <h2 className="heading-section-sm mb-8">관련 사례</h2>
               <CaseCarousel cases={relatedCases} />
             </div>
           </section>

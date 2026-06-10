@@ -11,7 +11,7 @@ export function OrganizationJsonLd() {
     "@type": "RealEstateAgent",
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
-    description: `${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 부동산 관리 전문기업`,
+    description: `${COMPANY.serviceArea} 부동산 관리 전문기업`,
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
@@ -22,7 +22,6 @@ export function OrganizationJsonLd() {
       name: `${b.label} (${b.detail})`,
     })),
     areaServed: COMPANY.serviceArea.split(" · "),
-    foundingDate: "1999",
   };
   return (
     <script
@@ -40,7 +39,7 @@ export function LocalBusinessJsonLd() {
     "@id": (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com") + "/#business",
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
-    description: `HUG 대위변제·부실 건물·세입자 분쟁까지 ${COMPANY.yearsOfExperience}년 노하우로 해결하는 위탁임대 전문기업`,
+    description: "HUG 대위변제·부실 건물·세입자 분쟁까지 축적된 현장 노하우로 해결하는 위탁임대 전문기업",
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginForm } from "./login-form";
 import { COMPANY } from "@/lib/company";
+import { Logo } from "@/components/Logo";
 import { Building2, HomeIcon, ShieldCheck, KeyRound } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -26,49 +27,49 @@ export default async function LoginPage({
   }[error ?? ""] ?? null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-[#F7F8FB] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="h-14 w-14 mx-auto rounded-xl bg-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
-            <ShieldCheck className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">{COMPANY.brand}</h1>
-          <p className="mt-2 text-sm text-slate-400">관리자 · 부동산 · 임대인 통합 로그인</p>
+          <Link href="/" className="inline-block">
+            <Logo size="large" className="mx-auto rounded-2xl shadow-lg shadow-primary/15" />
+          </Link>
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">{COMPANY.brand}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">관리자 · 부동산 · 임대인 통합 로그인</p>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-200 text-center">
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 text-center">
             {errorMessage}
           </div>
         )}
 
-        <Card>
+        <Card className="border-[#E8EBF0] shadow-sm">
           <CardContent className="pt-8">
             <LoginForm next={next} />
           </CardContent>
         </Card>
 
-        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-400">
-          <Link href="/auth/find-email" className="hover:text-white transition-colors">
+        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <Link href="/auth/find-email" className="hover:text-foreground transition-colors">
             아이디(이메일) 찾기
           </Link>
-          <span className="text-slate-600">·</span>
-          <Link href="/auth/forgot-password" className="hover:text-white transition-colors">
+          <span className="text-border">·</span>
+          <Link href="/auth/forgot-password" className="hover:text-foreground transition-colors">
             비밀번호 찾기
           </Link>
         </div>
 
-        <div className="mt-6 rounded-lg bg-slate-800/50 border border-slate-700/50 p-4">
-          <p className="text-xs font-semibold text-slate-300 mb-2">로그인 후 자동 안내</p>
-          <ul className="space-y-1.5 text-xs text-slate-400">
+        <div className="mt-6 rounded-xl bg-white border border-[#E8EBF0] p-4">
+          <p className="text-xs font-semibold text-foreground/70 mb-2">로그인 후 자동 안내</p>
+          <ul className="space-y-1.5 text-xs text-muted-foreground">
             <li className="flex items-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-400" /> 관리자 → 관리 대시보드
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> 관리자 → 관리 대시보드
             </li>
             <li className="flex items-center gap-2">
-              <Building2 className="h-3.5 w-3.5 text-emerald-400" /> 부동산 회원 → 공실 매물
+              <Building2 className="h-3.5 w-3.5 text-primary" /> 부동산 회원 → 공실 매물
             </li>
             <li className="flex items-center gap-2">
-              <KeyRound className="h-3.5 w-3.5 text-amber-400" /> 임대인 → 자산 현황·정산
+              <KeyRound className="h-3.5 w-3.5 text-primary" /> 임대인 → 자산 현황·정산
             </li>
           </ul>
         </div>
@@ -76,18 +77,18 @@ export default async function LoginPage({
         <div className="mt-6 space-y-3 text-center">
           <Link
             href="/tenant/login"
-            className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-primary transition-colors"
           >
             <HomeIcon className="h-4 w-4" />
             임차인이세요? 호실·휴대폰으로 인증 →
           </Link>
-          <div className="text-xs text-slate-500">
-            부동산 회원이 처음이신가요?{" "}
-            <Link href="/agency/signup" className="text-blue-400 font-semibold hover:underline">
-              가입 신청
+          <div className="text-xs text-muted-foreground">
+            처음이신가요?{" "}
+            <Link href="/signup" className="text-primary font-semibold hover:underline">
+              회원가입
             </Link>
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted-foreground/70">
             계정 발급 문의: {COMPANY.contact.phone}
           </div>
         </div>

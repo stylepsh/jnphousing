@@ -32,7 +32,7 @@ export default function AuctionLandingPage() {
   return (
     <div className="bg-white">
       {/* ============ 1. 히어로 ============ */}
-      <section className="relative bg-gradient-to-br from-[#0F2B5B] to-[#1B4DDB] text-white overflow-hidden">
+      <section className="relative bg-primary text-white overflow-hidden">
         <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="relative mx-auto max-w-5xl px-6 py-24 md:py-32 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-sm font-medium mb-8">
@@ -142,11 +142,11 @@ export default function AuctionLandingPage() {
       </section>
 
       {/* ============ 5. 최종 CTA + 인라인 폼 ============ */}
-      <section id="consult" className="relative bg-gradient-to-br from-[#1B4DDB] to-[#0F2B5B] text-white py-24 md:py-32 overflow-hidden">
+      <section id="consult" className="relative bg-primary text-white py-24 md:py-32 overflow-hidden">
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="relative mx-auto max-w-6xl px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+            <h2 className="heading-section leading-tight">
               건물 주소만 남겨주세요.
               <br />
               <span className="text-amber-300">검토 후 연락드리겠습니다.</span>

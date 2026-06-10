@@ -65,7 +65,7 @@ export function VacancyInfoPdf({ data }: { data: VacancyInfoData }) {
         <View style={styles.brandHeader}>
           <View>
             <Text style={styles.brandName}>{COMPANY.brand}</Text>
-            <Text style={styles.brandSub}>{COMPANY.legalName} · {COMPANY.yearsOfExperience}년차 위탁임대 전문</Text>
+            <Text style={styles.brandSub}>{COMPANY.legalName} · 위탁임대 전문</Text>
           </View>
           <View>
             <Text style={styles.rightHeader}>공실 매물 정보서</Text>

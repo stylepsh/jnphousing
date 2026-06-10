@@ -25,7 +25,7 @@ export async function GET() {
   <channel>
     <title>JNP주택관리 블로그</title>
     <link>${BASE}/blog</link>
-    <description>위탁임대 27년 노하우의 가이드·사례 분석</description>
+    <description>위탁임대 현장 노하우의 가이드·사례 분석</description>
     <language>ko-kr</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}
   </channel>

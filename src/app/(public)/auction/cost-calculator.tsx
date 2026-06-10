@@ -59,7 +59,7 @@ export function CostCalculator() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-gradient-to-r from-[#0F2B5B] to-[#1B4DDB] p-5 text-center">
+      <div className="rounded-xl bg-primary p-5 text-center">
         <p className="text-white/70 text-sm mb-1">방치 시 예상 총 손실</p>
         <p className="text-3xl md:text-4xl font-black text-amber-300 tabular-nums">
           {fmt(total)}<span className="text-xl ml-1">만원</span>

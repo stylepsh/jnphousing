@@ -14,7 +14,7 @@ export default function ServicesPage() {
       <section className="bg-primary text-white py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-6">
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">Our Services</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">서비스</h1>
+          <h1 className="mt-2 heading-section">서비스</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
             JNP주택관리는 두 가지 축으로 운영됩니다. 건물 운영의 모든 단계를 한 회사가 책임집니다.
           </p>
@@ -36,7 +36,7 @@ export default function ServicesPage() {
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                     <Building2 className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight">주택관리</h2>
+                  <h2 className="heading-section">주택관리</h2>
                   <p className="mt-4 text-muted-foreground leading-relaxed">
                     건물 시설을 안정적으로 유지하고, 입주민이 쾌적하게 거주할 수 있도록 책임집니다.
                     소규모 오피스텔·빌라부터 중규모 아파트까지 맞춤 운영합니다.
@@ -115,7 +115,7 @@ export default function ServicesPage() {
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                     <Wrench className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight">위탁임대관리</h2>
+                  <h2 className="heading-section">위탁임대관리</h2>
                   <p className="mt-4 text-muted-foreground leading-relaxed">
                     소유주를 대신해 임대 운영의 모든 과정을 책임집니다.
                     공실 마케팅·임차인 응대·임대료 수납·정산은 기본,

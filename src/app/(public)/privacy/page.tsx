@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <section className="bg-primary text-white py-16">
         <div className="mx-auto max-w-3xl px-6">
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">Privacy Policy</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">개인정보처리방침</h1>
+          <h1 className="mt-2 heading-section">개인정보처리방침</h1>
           <p className="mt-3 text-sm text-blue-100">시행일: 2026-05-08</p>
         </div>
       </section>

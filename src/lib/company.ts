@@ -8,7 +8,6 @@ export const COMPANY = {
   brand: "JNP주택관리",
   representative: "박재흥",
 
-  yearsOfExperience: 27,
   serviceArea: "전국",
 
   /** @deprecated lib/constants/stats.ts (COMPANY_STATS) 사용. */
@@ -16,7 +15,7 @@ export const COMPANY = {
     operatedBuildings: 32,
     managedUnits: 480,
     resolvedDisputes: 67,
-    yearsAsTeam: 27,
+    collectionRate: 98,
   },
 
   business: {

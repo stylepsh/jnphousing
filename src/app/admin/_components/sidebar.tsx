@@ -203,9 +203,14 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
         )}
       >
         <div className="px-5 py-5 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2 font-bold">
-            <Building2 className="h-5 w-5 text-blue-300" />
-            <span>JNP 관리자</span>
+          <Link href="/" className="flex items-center gap-2.5 font-bold">
+            <span className="h-8 w-8 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <span className="text-primary text-[11px] font-extrabold tracking-tighter">JNP</span>
+            </span>
+            <span className="leading-tight">
+              JNP 관리자
+              <span className="block text-[10px] font-normal text-blue-300/80 -mt-0.5">제이앤피 주택관리 OS</span>
+            </span>
           </Link>
           <div className="mt-3 flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold shrink-0">

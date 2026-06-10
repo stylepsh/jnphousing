@@ -100,7 +100,7 @@ export function QrPrintWorkspace({ properties }: { properties: Property[] }) {
                 <span className="text-2xl font-bold text-primary">JNP주택관리</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                {COMPANY.legalName} · {COMPANY.yearsOfExperience}년차 위탁임대 전문
+                {COMPANY.legalName} · 위탁임대 전문
               </p>
             </div>
 

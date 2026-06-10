@@ -110,7 +110,7 @@ export default async function PropertyDetailPage({
           <Badge className="mb-3 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
             {PROPERTY_TYPE_LABEL[property.type] ?? property.type}
           </Badge>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{property.name}</h1>
+          <h1 className="heading-section">{property.name}</h1>
           <p className="mt-3 text-muted-foreground flex items-center gap-2">
             <MapPin className="h-4 w-4" /> {property.address}
           </p>

@@ -53,7 +53,7 @@ export default async function PropertiesPage({
       <section className="bg-primary text-white py-20 md:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">Properties</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">관리현장</h1>
+          <h1 className="mt-2 heading-section">관리현장</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl">
             현재 JNP주택관리가 운영 중인 건물입니다. 클릭 시 상세 정보를 확인할 수 있습니다.
           </p>

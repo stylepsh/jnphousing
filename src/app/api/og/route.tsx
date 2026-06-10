@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <div style={{ fontSize: 22, fontWeight: 700 }}>JNP주택관리</div>
-            <div style={{ fontSize: 14, color: "#cbd5e1" }}>위탁임대 27년 전문</div>
+            <div style={{ fontSize: 14, color: "#cbd5e1" }}>위탁임대 전문</div>
           </div>
         </div>
 

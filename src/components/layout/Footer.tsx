@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Building2, Phone, MapPin, Mail, MessageCircle, Users, ChevronDown, FileText, Megaphone, Award, HelpCircle } from "lucide-react";
+import { Phone, MapPin, Mail, MessageCircle, Users, ChevronDown, FileText, Megaphone, Award, HelpCircle } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 import { cn } from "@/lib/utils";
 
@@ -47,12 +47,14 @@ export function Footer() {
           {/* 회사 정보 (왼쪽 크게) */}
           <div className="md:col-span-5">
             <div className="flex items-center gap-2 mb-3">
-              <Building2 className="h-6 w-6 text-blue-400" />
+              <span className="h-7 w-7 rounded-lg bg-white flex items-center justify-center shrink-0">
+                <span className="text-primary text-[10px] font-extrabold tracking-tighter">JNP</span>
+              </span>
               <span className="font-bold text-lg text-white">{COMPANY.brand}</span>
               <span className="text-xs text-slate-500 ml-1">({COMPANY.legalName})</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              {COMPANY.business.summary} · {COMPANY.yearsOfExperience}년 노하우
+              {COMPANY.business.summary}
               <br />
               전국 어디든 서비스
             </p>

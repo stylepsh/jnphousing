@@ -84,7 +84,7 @@ export function LandlordReportPdf({ data }: { data: LandlordReportData }) {
         <View style={styles.brandHeader}>
           <View>
             <Text style={styles.brandName}>{COMPANY.brand}</Text>
-            <Text style={styles.brandSub}>{COMPANY.legalName} · {COMPANY.yearsOfExperience}년차 위탁임대 전문</Text>
+            <Text style={styles.brandSub}>{COMPANY.legalName} · 위탁임대 전문</Text>
           </View>
           <View>
             <Text style={styles.rightHeader}>임대인 월간 보고서</Text>

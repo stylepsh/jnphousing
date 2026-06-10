@@ -43,17 +43,14 @@ export default function TeamPage() {
           <div className="grid md:grid-cols-2 gap-6 stagger-children">
             {STAFF.map((m) => (
               <Card key={m.id} className="overflow-hidden animate-fade-in">
-                <div
-                  className="aspect-[3/2] relative"
-                  style={{ background: `linear-gradient(135deg, hsl(${m.hue}, 65%, 35%) 0%, hsl(${m.hue}, 55%, 22%) 100%)` }}
-                >
+                <div className="aspect-[3/2] relative bg-primary">
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-24 w-24 rounded-full bg-white/15 backdrop-blur border border-white/25 flex items-center justify-center text-white text-3xl font-bold">
+                    <div className="h-24 w-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white text-3xl font-bold">
                       {m.initials}
                     </div>
                   </div>
                   <Badge className="absolute top-3 left-3 bg-white/95 text-primary hover:bg-white">
-                    <Award className="h-3 w-3 mr-1" /> {m.experienceYears}년 경력
+                    <Award className="h-3 w-3 mr-1" /> {m.role}
                   </Badge>
                 </div>
                 <CardContent className="p-6">

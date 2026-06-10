@@ -44,7 +44,7 @@ export async function GET() {
             marginBottom: "32px",
           }}
         >
-          27년차 위탁임대 전문기업
+          위탁임대 전문기업
         </div>
 
         <div

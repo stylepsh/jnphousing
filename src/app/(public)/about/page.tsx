@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "회사소개",
-  description: `${COMPANY.brand} (${COMPANY.legalName}) — ${COMPANY.yearsOfExperience}년차 ${COMPANY.serviceArea} 위탁임대 전문기업의 인사말, 핵심 가치, 연혁, 인증.`,
+  description: `${COMPANY.brand} (${COMPANY.legalName}) — ${COMPANY.serviceArea} 위탁임대 전문기업의 인사말, 핵심 가치, 연혁, 인증.`,
 };
 
 const VALUES = [
@@ -121,16 +121,16 @@ export default async function AboutPage() {
       <section className="bg-primary text-white py-20 md:py-28 relative overflow-hidden">
         <div className="relative mx-auto max-w-5xl px-6">
           <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">About Us</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">회사소개</h1>
+          <h1 className="mt-2 heading-section">회사소개</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
             건물의 가치를 지키는 일, 임대인의 자산을 지키는 일.
             <br />
-            {COMPANY.legalName}이 {COMPANY.yearsOfExperience}년간 {COMPANY.serviceArea}에서 해온 일입니다.
+            {COMPANY.legalName}이 {COMPANY.serviceArea}에서 묵묵히 해온 일입니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm border border-white/20">
               <Award className="h-4 w-4 text-blue-300" />
-              <span className="font-semibold">{COMPANY.yearsOfExperience}년차</span>
+              <span className="font-semibold">위기 자산 정상화 전문</span>
             </div>
             <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm border border-white/20">
               <MapPin className="h-4 w-4 text-blue-300" />
@@ -168,9 +168,9 @@ export default async function AboutPage() {
             </div>
             <div className="text-center animate-fade-in">
               <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.yearsAsTeam} suffix="년" />
+                <CountUp end={COMPANY.stats.collectionRate} suffix="%" />
               </div>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">운영 경력</p>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">평균 수금률</p>
             </div>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default async function AboutPage() {
         <div className="mx-auto max-w-3xl px-6">
           <div className="text-center mb-8">
             <p className="text-sm font-semibold text-primary uppercase tracking-wide">Business Info</p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight">사업자 정보</h2>
+            <h2 className="mt-2 heading-section-sm">사업자 정보</h2>
           </div>
           <Card className="border-primary/20">
             <CardContent className="pt-7 pb-7">
@@ -207,19 +207,22 @@ export default async function AboutPage() {
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Quote className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">대표 인사말</h2>
+            <h2 className="heading-section-sm">대표 인사말</h2>
           </div>
 
           <div className="grid md:grid-cols-[300px_1fr] gap-10 lg:gap-14 items-start">
             {/* 대표 사진 */}
             <div className="md:sticky md:top-24">
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 shadow-xl shadow-black/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80&auto=format&fit=crop"
-                  alt={`${COMPANY.representative} 대표`}
-                  className="w-full h-full object-cover"
-                />
+              {/* 대표 실제 사진 준비 전 — 네이비 모노그램 패널 (스톡 인물 사진 사용 금지) */}
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-primary shadow-xl shadow-primary/15 flex flex-col items-center justify-center text-white">
+                <div className="h-24 w-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-3xl font-bold">
+                  {COMPANY.representative.slice(0, 1)}
+                </div>
+                <p className="mt-5 text-lg font-bold tracking-tight">{COMPANY.representative}</p>
+                <p className="mt-1 text-xs text-white/60">{COMPANY.legalName} 대표</p>
+                <p className="mt-6 text-[11px] text-white/40 px-8 text-center leading-relaxed">
+                  건설 현장에서 시작해<br />건물을 아는 관리를 합니다
+                </p>
               </div>
               <div className="mt-5 text-center md:text-left">
                 <p className="font-bold text-lg tracking-tight">{COMPANY.representative} <span className="text-base font-medium text-muted-foreground">대표</span></p>
@@ -273,7 +276,7 @@ export default async function AboutPage() {
       <section className="bg-primary/5 py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">핵심 가치</h2>
+            <h2 className="heading-section">핵심 가치</h2>
             <p className="mt-3 text-muted-foreground">JNP가 모든 결정의 기준으로 삼는 세 가지</p>
           </div>
           <div className="grid gap-6 md:grid-cols-3 stagger-children">
@@ -296,8 +299,8 @@ export default async function AboutPage() {
       <section className="bg-background py-20">
         <div className="mx-auto max-w-3xl px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">연혁</h2>
-            <p className="mt-3 text-muted-foreground">{COMPANY.yearsOfExperience}년의 발자취</p>
+            <h2 className="heading-section">연혁</h2>
+            <p className="mt-3 text-muted-foreground">건설 현장에서 위탁임대 전문기업까지</p>
           </div>
           <div className="relative">
             {/* 좌측 세로 라인 */}
@@ -329,7 +332,7 @@ export default async function AboutPage() {
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center mb-10">
             <Award className="h-8 w-8 mx-auto mb-3 text-primary" />
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">인증·등록</h2>
+            <h2 className="heading-section">인증·등록</h2>
             <p className="mt-3 text-muted-foreground">투명한 운영을 위한 법적 등록과 인증</p>
           </div>
           {certifications.length === 0 ? (
@@ -386,7 +389,7 @@ export default async function AboutPage() {
       <section className="bg-background py-20">
         <div className="mx-auto max-w-4xl px-6">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold tracking-tight">사무실 위치</h2>
+            <h2 className="heading-section-sm">사무실 위치</h2>
             <p className="mt-3 text-muted-foreground">방문 상담 가능 · 사전 예약 권장</p>
           </div>
           <div className="grid md:grid-cols-2 gap-5">

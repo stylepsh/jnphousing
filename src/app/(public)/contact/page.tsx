@@ -15,7 +15,7 @@ export default function ContactPage() {
       <section className="bg-primary text-white py-20 md:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <p className="text-blue-200 text-sm font-semibold">무료 상담</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">힘든 상황, 혼자 고민하지 마세요</h1>
+          <h1 className="mt-2 heading-section">힘든 상황, 혼자 고민하지 마세요</h1>
           <p className="mt-6 text-lg text-blue-100 max-w-2xl">
             전화 한 통이면 시작됩니다. 상담 의무 없이, 무료로 상황을 들어드립니다.
           </p>

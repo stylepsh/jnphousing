@@ -24,7 +24,7 @@ export const SERVICE_AREAS: ServiceArea[] = [
     tagline: "건물 시설·청소·보안의 종합 관리",
     category: "Building Management",
     hue: 215,
-    description: "JNP는 단순 관리가 아니라, 건물을 자기 자산처럼 운영합니다. 27년 노하우로 시설·보안·청소 한 곳에서 처리하고, 임대인은 정산서만 받아보시면 됩니다.",
+    description: "JNP는 단순 관리가 아니라, 건물을 자기 자산처럼 운영합니다. 축적된 현장 노하우로 시설·보안·청소 한 곳에서 처리하고, 임대인은 정산서만 받아보시면 됩니다.",
     highlights: [
       { icon: "tools",      title: "시설 점검",   desc: "정기·긴급 점검 일정 자동 관리" },
       { icon: "sparkles",   title: "정기 청소",   desc: "공용부 청소 + 외부 환경 관리" },
@@ -58,7 +58,7 @@ export const SERVICE_AREAS: ServiceArea[] = [
     tagline: "임대인 대신 임차 운영을 책임집니다",
     category: "Rental Management",
     hue: 145,
-    description: "임차인 모집·임대료 수금·공실 매칭·민원·정산까지 임대인의 모든 역할을 대행합니다. JNP는 27년간 부천 일대에서 가장 신뢰받는 위탁임대 회사 중 하나입니다.",
+    description: "임차인 모집·임대료 수금·공실 매칭·민원·정산까지 임대인의 모든 역할을 대행합니다. JNP는 부천 일대에서 가장 신뢰받는 위탁임대 회사 중 하나입니다.",
     highlights: [
       { icon: "user",         title: "임차인 모집",   desc: "피터팬·삼삼엠투·직방 동시 광고" },
       { icon: "rent",         title: "임대료 수금",   desc: "가상계좌 + 자동 매칭" },
@@ -93,7 +93,7 @@ export const SERVICE_AREAS: ServiceArea[] = [
     tagline: "보증사고 발생 임대인의 동행자",
     category: "HUG Recovery",
     hue: 5,
-    description: "전세보증 대위변제 통보를 받으신 임대인을 위한 종합 동행 서비스. 자산 정리 · 임차인 정리 · 후속 법적 절차까지 JNP의 27년 경험으로 함께합니다.",
+    description: "전세보증 대위변제 통보를 받으신 임대인을 위한 종합 동행 서비스. 자산 정리 · 임차인 정리 · 후속 법적 절차까지 JNP의 풍부한 실전 경험으로 함께합니다.",
     highlights: [
       { icon: "alert",        title: "초기 대응 진단",   desc: "통보서 분석 + 변제 일정 정리" },
       { icon: "legal",        title: "법무 자문 연결",   desc: "변호사 협력 네트워크" },

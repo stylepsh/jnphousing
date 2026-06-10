@@ -6,7 +6,6 @@
  */
 
 import { COMPANY } from "@/lib/company";
-import { COMPANY_STATS } from "@/lib/constants/stats";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.co.kr";
 
@@ -17,13 +16,12 @@ export function buildOrganizationLd() {
     "@id": `${BASE}/#org`,
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
-    description: `${COMPANY_STATS.yearsAsTeam}년차 ${COMPANY.serviceArea} 부동산 위탁임대 전문기업`,
+    description: `${COMPANY.serviceArea} 부동산 위탁임대 전문기업`,
     url: BASE,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
     image: `${BASE}/og-default.png`,
     logo: `${BASE}/favicon.svg`,
-    foundingDate: "1999",
     address: {
       "@type": "PostalAddress",
       streetAddress: COMPANY.branches[0].address,
@@ -43,7 +41,7 @@ export function buildLocalBusinessLd() {
     "@id": `${BASE}/#business`,
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
-    description: `HUG 대위변제·부실 건물·세입자 분쟁까지 ${COMPANY_STATS.yearsAsTeam}년 노하우로 해결하는 위탁임대 전문기업`,
+    description: `HUG 대위변제·부실 건물·세입자 분쟁까지 축적된 현장 노하우로 해결하는 위탁임대 전문기업`,
     url: BASE,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,

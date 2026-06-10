@@ -24,7 +24,7 @@ export const STAFF: StaffMember[] = [
     experienceYears: 27,
     initials: "박재",
     hue: 215,
-    introduction: "1999년부터 부천 일대 주택관리를 시작해 27년간 위탁임대 운영·HUG 대응·세입자 분쟁 중재 등 위기 자산 정상화에 집중. JNP주택관리 설립자.",
+    introduction: "부천 일대에서 주택관리를 시작해 위탁임대 운영·HUG 대응·세입자 분쟁 중재 등 위기 자산 정상화에 집중해 온 JNP주택관리 설립자. 건설 현장 출신으로 건물을 누구보다 잘 아는 관리자.",
     expertise: ["위탁임대관리", "HUG 대위변제 대응", "세입자 분쟁 중재", "부실 건물 정상화"],
     email: "info@jnphousing.com",
   },
