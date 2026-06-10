@@ -101,9 +101,10 @@ export async function requireLandlord(): Promise<LandlordContext> {
     throw new AppError("UNAUTHORIZED", "로그인이 필요합니다.");
   }
 
+  // 016: landlord_users.landlord_id → owners(id) 재배선 (owners 가 landlords id 재사용)
   const { data } = await supabase
     .from("landlord_users")
-    .select("landlord_id, landlord:landlords(id, name)")
+    .select("landlord_id, landlord:owners(id, name)")
     .eq("user_id", user.id)
     .maybeSingle();
   const row = data as unknown as { landlord_id: string; landlord: { id: string; name: string } | null } | null;

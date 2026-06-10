@@ -19,8 +19,10 @@ export default async function AdminLayout({
     pendingAgencies: 0,
     newInquiries: 0,
     openTodos: 0,
+    pendingMembers: 0,
   };
   let adminName = "관리자";
+  let isSuper = false;
 
   if (configured) {
     try {
@@ -29,23 +31,26 @@ export default async function AdminLayout({
       if (user) {
         const { data: admin } = await supabase
           .from("admin_users")
-          .select("name")
+          .select("name, role")
           .eq("user_id", user.id)
           .maybeSingle();
-        adminName = ((admin as { name: string } | null)?.name) ?? "관리자";
+        const adminRow = admin as { name: string; role: string } | null;
+        adminName = adminRow?.name ?? "관리자";
+        isSuper = adminRow?.role === "super";
 
         const sixtyDaysAgo = new Date();
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() + 60);
         const todayISO = new Date().toISOString().slice(0, 10);
         const expiryISO = sixtyDaysAgo.toISOString().slice(0, 10);
 
-        const [c1, c2, c3, c4, c5, c6] = await Promise.all([
+        const [c1, c2, c3, c4, c5, c6, c7] = await Promise.all([
           supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
           supabase.from("rent_invoices").select("*", { count: "exact", head: true }).in("status", ["overdue", "unpaid"]).lt("due_date", todayISO),
           supabase.from("leases").select("*", { count: "exact", head: true }).eq("status", "active").lte("end_date", expiryISO).gte("end_date", todayISO),
           supabase.from("agencies").select("*", { count: "exact", head: true }).eq("status", "pending"),
           supabase.from("inquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
           supabase.from("team_todos").select("*", { count: "exact", head: true }).eq("status", "todo"),
+          supabase.from("member_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
         ]);
         counts.complaints = c1.count ?? 0;
         counts.overdue = c2.count ?? 0;
@@ -53,6 +58,8 @@ export default async function AdminLayout({
         counts.pendingAgencies = c4.count ?? 0;
         counts.newInquiries = c5.count ?? 0;
         counts.openTodos = c6.count ?? 0; // 015 미실행 시 error → count null → 0
+        // 회원 승인 배지 = 가입신청(임대인·임차인) + 부동산 신청
+        counts.pendingMembers = (c7.count ?? 0) + (c4.count ?? 0);
       }
     } catch {
       // ignore
@@ -62,7 +69,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <SessionTimeout />
-      <AdminSidebar counts={counts} adminName={adminName} />
+      <AdminSidebar counts={counts} adminName={adminName} isSuper={isSuper} />
       <div className="flex-1 lg:ml-64">
         {configured ? children : (
           <NotConfiguredBanner

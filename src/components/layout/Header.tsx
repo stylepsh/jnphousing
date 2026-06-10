@@ -163,6 +163,9 @@ export function Header() {
           <Link href="/login" className={cn("text-sm transition-colors", transparent ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
             로그인
           </Link>
+          <Link href="/signup" className={cn("text-sm font-semibold transition-colors", transparent ? "text-white/90 hover:text-white" : "text-foreground/80 hover:text-primary")}>
+            회원가입
+          </Link>
           <ThemeToggle />
           <Button asChild size="sm" className={cn("gap-1.5 font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all", transparent && "bg-white text-primary hover:bg-white/90")}>
             <Link href="/contact">무료 상담 <ArrowRight className="h-3.5 w-3.5" /></Link>
@@ -234,9 +237,14 @@ export function Header() {
               );
             })}
             <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-border">
-              <Button asChild variant="outline">
-                <Link href="/login" onClick={() => setMobileOpen(false)}>로그인</Link>
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild variant="outline">
+                  <Link href="/login" onClick={() => setMobileOpen(false)}>로그인</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/signup" onClick={() => setMobileOpen(false)}>회원가입</Link>
+                </Button>
+              </div>
               <Button asChild>
                 <Link href="/contact" onClick={() => setMobileOpen(false)}>관리문의</Link>
               </Button>

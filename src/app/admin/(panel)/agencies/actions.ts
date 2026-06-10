@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin, getClientIp } from "@/lib/auth-guard";
+import { requireSuperAdmin, getClientIp } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { audit } from "@/lib/audit";
 import { notify } from "@/lib/notify";
@@ -10,7 +10,8 @@ import { revalidatePath } from "next/cache";
 
 export async function approveAgency(id: string) {
   try {
-    const ctx = await requireAdmin();
+    // 회원 승인은 super(stylepsh) 전용
+    const ctx = await requireSuperAdmin();
     if (!z.string().uuid().safeParse(id).success) {
       return { ok: false as const, error: "잘못된 ID 입니다." };
     }
@@ -67,7 +68,8 @@ const rejectSchema = z.object({
 
 export async function rejectAgency(id: string, reason: string) {
   try {
-    const ctx = await requireAdmin();
+    // 회원 승인은 super(stylepsh) 전용
+    const ctx = await requireSuperAdmin();
     const parsed = rejectSchema.safeParse({ id, reason });
     if (!parsed.success) return { ok: false as const, error: "입력값 오류" };
 

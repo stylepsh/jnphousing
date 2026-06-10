@@ -30,18 +30,20 @@ import {
   Scale,
   Workflow,
   ListTodo,
+  UserCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries" | "openTodos";
+type BadgeKey = "complaints" | "overdue" | "expiring" | "pendingAgencies" | "newInquiries" | "openTodos" | "pendingMembers";
 
-type NavLeaf = { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue" };
+type NavLeaf = { href: string; label: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey; badgeColor?: "red" | "amber" | "blue"; superOnly?: boolean };
 type NavGroup = {
   group: string;
   items: NavLeaf[];
   pinned?: boolean;   // true → 항상 펼침(토글 없음). 티어① 매일 / 처리
   divider?: boolean;  // 위에 구분선 — 홈페이지 관리(CMS) 섹션 분리용
+  superOnly?: boolean; // super 관리자에게만 노출 (경매 등)
 };
 
 const NAV: NavGroup[] = [
@@ -64,6 +66,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/tenants", label: "임차인", icon: Users },
       { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
       { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
+      { href: "/admin/members", label: "회원 승인", icon: UserCheck, badgeKey: "pendingMembers", badgeColor: "amber", superOnly: true },
     ],
   },
   // ───────── ② 가끔 (그룹·접힘 기본) ─────────
@@ -76,6 +79,7 @@ const NAV: NavGroup[] = [
   },
   {
     group: "경매",
+    superOnly: true,
     items: [
       { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
       { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
@@ -128,6 +132,7 @@ interface BadgeCounts {
   pendingAgencies: number;
   newInquiries: number;
   openTodos: number;
+  pendingMembers: number;
 }
 
 const BADGE_BG: Record<"red" | "amber" | "blue", string> = {
@@ -136,13 +141,18 @@ const BADGE_BG: Record<"red" | "amber" | "blue", string> = {
   blue: "bg-blue-500",
 };
 
-export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; adminName: string }) {
+export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCounts; adminName: string; isSuper: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // super 전용 그룹·항목 필터 (staff 에게는 경매·회원승인 자체가 안 보임)
+  const nav = NAV
+    .filter((g) => isSuper || !g.superOnly)
+    .map((g) => ({ ...g, items: g.items.filter((i) => isSuper || !i.superOnly) }));
+
   // 현재 경로가 포함된 그룹만 기본으로 펼침
-  const activeGroup = NAV.find(g => g.items.some(i =>
+  const activeGroup = nav.find(g => g.items.some(i =>
     pathname === i.href || (i.href !== "/admin/dashboard" && pathname.startsWith(i.href))
   ))?.group ?? "";
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set([activeGroup]));
@@ -209,7 +219,7 @@ export function AdminSidebar({ counts, adminName }: { counts: BadgeCounts; admin
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-          {NAV.map((g) => {
+          {nav.map((g) => {
             const total = groupBadgeTotal(g);
             // pinned 그룹은 항상 펼침(토글 없음). 그 외에는 접힘 토글.
             const isOpen = g.pinned || openGroups.has(g.group);

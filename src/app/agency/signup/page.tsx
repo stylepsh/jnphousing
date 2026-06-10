@@ -37,6 +37,25 @@ export default function AgencySignupPage() {
             ))}
           </div>
 
+          {/* 제휴 혜택 — 임대인 소개 보상 */}
+          <div className="mt-8 rounded-2xl bg-primary text-white p-6">
+            <p className="text-xs font-semibold text-white/60 mb-2">파트너 제휴 혜택</p>
+            <p className="text-lg font-bold leading-snug">
+              임대인을 소개해 주시면<br />업계 최고 수준으로 보답합니다.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm text-white/85">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                소개로 위탁 계약 성사 시 <strong className="text-white">업계 최고 수수료</strong> 지급
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                또는 해당 물건 운영 기간 동안 <strong className="text-white">매월 수익 일부 지급</strong> 선택 가능
+              </li>
+            </ul>
+            <p className="mt-4 text-xs text-white/55">자세한 조건은 승인 후 담당자가 안내드립니다.</p>
+          </div>
+
           <p className="mt-8 text-sm text-muted-foreground">
             이미 회원이신가요?{" "}
             <Link href="/agency/login" className="text-primary font-semibold hover:underline">
