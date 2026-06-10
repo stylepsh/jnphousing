@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquareWarning, Home, ArrowRight, Wallet, AlertTriangle, FileSignature,
-  Building2, UserSquare, DoorOpen, Banknote, Download,
+  Building2, UserSquare, DoorOpen, Banknote, Download, Plus, BookOpen, Receipt,
 } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
@@ -203,10 +203,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
-      {/* 환영 헤더 */}
-      <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-slate-800 text-white p-6 md:p-7 mb-6 shadow-lg shadow-primary/20 relative overflow-hidden animate-fade-in">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(49,130,246,0.35),transparent_55%)] animate-gradient" />
-        <div className="relative flex flex-wrap items-start justify-between gap-3">
+      {/* 환영 헤더 — 플랫 네이비 (1인 운영: 정보만 간결하게) */}
+      <div className="rounded-2xl bg-primary text-white p-6 md:p-7 mb-6 animate-fade-in">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Badge variant="outline" className={`text-[10px] ${roleInfo.color} border-0`}>{roleInfo.label}</Badge>
@@ -230,6 +229,19 @@ export default async function DashboardPage() {
           </a>
         </div>
       </div>
+
+      {/* ⓪ 빠른 입력 — 1인 운영자가 가장 자주 쓰는 입력 동선 모음 */}
+      <section className="mb-8">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">빠른 입력</p>
+        <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          <QuickInput label="소유주 등록" icon={UserSquare} href="/admin/owners" />
+          <QuickInput label="건물 등록" icon={Building2} href="/admin/buildings-managed/new" />
+          <QuickInput label="계약 등록" icon={FileSignature} href="/admin/leases/new" />
+          <QuickInput label="수금 매칭" icon={Banknote} href="/admin/rent/match" />
+          <QuickInput label="청구 일괄 생성" icon={Receipt} href="/admin/rent/bulk" />
+          <QuickInput label="장부 입력" icon={BookOpen} href="/admin/ledger/new" />
+        </div>
+      </section>
 
       {/* ① 오늘 처리할 일 — 액션 중심 (0건은 회색) */}
       <section>
@@ -356,6 +368,26 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// 빠른 입력 타일 — 클릭 한 번으로 입력 화면 진입
+function QuickInput({
+  label, icon: Icon, href,
+}: {
+  label: string; icon: React.ComponentType<{ className?: string }>; href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/40 hover:shadow-md transition-all"
+    >
+      <span className="h-8 w-8 rounded-lg bg-primary/[0.07] text-primary flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="text-sm font-semibold text-foreground/85 group-hover:text-primary transition-colors leading-tight">{label}</span>
+      <Plus className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0 group-hover:text-primary transition-colors" />
+    </Link>
   );
 }
 
