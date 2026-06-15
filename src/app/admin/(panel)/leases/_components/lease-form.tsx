@@ -30,6 +30,7 @@ export function LeaseForm({ mode, lease, options }: Props) {
   const [leaseType, setLeaseType] = useState<"long_term" | "short_term">(lease?.lease_type ?? "long_term");
   const [rentCycle, setRentCycle] = useState<"monthly" | "weekly" | "daily">(lease?.rent_cycle ?? "monthly");
   const [feeType, setFeeType] = useState<"percent" | "fixed">(lease?.fee_type ?? "percent");
+  const [sourceType, setSourceType] = useState<"direct" | "broker" | "referral" | "other">(lease?.contract_source_type ?? "direct");
   const [unitId, setUnitId] = useState(lease?.unit_id ?? "");
   const [landlordId, setLandlordId] = useState(lease?.landlord_id ?? "");
   const [tenantId, setTenantId] = useState(lease?.tenant_id ?? "");
@@ -41,6 +42,7 @@ export function LeaseForm({ mode, lease, options }: Props) {
     fd.set("lease_type", leaseType);
     fd.set("rent_cycle", rentCycle);
     fd.set("fee_type", feeType);
+    fd.set("contract_source_type", sourceType);
     fd.set("unit_id", unitId);
     fd.set("landlord_id", landlordId);
     fd.set("tenant_id", tenantId);
@@ -209,6 +211,44 @@ export function LeaseForm({ mode, lease, options }: Props) {
       <div>
         <Label>특약사항</Label>
         <Textarea name="special_terms" rows={3} defaultValue={lease?.special_terms ?? ""} className="mt-1.5" />
+      </div>
+
+      <hr />
+
+      {/* ── 계약 경로 / 계약처 (어디서 계약했는지) ── */}
+      <div>
+        <p className="text-sm font-bold text-muted-foreground mb-2">계약 경로 / 계약처</p>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div>
+            <Label>계약 경로 *</Label>
+            <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as "direct" | "broker" | "referral" | "other")}>
+              <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="direct">자체 계약 (직접)</SelectItem>
+                <SelectItem value="broker">중개업소</SelectItem>
+                <SelectItem value="referral">소개</SelectItem>
+                <SelectItem value="other">기타</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>{sourceType === "broker" ? "중개업소명" : sourceType === "referral" ? "소개자명" : "계약처명"}</Label>
+            <Input
+              name="contract_source_name"
+              defaultValue={lease?.contract_source_name ?? ""}
+              placeholder={sourceType === "broker" ? "예: 한빛공인중개사" : sourceType === "referral" ? "예: 김OO 소개" : "선택"}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label>계약처 연락처</Label>
+            <Input name="contract_source_contact" defaultValue={lease?.contract_source_contact ?? ""} placeholder="예: 02-000-0000" className="mt-1.5" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <Label>계약 경로 메모</Label>
+          <Textarea name="contract_source_memo" rows={2} defaultValue={lease?.contract_source_memo ?? ""} placeholder="중개수수료·소개 경위 등 기록" className="mt-1.5" />
+        </div>
       </div>
 
       <div className="flex gap-2 justify-end pt-4">

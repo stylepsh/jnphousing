@@ -54,6 +54,13 @@ const EVENT_LABEL: Record<string, string> = {
   commission_generated: "수수료 정산",
 };
 
+const CONTRACT_SOURCE_LABEL: Record<string, string> = {
+  direct: "자체 계약",
+  broker: "중개업소",
+  referral: "소개",
+  other: "기타",
+};
+
 const INVOICE_STATUS_LABEL: Record<string, { l: string; c: string }> = {
   unpaid:   { l: "미납", c: "bg-blue-100 text-blue-800" },
   partial:  { l: "부분납", c: "bg-amber-100 text-amber-800" },
@@ -114,6 +121,16 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
             <Row label="부가세" value={lease.vat_included ? "별도 청구" : "포함" } />
             <Row label="수수료" value={lease.fee_type === "percent" ? `비율 ${lease.fee_percent}%` : `정액 ${formatWonSuffix(lease.fee_fixed ?? 0)}`} />
             <Row label="연체이율" value={`연 ${lease.overdue_annual_rate}%`} />
+            <Row
+              label="계약 경로"
+              value={
+                <span>
+                  {CONTRACT_SOURCE_LABEL[lease.contract_source_type] ?? "자체"}
+                  {lease.contract_source_name ? ` · ${lease.contract_source_name}` : ""}
+                  {lease.contract_source_contact ? ` (${lease.contract_source_contact})` : ""}
+                </span>
+              }
+            />
           </CardContent>
         </Card>
 

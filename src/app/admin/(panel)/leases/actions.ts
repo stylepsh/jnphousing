@@ -24,6 +24,10 @@ const baseSchema = z.object({
   fee_fixed: z.coerce.number().int().min(0).optional().nullable(),
   overdue_annual_rate: z.coerce.number().min(0).max(100).default(12),
   special_terms: z.string().max(5000).optional().or(z.literal("")).transform((v) => v || null),
+  contract_source_type: z.enum(["direct", "broker", "referral", "other"]).default("direct"),
+  contract_source_name: z.string().max(200).optional().or(z.literal("")).transform((v) => v || null),
+  contract_source_contact: z.string().max(100).optional().or(z.literal("")).transform((v) => v || null),
+  contract_source_memo: z.string().max(2000).optional().or(z.literal("")).transform((v) => v || null),
 });
 
 export async function upsertLease(id: string | null, formData: FormData) {
@@ -79,6 +83,10 @@ export async function upsertLease(id: string | null, formData: FormData) {
       fee_fixed: d.fee_type === "fixed" ? d.fee_fixed : null,
       overdue_annual_rate: d.overdue_annual_rate,
       special_terms: d.special_terms,
+      contract_source_type: d.contract_source_type,
+      contract_source_name: d.contract_source_name,
+      contract_source_contact: d.contract_source_contact,
+      contract_source_memo: d.contract_source_memo,
     };
 
     const supabase = createServiceClient();

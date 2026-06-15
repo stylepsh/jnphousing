@@ -10,6 +10,7 @@ export type LeaseType = "long_term" | "short_term";
 export type LeaseStatus = "draft" | "active" | "expiring" | "renewed" | "terminated" | "expired";
 export type RentCycle = "monthly" | "weekly" | "daily";
 export type FeeType = "percent" | "fixed";
+export type ContractSourceType = "direct" | "broker" | "referral" | "other";
 export type InvoiceStatus = "unpaid" | "partial" | "paid" | "overdue" | "waived";
 export type PaymentSource = "manual" | "bank_csv" | "virtual_account";
 export type PartyType = "landlord" | "tenant" | "co_tenant" | "guarantor";
@@ -100,6 +101,10 @@ export interface Lease {
   overdue_annual_rate: number;
   special_terms: string | null;
   contract_file_path: string | null;
+  contract_source_type: ContractSourceType;
+  contract_source_name: string | null;
+  contract_source_contact: string | null;
+  contract_source_memo: string | null;
   created_at: string;
   updated_at: string;
 }
