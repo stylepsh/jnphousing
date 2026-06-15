@@ -102,6 +102,14 @@ export function LookupForm() {
                 <span className="text-muted-foreground">접수일</span>
                 <span>{format(new Date(c.created_at), "yyyy.MM.dd HH:mm", { locale: ko })}</span>
               </div>
+              {c.visit_scheduled_at && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">방문 예정일</span>
+                  <span className="font-semibold text-blue-700">
+                    {format(new Date(c.visit_scheduled_at), "yyyy.MM.dd (EEE)", { locale: ko })}
+                  </span>
+                </div>
+              )}
               {c.resolved_at && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">처리 완료일</span>
@@ -110,7 +118,7 @@ export function LookupForm() {
               )}
               {c.admin_memo && (
                 <div className="pt-3 border-t border-border">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">관리자 메모</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">관리자 답변</p>
                   <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap">{c.admin_memo}</p>
                 </div>
               )}

@@ -9,12 +9,25 @@ import { revalidatePath } from "next/cache";
 const patchSchema = z.object({
   status: z.enum(["received", "in_progress", "resolved", "closed"]).optional(),
   admin_memo: z.string().max(2000).optional(),
+  internal_memo: z.string().max(2000).optional(),
   assigned_to: z.string().max(40).optional(),
+  // "YYYY-MM-DD" 또는 "" (비우면 null 처리)
+  visit_scheduled_at: z
+    .string()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, "날짜 형식 오류")
+    .max(10)
+    .optional(),
 });
 
 export async function updateComplaint(
   id: string,
-  patch: { status?: string; admin_memo?: string; assigned_to?: string },
+  patch: {
+    status?: string;
+    admin_memo?: string;
+    internal_memo?: string;
+    assigned_to?: string;
+    visit_scheduled_at?: string;
+  },
 ) {
   try {
     await requireAdmin();
@@ -28,6 +41,10 @@ export async function updateComplaint(
 
     const supabase = createServiceClient();
     const update: Record<string, unknown> = { ...parsed.data };
+    // 빈 날짜 문자열은 null 로 저장 (예정일 해제)
+    if (parsed.data.visit_scheduled_at !== undefined) {
+      update.visit_scheduled_at = parsed.data.visit_scheduled_at.trim() || null;
+    }
     if (parsed.data.status === "resolved") {
       update.resolved_at = new Date().toISOString();
     }

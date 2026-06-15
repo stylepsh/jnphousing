@@ -14,6 +14,7 @@ export type LookupResult =
         category: string;
         status: ComplaintStatus;
         admin_memo: string | null;
+        visit_scheduled_at: string | null;
         building_name: string | null;
         unit_number: string | null;
         created_at: string;
@@ -64,7 +65,7 @@ export async function lookupComplaint(formData: FormData): Promise<LookupResult>
     const { data, error } = await supabase
       .from("complaints")
       .select(
-        "id, title, category, status, admin_memo, building_name, unit_number, created_at, resolved_at, tenant_phone",
+        "id, title, category, status, admin_memo, visit_scheduled_at, building_name, unit_number, created_at, resolved_at, tenant_phone",
       )
       .gte("created_at", since)
       .limit(500);
@@ -80,6 +81,7 @@ export async function lookupComplaint(formData: FormData): Promise<LookupResult>
       category: string;
       status: ComplaintStatus;
       admin_memo: string | null;
+      visit_scheduled_at: string | null;
       building_name: string | null;
       unit_number: string | null;
       created_at: string;
@@ -111,6 +113,7 @@ export async function lookupComplaint(formData: FormData): Promise<LookupResult>
         category: match.category,
         status: match.status,
         admin_memo: match.admin_memo,
+        visit_scheduled_at: match.visit_scheduled_at,
         building_name: match.building_name,
         unit_number: match.unit_number,
         created_at: match.created_at,

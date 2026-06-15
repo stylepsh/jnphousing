@@ -42,6 +42,8 @@ export interface Complaint {
   images: string[];
   status: ComplaintStatus;
   admin_memo: string | null;
+  internal_memo: string | null;
+  visit_scheduled_at: string | null;
   assigned_to: string | null;
   kakao_channel_sent: boolean;
   created_at: string;
