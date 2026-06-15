@@ -102,7 +102,7 @@ export function PropertyManager({
             <div key={b.id} className="rounded-lg border overflow-hidden">
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/40">
                 <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="font-semibold text-sm">{b.name}</span>
+                <Link href={`/admin/buildings/${b.id}`} className="font-semibold text-sm hover:underline" title="건물 현황 카드뷰 보기">{b.name}</Link>
                 {b.address && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{b.address}</span>}
                 <span className="ml-1"><ModeBadges modes={b.modes} /></span>
                 <div className="ml-auto flex items-center gap-1">

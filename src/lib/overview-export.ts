@@ -22,8 +22,17 @@ const MODE_LABEL: Record<string, string> = {
 const LEASE_STATUS: Record<string, string> = {
   draft: "작성중", active: "진행중", expiring: "만료임박", renewed: "갱신", terminated: "해지", expired: "만료",
 };
+const SOURCE_LABEL: Record<string, string> = {
+  direct: "자체", broker: "중개업소", referral: "소개", other: "기타",
+};
 const modesText = (modes: string[] | null) =>
   (modes ?? []).map((m) => MODE_LABEL[m] ?? m).join(", ");
+
+/** 월 위탁수수료(우리 수익) — percent 는 월세 기준, fixed 는 정액. */
+function monthlyFee(l: { fee_type: string; fee_percent: number | null; fee_fixed: number | null; rent_amount: number }): number {
+  if (l.fee_type === "percent") return l.fee_percent != null ? Math.floor((l.rent_amount * l.fee_percent) / 100) : 0;
+  return l.fee_fixed ?? 0;
+}
 
 function applyHeaderStyle(ws: ExcelJS.Worksheet) {
   const header = ws.getRow(1);
@@ -51,6 +60,9 @@ interface PropRow {
 interface LeaseRow {
   id: string; unit_id: string; landlord_id: string; tenant_id: string;
   status: string; lease_type: string; deposit: number; rent_amount: number;
+  management_fee: number;
+  fee_type: string; fee_percent: number | null; fee_fixed: number | null;
+  contract_source_type: string | null; contract_source_name: string | null;
   start_date: string; end_date: string;
 }
 
@@ -62,7 +74,7 @@ export async function buildOverviewWorkbook(): Promise<Buffer> {
     sb.from("owners").select("id, name, phone").order("name"),
     sb.from("v_owner_pipeline").select("*"),
     sb.from("properties").select("id, owner_id, unit_type, name, address, unit_no, floor, service_modes, parent_building_id, deposit_default, rent_default").limit(10000),
-    sb.from("leases").select("id, unit_id, landlord_id, tenant_id, status, lease_type, deposit, rent_amount, start_date, end_date").limit(10000),
+    sb.from("leases").select("id, unit_id, landlord_id, tenant_id, status, lease_type, deposit, rent_amount, management_fee, fee_type, fee_percent, fee_fixed, contract_source_type, contract_source_name, start_date, end_date").limit(10000),
     sb.from("tenants").select("id, name, phone").limit(10000),
     sb.from("rent_invoices").select("lease_id, amount_total, paid_total, due_date").limit(10000),
   ]);
@@ -189,6 +201,12 @@ export async function buildOverviewWorkbook(): Promise<Buffer> {
     { header: "상태", key: "status", width: 10 },
     { header: "보증금", key: "deposit", width: 12 },
     { header: "월세", key: "rent", width: 10 },
+    { header: "관리비", key: "mgmt", width: 10 },
+    { header: "수수료방식", key: "feetype", width: 12 },
+    { header: "우리수익(월)", key: "fee", width: 12 },
+    { header: "임대인지급(월)", key: "payout", width: 13 },
+    { header: "계약경로", key: "source", width: 10 },
+    { header: "계약처", key: "sourcename", width: 16 },
     { header: "시작", key: "start", width: 12 },
     { header: "종료", key: "end", width: 12 },
     { header: "이번달 납부", key: "thismonth", width: 12 },
@@ -200,20 +218,25 @@ export async function buildOverviewWorkbook(): Promise<Buffer> {
     const mBilled = mInv.reduce((s, i) => s + i.amount_total, 0);
     const mPaid = mInv.reduce((s, i) => s + i.paid_total, 0);
     const thismonth = mInv.length === 0 ? "미발행" : mPaid >= mBilled ? "완납" : mPaid > 0 ? "부분납" : "미납";
+    const ourFee = monthlyFee(l);
+    const billMonthly = l.rent_amount + (l.management_fee ?? 0);
     wsL.addRow({
       owner: ownerName.get(l.landlord_id) ?? "-",
       unit: u ? `${u.name ?? ""}${u.unit_no ? ` ${u.unit_no}` : ""}`.trim() : "(미상)",
       tenant: tn?.name ?? "-", phone: tn?.phone ?? "",
       type: l.lease_type === "long_term" ? "장기" : "단기",
       status: LEASE_STATUS[l.status] ?? l.status,
-      deposit: l.deposit, rent: l.rent_amount,
+      deposit: l.deposit, rent: l.rent_amount, mgmt: l.management_fee ?? 0,
+      feetype: l.fee_type === "percent" ? `${l.fee_percent ?? 0}%` : "정액",
+      fee: ourFee, payout: billMonthly - ourFee,
+      source: SOURCE_LABEL[l.contract_source_type ?? "direct"] ?? "자체",
+      sourcename: l.contract_source_name ?? "",
       start: (l.start_date ?? "").slice(0, 10), end: (l.end_date ?? "").slice(0, 10),
       thismonth,
     });
   }
   applyHeaderStyle(wsL);
-  wsL.getColumn("deposit").numFmt = won;
-  wsL.getColumn("rent").numFmt = won;
+  for (const k of ["deposit", "rent", "mgmt", "fee", "payout"]) wsL.getColumn(k).numFmt = won;
 
   const out = await wb.xlsx.writeBuffer();
   return Buffer.from(out);
