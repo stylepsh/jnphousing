@@ -42,9 +42,15 @@ export function OwnerDialog({ mode, owner }: Props) {
     startTransition(async () => {
       const r = await upsertOwner(owner?.id ?? null, fd);
       if (r.ok) {
-        toast.success(mode === "create" ? "소유주가 등록되었습니다." : "수정되었습니다.");
         setOpen(false);
-        router.refresh();
+        if (mode === "create" && r.id) {
+          // 바로 상세로 이동 → 끊김 없이 건물·호실 등록 시작
+          toast.success("소유주 등록 완료 — 이어서 건물·호실을 등록하세요.");
+          router.push(`/admin/owners/${r.id}`);
+        } else {
+          toast.success("수정되었습니다.");
+          router.refresh();
+        }
       } else {
         toast.error("저장 실패", { description: r.error });
       }
