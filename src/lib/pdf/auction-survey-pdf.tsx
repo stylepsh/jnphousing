@@ -6,7 +6,6 @@
 
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { ensureKoreanFonts } from "./fonts";
-import { COMPANY } from "@/lib/company";
 
 ensureKoreanFonts();
 
@@ -24,7 +23,6 @@ export interface SurveyPdfItem {
 }
 
 export interface SurveyPdfData {
-  inspectorName: string;
   printedAt: string; // YYYY-MM-DD
   items: SurveyPdfItem[];
 }
@@ -118,7 +116,6 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>경매 물건 답사지</Text>
-            <Text style={styles.sub}>{COMPANY.brand} · 답사자 {data.inspectorName || "______"}</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoItem}>출력일 {data.printedAt}</Text>
@@ -153,8 +150,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
           </View>
         ))}
 
-        <Text style={styles.signature}>답사자: {data.inspectorName || "________"} (서명)</Text>
-        <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) => `${COMPANY.brand}  ·  ${pageNumber} / ${totalPages}`} />
+        <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </Page>
     </Document>
   );

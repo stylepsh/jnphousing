@@ -193,6 +193,28 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     toast.success(`지역 ${source.length}곳 × 최대 ${n}건 = ${sampled.size}건 샘플링`);
   }
 
+  // 임대인별/지역별 전체 선택 (샘플 N건이 아니라 그룹의 모든 물건)
+  function sampleAll() {
+    const source =
+      sampleMode === "region"
+        ? regionGroups
+        : selectedOwners.size > 0
+          ? filteredGroups.filter(([owner]) => selectedOwners.has(owner))
+          : filteredGroups;
+    if (source.length === 0) {
+      toast.error("선택할 그룹이 없습니다. 최소건수·검색 조건을 확인하세요.");
+      return;
+    }
+    const sel = new Set<string>();
+    for (const [, list] of source) list.forEach((p) => sel.add(p.id));
+    setSelected(sel);
+    const label =
+      sampleMode === "region"
+        ? `지역 ${source.length}곳`
+        : `임대인 ${source.length}명${selectedOwners.size > 0 ? " (선택분)" : ""}`;
+    toast.success(`${label} 전체 ${sel.size}건 선택`);
+  }
+
   // ===== 임대인 카드 다중 선택 =====
   function toggleOwner(owner: string) {
     setSelectedOwners((s) => {
@@ -422,7 +444,7 @@ export function PoolList({ items }: { items: PoolItem[] }) {
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700">
                 <Shuffle className="w-3 h-3" /> 탐색답사
               </span>
-              {[2, 3, 5].map((n) => (
+              {[2, 3, 4].map((n) => (
                 <button
                   key={n}
                   onClick={() => doSample(n)}
@@ -432,6 +454,13 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                   {n}건씩
                 </button>
               ))}
+              <button
+                onClick={sampleAll}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[11px] font-bold hover:bg-indigo-700"
+                title={`${sampleMode === "region" ? "지역" : "임대인"}별 전체 물건 선택`}
+              >
+                전체
+              </button>
               <div className="inline-flex items-center gap-1 text-[11px] bg-white px-1.5 py-0.5 rounded-md border border-blue-200">
                 <Filter className="w-3 h-3 text-blue-700" />
                 <span className="text-blue-700 font-bold">최소</span>
@@ -466,6 +495,16 @@ export function PoolList({ items }: { items: PoolItem[] }) {
           <Button size="sm" variant="outline" disabled={pending || selected.size === 0} onClick={printPdf} className="gap-1.5">
             <Printer className="w-4 h-4" />
             {selected.size > 0 ? `답사지 인쇄 (${selected.size})` : "답사지 인쇄"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() => deleteIds(items.map((i) => i.id), "후보 풀 전체")}
+            className="gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-700"
+            title="수집된 후보 풀 전체를 제외합니다 (데이터는 보존)"
+          >
+            <Trash2 className="w-4 h-4" /> 전체삭제 ({items.length})
           </Button>
         </div>
 
@@ -563,10 +602,10 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                     title="이 임대인을 탐색답사 대상에 추가/제거"
                   />
                   <button onClick={() => setFilterOwner(isFiltered ? null : owner)} className="w-full text-left pr-6" title={isFiltered ? "필터 해제" : "이 임대인 물건만 보기"}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shrink-0">{(owner[0] ?? "?").toUpperCase()}</div>
-                      <span className="font-bold text-sm truncate flex-1">{owner}</span>
-                      {isFiltered && <Filter className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-[10px] shrink-0">{(owner[0] ?? "?").toUpperCase()}</div>
+                      <span className="font-bold text-[11px] truncate flex-1">{owner}</span>
+                      {isFiltered && <Filter className="w-3 h-3 text-blue-600 shrink-0" />}
                     </div>
                     <div className="flex items-baseline justify-between gap-1">
                       <span className="text-xl font-black text-blue-700">{list.length}<span className="text-[10px] font-bold text-muted-foreground ml-0.5">건</span></span>
@@ -619,10 +658,10 @@ export function PoolList({ items }: { items: PoolItem[] }) {
               <button onClick={() => toggleGroup(list)} className="inline-flex items-center justify-center w-6 h-6 rounded border-2 border-blue-600 bg-white shrink-0">
                 {groupAll ? <CheckSquare className="w-4 h-4 text-blue-700" /> : groupSome ? <div className="w-3 h-3 bg-blue-600 rounded-sm" /> : <Square className="w-4 h-4 text-blue-300" />}
               </button>
-              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-black">{(owner[0] ?? "?").toUpperCase()}</div>
+              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-black text-xs">{(owner[0] ?? "?").toUpperCase()}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-lg font-black truncate">{owner}</span>
+                  <span className="text-sm font-black truncate">{owner}</span>
                   <span className="text-sm font-bold text-blue-700 bg-white px-2.5 py-0.5 rounded-full">{list.length}건</span>
                   {list.filter((i) => selected.has(i.id)).length > 0 && (
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">{list.filter((i) => selected.has(i.id)).length}건 선택</span>

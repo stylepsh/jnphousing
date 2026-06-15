@@ -61,6 +61,27 @@ export function AuctionImportForm() {
 
   return (
     <section className="rounded-xl border bg-card p-4 space-y-4">
+      {/* ── 상단 실행 바: 긴 텍스트를 스크롤하지 않고 바로 저장 ── */}
+      <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-1 flex items-center gap-2 flex-wrap border-b bg-card/95 px-4 py-3 backdrop-blur">
+        <Button onClick={handleImport} disabled={pending} className="gap-2">
+          <Sparkles className="w-4 h-4" />
+          {pending ? "수집 중…" : "파싱 후 저장"}
+        </Button>
+        <button
+          type="button"
+          onClick={pasteFromClipboard}
+          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
+        >
+          <ClipboardPaste className="w-3.5 h-3.5" />
+          클립보드 붙여넣기
+        </button>
+        {text && (
+          <span className="text-xs text-muted-foreground">
+            {text.split("\n").filter(Boolean).length}줄 입력됨
+          </span>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="mb-1.5 block text-xs font-bold text-muted-foreground">
@@ -108,14 +129,6 @@ export function AuctionImportForm() {
               — 사건번호 / 주소 / 소유자 / 채권자 / 감정가 / 최저가 / 기일 자동 파싱
             </span>
           </Label>
-          <button
-            type="button"
-            onClick={pasteFromClipboard}
-            className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900"
-          >
-            <ClipboardPaste className="w-3.5 h-3.5" />
-            클립보드에서 붙여넣기
-          </button>
         </div>
         <Textarea
           value={text}
@@ -126,18 +139,6 @@ export function AuctionImportForm() {
             "지지옥션 등에서 검색 결과 행을 복사해서 붙여넣으세요.\n채권자 칼럼에 '주택도시보증공사' 또는 '서울보증보험(SGI)' 가 들어있는 건만 임포트됩니다.\n개인채권, 은행, 기타는 자동 배제.\n\n예시:\n서부6계\n2026-50501\n[강제경매] 다세대(생활주택)\n서울 은평구 갈현동 521-22 하나블루힐스 2층 202호\n채권자 : 주택도시보증공사 | 채무자 : 대성하우징 | 소유자 : 대성하우징\n220,000,000\n296,000,000\n2026.04.30"
           }
         />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button onClick={handleImport} disabled={pending} className="gap-2">
-          <Sparkles className="w-4 h-4" />
-          {pending ? "수집 중…" : "수집 후 저장"}
-        </Button>
-        {text && (
-          <span className="text-xs text-muted-foreground">
-            {text.split("\n").filter(Boolean).length}줄 입력됨
-          </span>
-        )}
       </div>
 
       {lastResult && lastResult.parsedTotal > 0 && (

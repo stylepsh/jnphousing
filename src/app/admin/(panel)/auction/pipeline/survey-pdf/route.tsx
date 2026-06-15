@@ -1,5 +1,5 @@
 /**
- * 답사지 PDF 생성 — POST { ids: string[], inspectorName?: string }.
+ * 답사지 PDF 생성 — POST { ids: string[] }.
  * 선택한 auction_property 들을 지역별로 묶은 현장 체크리스트. DB 부작용 없음.
  * 보호: requireAdmin.
  */
@@ -13,8 +13,8 @@ import { AuctionSurveyPdf, type SurveyPdfItem } from "@/lib/pdf/auction-survey-p
 
 export async function POST(req: NextRequest) {
   try {
-    const ctx = await requireAdmin();
-    const body = (await req.json().catch(() => ({}))) as { ids?: string[]; inspectorName?: string };
+    await requireAdmin();
+    const body = (await req.json().catch(() => ({}))) as { ids?: string[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter((x) => typeof x === "string") : [];
     if (ids.length === 0) {
       return NextResponse.json({ error: "선택된 물건이 없습니다." }, { status: 400 });
@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
     const buf = await renderToBuffer(
       <AuctionSurveyPdf
         data={{
-          inspectorName: body.inspectorName?.trim() || ctx.admin.name,
           printedAt: today,
           items,
         }}
