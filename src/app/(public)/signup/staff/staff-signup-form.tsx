@@ -11,7 +11,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { submitMemberSignup } from "../actions";
 
 const schema = z.object({
   email: z.string().email("이메일 형식이 올바르지 않습니다."),
@@ -43,24 +43,15 @@ export function StaffSignupForm() {
     setPending(true);
     try {
       const parsed = schema.parse(values);
-      const supabase = createClient();
-
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const r = await submitMemberSignup({
+        role: "staff",
         email: parsed.email,
         password: parsed.password,
-      });
-      if (signUpError) throw new Error(signUpError.message);
-      if (!authData.user) throw new Error("계정 생성에 실패했습니다.");
-
-      const { error: insertError } = await supabase.from("member_applications").insert({
-        role: "staff",
-        user_id: authData.user.id,
         name: parsed.name,
         phone: parsed.phone,
-        email: parsed.email,
-        memo: parsed.memo || null,
+        memo: parsed.memo || undefined,
       });
-      if (insertError) throw new Error(insertError.message);
+      if (!r.ok) throw new Error(r.error);
 
       setDone(true);
       toast.success("직원 계정 신청이 완료되었습니다.", {
