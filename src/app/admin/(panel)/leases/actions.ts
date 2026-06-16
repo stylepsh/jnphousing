@@ -38,8 +38,25 @@ export async function upsertLease(id: string | null, formData: FormData) {
       return { ok: false as const, error: "잘못된 ID" };
     }
     const raw = Object.fromEntries(formData.entries());
+    const supabase = createServiceClient();
+
+    // 임차인 수기 입력(신규) → 임차인 생성 후 tenant_id 채움
+    let tenantId = String(raw.tenant_id ?? "");
+    if (!tenantId && !id) {
+      const tName = String(raw.tenant_name ?? "").trim();
+      const tPhone = String(raw.tenant_phone ?? "").trim();
+      if (tName) {
+        if (!tPhone) return { ok: false as const, error: "신규 임차인은 연락처가 필요합니다." };
+        const { data: tRow, error: tErr } = await supabase
+          .from("tenants").insert({ name: tName, phone: tPhone }).select("id").single();
+        if (tErr || !tRow) return { ok: false as const, error: tErr?.message ?? "임차인 생성 실패" };
+        tenantId = (tRow as { id: string }).id;
+      }
+    }
+
     const normalized = {
       ...raw,
+      tenant_id: tenantId,
       vat_included: raw.vat_included === "on" || raw.vat_included === "true",
       move_in_date: raw.move_in_date === "" ? null : raw.move_in_date,
       rent_day: raw.rent_day === "" ? null : raw.rent_day,
@@ -92,7 +109,6 @@ export async function upsertLease(id: string | null, formData: FormData) {
       contract_source_memo: d.contract_source_memo,
     };
 
-    const supabase = createServiceClient();
     if (id) {
       const { error } = await supabase.from("leases").update(payload).eq("id", id);
       if (error) {
@@ -116,6 +132,36 @@ export async function upsertLease(id: string | null, formData: FormData) {
         event_type: "created",
         payload: { lease_type: d.lease_type },
       });
+
+      // 부동산 중개수수료 → 호실 지출(지출항목)로 기록 (best-effort)
+      const brokerage = Math.max(0, Math.floor(Number(raw.brokerage_fee ?? 0)) || 0);
+      if (brokerage > 0) {
+        const bearer = String(raw.brokerage_bearer ?? "jnp");
+        const half = Math.floor(brokerage / 2);
+        const split = bearer === "owner"
+          ? { split_type: "owner_all", owner_ratio: 100, company_ratio: 0, owner_amount: brokerage, company_amount: 0 }
+          : bearer === "half"
+            ? { split_type: "shared", owner_ratio: 50, company_ratio: 50, owner_amount: half, company_amount: brokerage - half }
+            : { split_type: "company_all", owner_ratio: 0, company_ratio: 100, owner_amount: 0, company_amount: brokerage };
+        try {
+          await supabase.from("unit_expenses").insert({
+            unit_id: d.unit_id, owner_id: d.landlord_id, lease_id: newId,
+            category: "etc", description: "부동산 중개수수료", amount: brokerage,
+            incurred_on: d.start_date, ...split,
+          });
+        } catch { /* 지출 기록 실패는 계약 저장에 영향 없음 */ }
+      }
+
+      // 입주 준비 할 일 → 팀 할 일로 생성 (best-effort)
+      const prep = String(raw.prep_todos ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (prep.length > 0) {
+        try {
+          await supabase.from("team_todos").insert(
+            prep.map((t) => ({ title: t, detail: "신규 계약 입주 준비" })),
+          );
+        } catch { /* 할 일 생성 실패는 계약 저장에 영향 없음 */ }
+      }
+
       revalidatePath("/admin/leases");
       return { ok: true as const, id: newId };
     }
