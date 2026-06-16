@@ -12,6 +12,7 @@ const baseSchema = z.object({
   landlord_id: z.string().uuid(),
   tenant_id: z.string().uuid(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  move_in_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   deposit: z.coerce.number().int().min(0).default(0),
   rent_amount: z.coerce.number().int().min(0).default(0),
@@ -40,6 +41,7 @@ export async function upsertLease(id: string | null, formData: FormData) {
     const normalized = {
       ...raw,
       vat_included: raw.vat_included === "on" || raw.vat_included === "true",
+      move_in_date: raw.move_in_date === "" ? null : raw.move_in_date,
       rent_day: raw.rent_day === "" ? null : raw.rent_day,
       fee_percent: raw.fee_percent === "" ? null : raw.fee_percent,
       fee_fixed: raw.fee_fixed === "" ? null : raw.fee_fixed,
@@ -71,6 +73,7 @@ export async function upsertLease(id: string | null, formData: FormData) {
       landlord_id: d.landlord_id,
       tenant_id: d.tenant_id,
       start_date: d.start_date,
+      move_in_date: d.move_in_date ?? null,
       end_date: d.end_date,
       deposit: d.deposit,
       rent_amount: d.rent_amount,

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { MODE_OPTIONS, TYPE_OPTIONS, modeLabel } from "../constants";
 import type { OwnerBuilding, OwnerUnit } from "./types";
 import { createBuilding, addUnit, addUnitsBulk, deleteProperty, createLeaseForUnit, updateBuilding, updateUnit } from "./property-actions";
+import { buildUnitNos } from "./unit-gen";
 
 function ModeBadges({ modes }: { modes: string[] }) {
   if (!modes.length) return <span className="text-xs text-muted-foreground">유형 미지정</span>;
@@ -218,27 +219,19 @@ export function PropertyManager({
         </DialogContent>
       </Dialog>
 
-      {/* ── 호실 일괄 생성 ── */}
+      {/* ── 호실 일괄 생성 (층 × 층당 호실수) ── */}
       <Dialog open={dialog?.kind === "bulk"} onOpenChange={(o) => !o && setDialog(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>호실 일괄 생성{dialog?.kind === "bulk" ? ` — ${dialog.buildingName}` : ""}</DialogTitle>
-            <DialogDescription>시작~끝 호수 범위로 한 번에 생성. 건물 정보 자동 상속. (예: 201~210 → 10개)</DialogDescription>
+            <DialogDescription>층 범위 × 층당 호실수로 자동 생성. 예: 2층~13층, 층당 5호 → 201~205 … 1301~1305. 건물 정보 자동 상속.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); const bid = dialog?.kind === "bulk" ? dialog.buildingId : ""; run(() => addUnitsBulk(ownerId, bid, fd), "호실이 생성되었습니다"); }} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label className="mb-1 block text-xs">시작 호수 *</Label><Input name="start" type="number" required placeholder="201" /></div>
-              <div><Label className="mb-1 block text-xs">끝 호수 *</Label><Input name="end" type="number" required placeholder="210" /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label className="mb-1 block text-xs">접두</Label><Input name="prefix" placeholder="(예: B)" /></div>
-              <div><Label className="mb-1 block text-xs">접미</Label><Input name="suffix" placeholder="(예: 호)" /></div>
-              <div><Label className="mb-1 block text-xs">층(공통)</Label><Input name="floor" type="number" /></div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={pending} className="gap-1">{pending && <Loader2 className="h-4 w-4 animate-spin" />}일괄 생성</Button>
-            </DialogFooter>
-          </form>
+          {dialog?.kind === "bulk" && (
+            <BulkUnitForm
+              pending={pending}
+              onSubmit={(fd) => run(() => addUnitsBulk(ownerId, dialog.buildingId, fd), "호실이 생성되었습니다")}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -337,6 +330,60 @@ export function PropertyManager({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function BulkUnitForm({ pending, onSubmit }: { pending: boolean; onSubmit: (fd: FormData) => void }) {
+  const [floorFrom, setFloorFrom] = useState(2);
+  const [floorTo, setFloorTo] = useState(13);
+  const [perFloor, setPerFloor] = useState(5);
+  const [startNo, setStartNo] = useState(1);
+  const pad = 2;
+
+  const combos = buildUnitNos(floorFrom, floorTo, perFloor, startNo, pad);
+  const tooMany = combos.length > 500;
+
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.set("floor_from", String(floorFrom));
+    fd.set("floor_to", String(floorTo));
+    fd.set("per_floor", String(perFloor));
+    fd.set("start_no", String(startNo));
+    fd.set("pad", String(pad));
+    onSubmit(fd);
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div><Label className="mb-1 block text-xs">시작 층 *</Label><Input type="number" value={floorFrom} onChange={(e) => setFloorFrom(Number(e.target.value))} required /></div>
+        <div><Label className="mb-1 block text-xs">끝 층 *</Label><Input type="number" value={floorTo} onChange={(e) => setFloorTo(Number(e.target.value))} required /></div>
+        <div><Label className="mb-1 block text-xs">층당 호실수 *</Label><Input type="number" min={1} max={50} value={perFloor} onChange={(e) => setPerFloor(Number(e.target.value))} required /></div>
+        <div><Label className="mb-1 block text-xs">호 시작번호</Label><Input type="number" min={1} max={99} value={startNo} onChange={(e) => setStartNo(Number(e.target.value))} /></div>
+      </div>
+
+      <div>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          미리보기 — 총 <strong className={tooMany ? "text-destructive" : "text-foreground"}>{combos.length}</strong>호
+          {tooMany && " (최대 500개)"}
+        </p>
+        <div className="rounded-lg border p-2 max-h-40 overflow-y-auto">
+          <div className="flex flex-wrap gap-1.5">
+            {combos.slice(0, 120).map((c) => (
+              <span key={c.unitNo} className="px-1.5 py-1 rounded-md bg-muted text-xs font-medium tabular-nums">{c.unitNo}</span>
+            ))}
+            {combos.length > 120 && <span className="px-1.5 py-1 text-xs text-muted-foreground">… 외 {combos.length - 120}호</span>}
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button type="submit" disabled={pending || tooMany || combos.length === 0} className="gap-1">
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}{combos.length}호 일괄 생성
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

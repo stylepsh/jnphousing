@@ -6,6 +6,7 @@ import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { activateLease } from "@/lib/billing/actions";
+import { buildUnitNos } from "./unit-gen";
 
 const MODE_VALUES = ["housing_mgmt", "rental_consigned", "dm"] as const;
 const TYPE_VALUES = ["villa", "apartment", "officetel", "commercial"] as const;
@@ -110,45 +111,54 @@ export async function addUnit(ownerId: string, buildingId: string | null, fd: Fo
 }
 
 const bulkSchema = z.object({
-  start: z.coerce.number().int().min(0),
-  end: z.coerce.number().int().min(0),
-  prefix: z.string().max(20).optional().or(z.literal("")),
-  suffix: z.string().max(20).optional().or(z.literal("")),
-  floor: z.coerce.number().int().optional().or(z.literal("")).transform((v) => (typeof v === "number" ? v : null)),
+  floor_from: z.coerce.number().int().min(-5).max(99),
+  floor_to: z.coerce.number().int().min(-5).max(99),
+  per_floor: z.coerce.number().int().min(1).max(50),
+  start_no: z.coerce.number().int().min(1).max(99).default(1),
+  pad: z.coerce.number().int().min(1).max(3).default(2),
 });
 
-/** 호실 일괄 생성 — 범위(start~end) → 여러 호실. 건물 정보 상속. 최대 300개. */
+/**
+ * 호실 일괄 생성 — 층 범위 × 층당 호실수로 자동 생성.
+ * 예: 2층~13층, 층당 5호 → 201~205, 301~305, … 1301~1305 (총 60호). 최대 500개.
+ * 건물 정보(주소·유형·관리유형·기본 보증금/월세) 자동 상속.
+ */
 export async function addUnitsBulk(ownerId: string, buildingId: string, fd: FormData) {
   try {
     await requireAdmin();
     const parsed = bulkSchema.safeParse({
-      start: fd.get("start"), end: fd.get("end"),
-      prefix: fd.get("prefix") || "", suffix: fd.get("suffix") || "", floor: fd.get("floor") || "",
+      floor_from: fd.get("floor_from"), floor_to: fd.get("floor_to"),
+      per_floor: fd.get("per_floor"), start_no: fd.get("start_no") || 1, pad: fd.get("pad") || 2,
     });
     if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
-    const { start, end, prefix, suffix, floor } = parsed.data;
-    if (end < start) return { ok: false as const, error: "끝 호수가 시작보다 작습니다." };
-    if (end - start + 1 > 300) return { ok: false as const, error: "한 번에 최대 300개까지 생성됩니다." };
+    const { floor_from, floor_to, per_floor, start_no, pad } = parsed.data;
+
+    const combos = buildUnitNos(floor_from, floor_to, per_floor, start_no, pad);
+    if (combos.length === 0) return { ok: false as const, error: "생성할 호실이 없습니다." };
+    if (combos.length > 500) return { ok: false as const, error: "한 번에 최대 500개까지 생성됩니다." };
 
     const building = await getBuilding(buildingId);
     if (!building) return { ok: false as const, error: "상위 건물을 찾을 수 없습니다." };
 
-    const rows = [];
-    for (let n = start; n <= end; n++) {
-      const unitNo = `${prefix ?? ""}${n}${suffix ?? ""}`;
-      rows.push({
-        owner_id: ownerId, unit_type: "unit", parent_building_id: buildingId,
-        name: `${building.name ?? ""} ${unitNo}`.trim(),
-        address: building.address ?? "", type: building.type,
-        unit_no: unitNo, floor,
-        service_modes: building.service_modes ?? [],
-        deposit_default: building.deposit_default ?? 0,
-        rent_default: building.rent_default ?? 0,
-        management_fee_default: building.management_fee_default ?? 0,
-      });
-    }
-
+    // 중복 회피 — 기존 호번 조회
     const supabase = createServiceClient();
+    const { data: existing } = await supabase.from("properties")
+      .select("unit_no").eq("parent_building_id", buildingId).eq("unit_type", "unit");
+    const existingSet = new Set(((existing ?? []) as { unit_no: string | null }[]).map((u) => u.unit_no));
+
+    const rows = combos.filter((c) => !existingSet.has(c.unitNo)).map((c) => ({
+      owner_id: ownerId, unit_type: "unit", parent_building_id: buildingId,
+      name: `${building.name ?? ""} ${c.unitNo}`.trim(),
+      address: building.address ?? "", type: building.type,
+      unit_no: c.unitNo, floor: c.floor,
+      service_modes: building.service_modes ?? [],
+      deposit_default: building.deposit_default ?? 0,
+      rent_default: building.rent_default ?? 0,
+      management_fee_default: building.management_fee_default ?? 0,
+    }));
+
+    if (rows.length === 0) return { ok: false as const, error: "이미 모두 등록된 호실입니다." };
+
     const { error } = await supabase.from("properties").insert(rows);
     if (error) return { ok: false as const, error: error.message };
     revalidatePath(`/admin/owners/${ownerId}`);

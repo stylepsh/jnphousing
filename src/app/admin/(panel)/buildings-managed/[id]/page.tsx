@@ -104,7 +104,7 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 {(p.service_modes ?? []).map(m => (
                   <Badge key={m} variant="outline" className="bg-white/15 text-white border-white/30 text-[10px]">
-                    {m === "dm" ? "JNP 단기임대" : m === "housing_mgmt" ? "건물 위탁관리" : "임대 위탁"}
+                    {m === "dm" ? "JNP 단기임대" : m === "housing_mgmt" ? "건물 위탁관리" : "위탁임대관리"}
                   </Badge>
                 ))}
               </div>

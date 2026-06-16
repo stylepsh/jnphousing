@@ -88,6 +88,7 @@ export interface Lease {
   tenant_id: string;
   status: LeaseStatus;
   start_date: string;
+  move_in_date: string | null;
   end_date: string;
   deposit: number;
   rent_amount: number;

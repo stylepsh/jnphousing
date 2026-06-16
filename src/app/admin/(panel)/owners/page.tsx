@@ -8,7 +8,7 @@ import { maskPhone } from "@/lib/pii";
 import { OwnerDialog } from "./owner-dialog";
 import { modeLabel, type OwnerPipeline } from "./constants";
 
-export const metadata: Metadata = { title: "소유주" };
+export const metadata: Metadata = { title: "소유주(임대인)" };
 export const dynamic = "force-dynamic";
 
 interface OwnerRow {
@@ -60,8 +60,8 @@ export default async function OwnersPage() {
     <div className="p-6 lg:p-8 max-w-7xl">
       <div className="flex items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">소유주</h1>
-          <p className="mt-1 text-sm text-muted-foreground">총 {owners.length}명 · 임대인별 물건·공실·임차·월세 파이프라인</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">소유주(임대인)</h1>
+          <p className="mt-1 text-sm text-muted-foreground">우리 회사에 운영을 맡긴 소유주 {owners.length}명 · 임대인별 물건·공실·임차·월세 파이프라인</p>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -79,13 +79,13 @@ export default async function OwnersPage() {
         <CardContent className="p-0">
           {owners.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-16">
-              등록된 소유주가 없습니다. 우측 상단 &quot;소유주 등록&quot;으로 시작하세요.
+              등록된 소유주(임대인)가 없습니다. 우측 상단 &quot;소유주 등록&quot;으로 시작하세요.
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>소유주</TableHead>
+                  <TableHead>소유주(임대인)</TableHead>
                   <TableHead>관리유형</TableHead>
                   <TableHead className="text-center">물건</TableHead>
                   <TableHead className="text-center">공실</TableHead>

@@ -9,20 +9,21 @@ async function fetchOptions() {
   const [oRes, tRes, uRes, bRes] = await Promise.all([
     supabase.from("owners").select("id, name").order("name"),
     supabase.from("tenants").select("id, name").order("name"),
-    supabase.from("properties").select("id, unit_no, parent_building_id").eq("unit_type", "unit").order("unit_no"),
+    supabase.from("properties").select("id, unit_no, parent_building_id, owner_id").eq("unit_type", "unit").order("unit_no"),
     supabase.from("properties").select("id, name").eq("unit_type", "building"),
   ]);
   const bName = new Map(((bRes.data ?? []) as { id: string; name: string | null }[]).map((b) => [b.id, b.name ?? "건물"]));
-  const units = ((uRes.data ?? []) as { id: string; unit_no: string | null; parent_building_id: string | null }[]).map((u) => ({
+  const units = ((uRes.data ?? []) as { id: string; unit_no: string | null; parent_building_id: string | null; owner_id: string | null }[]).map((u) => ({
     id: u.id,
     unit_no: u.unit_no ?? "",
     property_id: u.parent_building_id ?? "",
+    owner_id: u.owner_id ?? null,
     properties: { name: u.parent_building_id ? (bName.get(u.parent_building_id) ?? "건물") : "단독호실" },
   }));
   return {
     landlords: (oRes.data ?? []) as Pick<Landlord, "id" | "name">[],
     tenants: (tRes.data ?? []) as Pick<Tenant, "id" | "name">[],
-    units: units as unknown as (Pick<PropertyUnit, "id" | "unit_no" | "property_id"> & { properties: { name: string } | null })[],
+    units: units as unknown as (Pick<PropertyUnit, "id" | "unit_no" | "property_id"> & { owner_id: string | null; properties: { name: string } | null })[],
   };
 }
 

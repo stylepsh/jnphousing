@@ -79,57 +79,57 @@ export function OwnerDialog({ mode, owner }: Props) {
       ) : (
         <Button size="sm" variant="outline" className="gap-1" onClick={() => setOpen(true)}><Pencil className="h-3.5 w-3.5" /> 기본정보 수정</Button>
       )}
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "소유주 등록" : "소유주 기본정보 수정"}</DialogTitle>
-          <DialogDescription>임대인(소유주) 기본정보·계좌·사업자 정보. 계좌번호는 암호화 저장됩니다.</DialogDescription>
+          <DialogTitle>{mode === "create" ? "소유주(임대인) 등록" : "소유주(임대인) 기본정보 수정"}</DialogTitle>
+          <DialogDescription>우리 회사에 운영을 맡긴 소유주(임대인) 기본정보·계좌·사업자 정보. 계좌번호는 암호화 저장됩니다.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1 block text-xs">이름 *</Label>
-              <Input name="name" defaultValue={owner?.name ?? ""} required />
+              <Label className="mb-1.5 block">이름 *</Label>
+              <Input name="name" defaultValue={owner?.name ?? ""} required className="h-11 text-base" />
             </div>
             <div>
-              <Label className="mb-1 block text-xs">연락처</Label>
-              <Input name="phone" defaultValue={owner?.phone ?? ""} placeholder="010-0000-0000" />
-            </div>
-          </div>
-          <div>
-            <Label className="mb-1 block text-xs">이메일</Label>
-            <Input name="email" type="email" defaultValue={owner?.email ?? ""} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label className="mb-1 block text-xs">은행</Label>
-              <Input name="account_bank" defaultValue={owner?.account_bank ?? ""} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">예금주</Label>
-              <Input name="account_holder" defaultValue={owner?.account_holder ?? ""} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">계좌번호</Label>
-              <Input name="account_number" placeholder={owner ? "변경 시에만 입력" : ""} />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label className="mb-1 block text-xs">사업자명</Label>
-              <Input name="business_name" defaultValue={owner?.business_name ?? ""} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">사업자번호</Label>
-              <Input name="business_number" defaultValue={owner?.business_number ?? ""} />
-            </div>
-            <div>
-              <Label className="mb-1 block text-xs">대표자</Label>
-              <Input name="representative" defaultValue={owner?.representative ?? ""} />
+              <Label className="mb-1.5 block">연락처</Label>
+              <Input name="phone" defaultValue={owner?.phone ?? ""} placeholder="010-0000-0000" className="h-11 text-base" />
             </div>
           </div>
           <div>
-            <Label className="mb-1 block text-xs">메모</Label>
-            <Textarea name="memo" rows={2} defaultValue={owner?.memo ?? ""} />
+            <Label className="mb-1.5 block">이메일</Label>
+            <Input name="email" type="email" defaultValue={owner?.email ?? ""} className="h-11 text-base" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="mb-1.5 block">은행</Label>
+              <Input name="account_bank" defaultValue={owner?.account_bank ?? ""} className="h-11 text-base" />
+            </div>
+            <div>
+              <Label className="mb-1.5 block">예금주</Label>
+              <Input name="account_holder" defaultValue={owner?.account_holder ?? ""} className="h-11 text-base" />
+            </div>
+            <div>
+              <Label className="mb-1.5 block">계좌번호</Label>
+              <Input name="account_number" placeholder={owner ? "변경 시에만 입력" : ""} className="h-11 text-base" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="mb-1.5 block">사업자명</Label>
+              <Input name="business_name" defaultValue={owner?.business_name ?? ""} className="h-11 text-base" />
+            </div>
+            <div>
+              <Label className="mb-1.5 block">사업자번호</Label>
+              <Input name="business_number" defaultValue={owner?.business_number ?? ""} className="h-11 text-base" />
+            </div>
+            <div>
+              <Label className="mb-1.5 block">대표자</Label>
+              <Input name="representative" defaultValue={owner?.representative ?? ""} className="h-11 text-base" />
+            </div>
+          </div>
+          <div>
+            <Label className="mb-1.5 block">메모</Label>
+            <Textarea name="memo" rows={2} defaultValue={owner?.memo ?? ""} className="text-base" />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             {mode === "edit" && (

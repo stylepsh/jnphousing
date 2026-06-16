@@ -53,7 +53,7 @@ async function fetchData() {
 const MODE_LABEL: Record<string, { label: string; color: string }> = {
   dm:                { label: "JNP 단기임대", color: "bg-purple-100 text-purple-700 border-purple-200" },
   housing_mgmt:      { label: "건물 위탁관리", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  rental_consigned:  { label: "임대 위탁",    color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  rental_consigned:  { label: "위탁임대관리", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
 };
 
 export default async function BuildingsManagedPage() {

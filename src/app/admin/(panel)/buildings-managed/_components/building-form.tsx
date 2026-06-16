@@ -24,8 +24,7 @@ interface Initial {
 
 const MODE_OPTIONS = [
   { key: "housing_mgmt",     label: "건물 위탁관리" },
-  { key: "dm",               label: "JNP 단기임대" },
-  { key: "rental_consigned", label: "임대 위탁" },
+  { key: "rental_consigned", label: "위탁임대관리" },
 ];
 
 export function BuildingForm({
@@ -56,51 +55,51 @@ export function BuildingForm({
   const initialModes = initial?.service_modes ?? [];
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4">
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div className="grid sm:grid-cols-2 gap-5">
         <div>
-          <Label htmlFor="name">건물명 *</Label>
-          <Input id="name" name="name" defaultValue={initial?.name ?? ""} required maxLength={200} placeholder="신림더로프트" />
+          <Label htmlFor="name" className="mb-1.5 block">건물명 *</Label>
+          <Input id="name" name="name" defaultValue={initial?.name ?? ""} required maxLength={200} placeholder="신림더로프트" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="short_alias">짧은 별칭</Label>
-          <Input id="short_alias" name="short_alias" defaultValue={initial?.short_alias ?? ""} maxLength={100} placeholder="신림더" />
+          <Label htmlFor="short_alias" className="mb-1.5 block">짧은 별칭</Label>
+          <Input id="short_alias" name="short_alias" defaultValue={initial?.short_alias ?? ""} maxLength={100} placeholder="신림더" className="h-11 text-base" />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="address">주소</Label>
-          <Input id="address" name="address" defaultValue={initial?.address ?? ""} maxLength={500} placeholder="관악구 시흥대로158가길 25" />
+          <Label htmlFor="address" className="mb-1.5 block">주소</Label>
+          <Input id="address" name="address" defaultValue={initial?.address ?? ""} maxLength={500} placeholder="관악구 시흥대로158가길 25" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="business_name">사업자명</Label>
-          <Input id="business_name" name="business_name" defaultValue={initial?.business_name ?? ""} placeholder="(주)트라움하임" />
+          <Label htmlFor="business_name" className="mb-1.5 block">사업자명</Label>
+          <Input id="business_name" name="business_name" defaultValue={initial?.business_name ?? ""} placeholder="(주)트라움하임" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="business_number">사업자등록번호</Label>
-          <Input id="business_number" name="business_number" defaultValue={initial?.business_number ?? ""} placeholder="123-45-67890" />
+          <Label htmlFor="business_number" className="mb-1.5 block">사업자등록번호</Label>
+          <Input id="business_number" name="business_number" defaultValue={initial?.business_number ?? ""} placeholder="123-45-67890" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="corporate_number">고유번호증</Label>
-          <Input id="corporate_number" name="corporate_number" defaultValue={initial?.corporate_number ?? ""} placeholder="606-80-21237" />
+          <Label htmlFor="corporate_number" className="mb-1.5 block">고유번호증</Label>
+          <Input id="corporate_number" name="corporate_number" defaultValue={initial?.corporate_number ?? ""} placeholder="606-80-21237" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="total_units">총 세대수</Label>
-          <Input id="total_units" name="total_units" defaultValue={initial?.total_units ?? 0} type="number" min={0} />
+          <Label htmlFor="total_units" className="mb-1.5 block">총 세대수</Label>
+          <Input id="total_units" name="total_units" defaultValue={initial?.total_units ?? 0} type="number" min={0} className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="entrance_password">공동현관 비밀번호</Label>
-          <Input id="entrance_password" name="entrance_password" defaultValue={initial?.entrance_password ?? ""} placeholder="*****" />
+          <Label htmlFor="entrance_password" className="mb-1.5 block">공동현관 비밀번호</Label>
+          <Input id="entrance_password" name="entrance_password" defaultValue={initial?.entrance_password ?? ""} placeholder="*****" className="h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="management_account">관리단 계좌</Label>
-          <Input id="management_account" name="management_account" defaultValue={initial?.management_account ?? ""} placeholder="KB 123-456-789012" />
+          <Label htmlFor="management_account" className="mb-1.5 block">관리단 계좌</Label>
+          <Input id="management_account" name="management_account" defaultValue={initial?.management_account ?? ""} placeholder="KB 123-456-789012" className="h-11 text-base" />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="landlord_business_id">임사자 (임대사업자)</Label>
+          <Label htmlFor="landlord_business_id" className="mb-1.5 block">임사자 (임대사업자)</Label>
           <select
             id="landlord_business_id"
             name="landlord_business_id"
             defaultValue={initial?.landlord_business_id ?? ""}
-            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+            className="w-full h-11 px-3 rounded-lg border border-input bg-background text-base"
           >
             <option value="">선택 안함</option>
             {landlords.map(l => (

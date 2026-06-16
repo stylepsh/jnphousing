@@ -100,9 +100,9 @@ async function getDashboardData() {
     supabase.from("ad_channels").select("id, name").eq("is_active", true).order("display_order"),
     supabase.from("v_owner_pipeline").select("*"),
     supabase.from("rent_invoices").select("id, due_date, amount_total, paid_total, status, lease_id")
-      .lte("due_date", todayIso)
+      .lte("due_date", endIso)
       .in("status", ["unpaid", "partial", "overdue"])
-      .order("due_date").limit(30),
+      .order("due_date").limit(100),
     supabase.from("team_todos").select("id, title, assignee, due_date", { count: "exact" })
       .eq("status", "todo")
       .order("due_date", { ascending: true, nullsFirst: false })
@@ -172,22 +172,33 @@ async function getDashboardData() {
     const leaseMap = new Map(((leaseRows ?? []) as { id: string; unit_id: string; tenant_id: string }[]).map((l) => [l.id, l]));
     const unitIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.unit_id)));
     const tenantIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.tenant_id)));
+    // 신 통합 모델: 호실은 properties(unit_type='unit'), 상위 건물명은 parent_building_id 로 별도 조회
     const [{ data: unitRows }, { data: tenantRows }] = await Promise.all([
-      supabase.from("properties_units").select("id, unit_no, properties:property_id(name)").in("id", unitIds),
-      supabase.from("tenants").select("id, name").in("id", tenantIds),
+      supabase.from("properties").select("id, unit_no, parent_building_id").in("id", unitIds),
+      supabase.from("tenants").select("id, name, phone").in("id", tenantIds),
     ]);
-    const unitMap = new Map(((unitRows ?? []) as unknown as { id: string; unit_no: string; properties: { name: string } | null }[]).map((u) => [u.id, u]));
-    const tenantMap = new Map(((tenantRows ?? []) as { id: string; name: string }[]).map((t) => [t.id, t.name]));
+    const unitArr = (unitRows ?? []) as { id: string; unit_no: string | null; parent_building_id: string | null }[];
+    const buildingIds = Array.from(new Set(unitArr.map((u) => u.parent_building_id).filter(Boolean) as string[]));
+    let buildingNameMap = new Map<string, string>();
+    if (buildingIds.length > 0) {
+      const { data: bRows } = await supabase.from("properties").select("id, name").in("id", buildingIds);
+      buildingNameMap = new Map(((bRows ?? []) as { id: string; name: string | null }[]).map((b) => [b.id, b.name ?? "건물"]));
+    }
+    const unitMap = new Map(unitArr.map((u) => [u.id, u]));
+    const tenantMap = new Map(((tenantRows ?? []) as { id: string; name: string; phone: string | null }[]).map((t) => [t.id, t]));
     collectRows = collectInvs.map((inv) => {
       const lease = leaseMap.get(inv.lease_id);
       const unit = lease ? unitMap.get(lease.unit_id) : null;
+      const bName = unit?.parent_building_id ? (buildingNameMap.get(unit.parent_building_id) ?? "건물") : "단독호실";
+      const tenant = lease ? tenantMap.get(lease.tenant_id) : null;
       return {
         invoiceId: inv.id,
         dueDate: inv.due_date,
         remaining: Math.max(0, inv.amount_total - inv.paid_total),
         status: inv.status,
-        unitLabel: unit ? `${unit.properties?.name ?? "—"} · ${unit.unit_no}호` : "—",
-        tenantName: (lease && tenantMap.get(lease.tenant_id)) || "—",
+        unitLabel: unit ? `${bName} · ${unit.unit_no ?? ""}호` : "—",
+        tenantName: tenant?.name || "—",
+        tenantPhone: tenant?.phone || null,
       };
     }).filter((r) => r.remaining > 0);
   }
