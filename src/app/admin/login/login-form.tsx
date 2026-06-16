@@ -50,11 +50,11 @@ export function LoginForm({ next }: { next?: string }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <Label htmlFor="email">이메일</Label>
-        <Input id="email" name="email" type="email" required className="mt-1.5" />
+        <Input id="email" name="email" type="email" required autoComplete="username" className="mt-1.5" />
       </div>
       <div>
         <Label htmlFor="password">비밀번호</Label>
-        <Input id="password" name="password" type="password" required className="mt-1.5" />
+        <Input id="password" name="password" type="password" required autoComplete="current-password" className="mt-1.5" />
       </div>
       <Button type="submit" className="w-full" size="lg" disabled={pending}>
         {pending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> 로그인 중...</> : "로그인"}

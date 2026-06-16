@@ -1,7 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { AdminSidebar } from "../_components/sidebar";
 import { NotConfiguredBanner } from "@/components/shared/NotConfiguredBanner";
-import { SessionTimeout } from "@/components/admin/SessionTimeout";
 import { createClient, createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
 // admin (panel) 전체를 동적 렌더링 — DB/세션 의존
@@ -85,7 +84,6 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <SessionTimeout />
       <AdminSidebar counts={counts} adminName={adminName} isSuper={isSuper} />
       <div className="flex-1 lg:ml-64">
         {configured ? children : (
