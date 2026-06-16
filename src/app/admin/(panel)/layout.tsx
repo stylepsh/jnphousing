@@ -24,7 +24,7 @@ const getSidebarCounts = unstable_cache(
       supabase.from("leases").select("*", { count: "exact", head: true }).eq("status", "active").lte("end_date", expiryISO).gte("end_date", todayISO),
       supabase.from("agencies").select("*", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("inquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
-      supabase.from("team_todos").select("*", { count: "exact", head: true }).eq("status", "todo"),
+      supabase.from("team_todos").select("*", { count: "exact", head: true }).in("status", ["todo", "delayed"]),
       supabase.from("member_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
     ]);
     const pendingAgencies = c4.count ?? 0;

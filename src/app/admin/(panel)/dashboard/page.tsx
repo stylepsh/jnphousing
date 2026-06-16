@@ -104,7 +104,7 @@ async function getDashboardData() {
       .in("status", ["unpaid", "partial", "overdue"])
       .order("due_date").limit(100),
     supabase.from("team_todos").select("id, title, assignee, due_date", { count: "exact" })
-      .eq("status", "todo")
+      .in("status", ["todo", "delayed"])
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(5),
   ]);
