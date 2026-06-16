@@ -8,10 +8,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * 다음을 제외한 모든 경로:
-     * - _next/static, _next/image, favicon
-     * - public 정적 파일
+     * 인증·세션 갱신이 필요한 보호 영역에서만 미들웨어 실행.
+     * (공개 홈페이지·정적 자산은 미들웨어를 거치지 않아 빠름 — 매 요청 Supabase 인증 왕복 제거)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/admin/:path*",
+    "/agency/:path*",
+    "/landlord/:path*",
+    "/tenant/:path*",
   ],
 };
