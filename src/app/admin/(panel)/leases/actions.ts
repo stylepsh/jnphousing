@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 
 const baseSchema = z.object({
+  prev_lease_id: z.string().uuid().optional().nullable(),
   lease_type: z.enum(["long_term", "short_term"]),
   unit_id: z.string().uuid(),
   landlord_id: z.string().uuid(),
@@ -57,6 +58,7 @@ export async function upsertLease(id: string | null, formData: FormData) {
     const normalized = {
       ...raw,
       tenant_id: tenantId,
+      prev_lease_id: raw.prev_lease_id ? raw.prev_lease_id : null,
       vat_included: raw.vat_included === "on" || raw.vat_included === "true",
       move_in_date: raw.move_in_date === "" ? null : raw.move_in_date,
       rent_day: raw.rent_day === "" ? null : raw.rent_day,
@@ -119,7 +121,7 @@ export async function upsertLease(id: string | null, formData: FormData) {
     } else {
       const { data, error } = await supabase
         .from("leases")
-        .insert({ ...payload, status: "draft" })
+        .insert({ ...payload, prev_lease_id: d.prev_lease_id ?? null, status: "draft" })
         .select("id")
         .single();
       if (error) {

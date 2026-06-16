@@ -19,12 +19,33 @@ interface Props {
   mode: "create" | "edit";
   lease?: Lease;
   adminName?: string;
+  /** 재계약/연장: 이전 계약 id (있으면 새 계약에 연결) */
+  prevLeaseId?: string;
+  /** 재계약/연장 모드 — lease 값을 기본값으로 끌어오고 날짜는 갱신 기간으로 제안 */
+  renew?: boolean;
   options: {
     landlords: Option[];
     tenants: Option[];
     units: UnitOption[];
     buildings: BuildingOption[];
   };
+}
+
+// 갱신 날짜 제안: 새 시작일 = 이전 종료일 +1일, 새 종료일 = +1년 -1일
+function renewalDates(endDate?: string | null): { start: string; end: string } {
+  if (!endDate) return { start: "", end: "" };
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const s = new Date(endDate); s.setDate(s.getDate() + 1);
+  const e = new Date(s); e.setFullYear(e.getFullYear() + 1); e.setDate(e.getDate() - 1);
+  return { start: iso(s), end: iso(e) };
+}
+
+function channelFromType(t?: string): string {
+  if (t === "direct") return "direct";
+  if (t === "referral") return "referral";
+  if (t === "broker") return "agency";
+  if (t === "other") return "etc";
+  return "direct";
 }
 
 // 입력칸 통일 — 시원하게 (h-11 / text-base)
@@ -49,9 +70,10 @@ const BEARER_LABEL: Record<string, string> = { jnp: "JNP", owner: "임대인", h
 
 function fmt(n: number) { return (n || 0).toLocaleString("ko-KR"); }
 
-export function LeaseForm({ mode, lease, options, adminName }: Props) {
+export function LeaseForm({ mode, lease, options, adminName, prevLeaseId, renew }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const rd = renew ? renewalDates(lease?.end_date) : null;
 
   const [leaseType, setLeaseType] = useState<"long_term" | "short_term">(lease?.lease_type ?? "long_term");
   const [landlordId, setLandlordId] = useState(lease?.landlord_id ?? "");
@@ -63,9 +85,9 @@ export function LeaseForm({ mode, lease, options, adminName }: Props) {
   const [tenantName, setTenantName] = useState("");
   const [tenantPhone, setTenantPhone] = useState("");
 
-  const [startDate, setStartDate] = useState(lease?.start_date ?? "");
-  const [moveInDate, setMoveInDate] = useState(lease?.move_in_date ?? "");
-  const [endDate, setEndDate] = useState(lease?.end_date ?? "");
+  const [startDate, setStartDate] = useState(rd?.start ?? lease?.start_date ?? "");
+  const [moveInDate, setMoveInDate] = useState(renew ? "" : (lease?.move_in_date ?? ""));
+  const [endDate, setEndDate] = useState(rd?.end ?? lease?.end_date ?? "");
 
   const [deposit, setDeposit] = useState(lease?.deposit ?? 0);
   const [rent, setRent] = useState(lease?.rent_amount ?? 0);
@@ -82,7 +104,7 @@ export function LeaseForm({ mode, lease, options, adminName }: Props) {
   const [brokerageFee, setBrokerageFee] = useState<number>(0);
   const [brokerageBearer, setBrokerageBearer] = useState<"jnp" | "owner" | "half">("jnp");
 
-  const [channel, setChannel] = useState("direct");
+  const [channel, setChannel] = useState(lease ? channelFromType(lease.contract_source_type) : "direct");
   const [sourceName, setSourceName] = useState(lease?.contract_source_name ?? "");
   const [sourceContact, setSourceContact] = useState(lease?.contract_source_contact ?? "");
   const [sourceMemo, setSourceMemo] = useState(lease?.contract_source_memo ?? "");
@@ -191,6 +213,7 @@ export function LeaseForm({ mode, lease, options, adminName }: Props) {
     fd.set("brokerage_fee", String(brokerageFee || 0));
     fd.set("brokerage_bearer", brokerageBearer);
     fd.set("prep_todos", allPrep.join(","));
+    if (prevLeaseId) fd.set("prev_lease_id", prevLeaseId);
 
     startTransition(async () => {
       const r = await upsertLease(lease?.id ?? null, fd);
@@ -205,6 +228,11 @@ export function LeaseForm({ mode, lease, options, adminName }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {renew && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <strong>재계약 / 연장</strong> — 이전 계약 정보를 불러왔습니다. 날짜는 갱신 기간으로 자동 제안했으니, 월세·보증금 등 바뀐 부분만 수정 후 저장하세요. (이전 계약과 연결되어 기록됩니다)
+        </div>
+      )}
       {/* ── 계약 대상: 임대인 → 건물 → 호실 ── */}
       <Section title="계약 대상">
         <div className="grid sm:grid-cols-2 gap-4">

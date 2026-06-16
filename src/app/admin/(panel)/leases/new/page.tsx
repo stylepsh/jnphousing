@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { LeaseForm } from "../_components/lease-form";
 import { createClient } from "@/lib/supabase/server";
-import type { Landlord, Tenant, PropertyUnit } from "@/types/lease";
+import type { Landlord, Tenant, PropertyUnit, Lease } from "@/types/lease";
 
 async function fetchOptions() {
   const supabase = await createClient();
@@ -40,18 +40,31 @@ async function fetchOptions() {
   };
 }
 
-export default async function LeaseNewPage() {
+async function fetchPrior(from: string): Promise<Lease | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("leases").select("*").eq("id", from).maybeSingle();
+  return (data ?? null) as Lease | null;
+}
+
+export default async function LeaseNewPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  const { from } = await searchParams;
   const opts = await fetchOptions();
+  const prior = from ? await fetchPrior(from) : null;
+  const renew = !!prior;
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">신규 계약 등록</h1>
-        <p className="mt-1 text-sm text-muted-foreground">임대인 → 건물 → 호실 → 임차인 순으로 입력하고, 하단에서 카카오톡용 계약정보를 복사할 수 있습니다.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{renew ? "재계약 / 연장 등록" : "신규 계약 등록"}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {renew
+            ? "이전 계약 정보를 불러왔습니다. 바뀐 부분만 수정 후 저장하세요."
+            : "임대인 → 건물 → 호실 → 임차인 순으로 입력하고, 하단에서 카카오톡용 계약정보를 복사할 수 있습니다."}
+        </p>
       </div>
       <Card>
         <CardContent className="pt-6">
-          <LeaseForm mode="create" options={opts} adminName={opts.adminName} />
+          <LeaseForm mode="create" options={opts} adminName={opts.adminName} lease={prior ?? undefined} prevLeaseId={renew ? from : undefined} renew={renew} />
         </CardContent>
       </Card>
     </div>

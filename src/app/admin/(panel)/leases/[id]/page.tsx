@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatWonSuffix, formatWonMan } from "@/lib/money";
 import { formatKoreanDate } from "@/lib/dates";
@@ -13,23 +13,49 @@ import type { Lease, Landlord, Tenant, PropertyUnit, LeaseEvent, RentInvoice, Re
 
 async function fetchAll(id: string) {
   const supabase = await createClient();
+  // 신 통합 모델: unit_id→properties(unit_type='unit'), landlord_id→owners. 조인 대신 단계 조회.
   const [lRes, evRes, schRes, invRes] = await Promise.all([
-    supabase.from("leases").select("*, unit:properties_units(*, properties(name, address)), landlord:landlords(name, phone), tenant:tenants(name, phone)").eq("id", id).maybeSingle(),
+    supabase.from("leases").select("*").eq("id", id).maybeSingle(),
     supabase.from("lease_events").select("*").eq("lease_id", id).order("event_date", { ascending: false }).limit(50),
     supabase.from("rent_schedules").select("*").eq("lease_id", id).order("due_date"),
     supabase.from("rent_invoices").select("*").eq("lease_id", id).order("due_date"),
   ]);
+  const base = lRes.data as Lease | null;
+  if (!base) return { lease: null, events: [], schedules: [], invoices: [] };
+
+  const [unitRes, ownerRes, tenantRes] = await Promise.all([
+    supabase.from("properties").select("unit_no, address, parent_building_id").eq("id", base.unit_id).maybeSingle(),
+    supabase.from("owners").select("name, phone").eq("id", base.landlord_id).maybeSingle(),
+    supabase.from("tenants").select("name, phone").eq("id", base.tenant_id).maybeSingle(),
+  ]);
+  const unitRow = unitRes.data as { unit_no: string | null; address: string | null; parent_building_id: string | null } | null;
+  let buildingName: string | null = null;
+  let buildingAddr: string | null = unitRow?.address ?? null;
+  if (unitRow?.parent_building_id) {
+    const { data: b } = await supabase.from("properties").select("name, address").eq("id", unitRow.parent_building_id).maybeSingle();
+    const bRow = b as { name: string | null; address: string | null } | null;
+    buildingName = bRow?.name ?? null;
+    buildingAddr = buildingAddr ?? bRow?.address ?? null;
+  }
+
   return {
-    lease: lRes.data as unknown as (Lease & {
+    lease: {
+      ...base,
+      unit: { unit_no: unitRow?.unit_no ?? null, properties: { name: buildingName ?? "단독호실", address: buildingAddr ?? "" } },
+      landlord: (ownerRes.data ?? null) as Pick<Landlord, "name" | "phone"> | null,
+      tenant: (tenantRes.data ?? null) as Pick<Tenant, "name" | "phone"> | null,
+    } as unknown as (Lease & {
       unit: (PropertyUnit & { properties: { name: string; address: string } | null }) | null;
       landlord: Pick<Landlord, "name" | "phone"> | null;
       tenant: Pick<Tenant, "name" | "phone"> | null;
-    }) | null,
+    }),
     events: (evRes.data ?? []) as LeaseEvent[],
     schedules: (schRes.data ?? []) as RentSchedule[],
     invoices: (invRes.data ?? []) as RentInvoice[],
   };
 }
+
+const RENT_CYCLE_LABEL: Record<string, string> = { monthly: "매월", weekly: "매주", daily: "매일" };
 
 const STATUS_LABEL: Record<string, { l: string; c: string }> = {
   draft:      { l: "초안", c: "bg-slate-200 text-slate-700" },
@@ -93,6 +119,13 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
           <p className="mt-1 text-sm text-muted-foreground">{lease.unit?.properties?.address}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {lease.status !== "draft" && (
+            <Button asChild variant="outline">
+              <Link href={`/admin/leases/new?from=${lease.id}`}>
+                <RefreshCw className="h-4 w-4 mr-1.5" /> 재계약 / 연장
+              </Link>
+            </Button>
+          )}
           {lease.status === "terminated" && (
             <Button asChild variant="outline">
               <a href={`/admin/leases/${lease.id}/settlement`} target="_blank" rel="noopener noreferrer">
@@ -117,7 +150,7 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
             <Row label="보증금" value={formatWonSuffix(lease.deposit)} />
             <Row label="월세" value={formatWonSuffix(lease.rent_amount)} />
             <Row label="관리비" value={formatWonSuffix(lease.management_fee)} />
-            <Row label="청구 주기" value={`${lease.rent_cycle}${lease.rent_day ? ` · 매월 ${lease.rent_day}일` : ""}`} />
+            <Row label="청구 주기" value={`${RENT_CYCLE_LABEL[lease.rent_cycle] ?? lease.rent_cycle}${lease.rent_day ? ` · 매월 ${lease.rent_day}일` : ""}`} />
             <Row label="부가세" value={lease.vat_included ? "별도 청구" : "포함" } />
             <Row label="수수료" value={lease.fee_type === "percent" ? `비율 ${lease.fee_percent}%` : `정액 ${formatWonSuffix(lease.fee_fixed ?? 0)}`} />
             <Row label="연체이율" value={`연 ${lease.overdue_annual_rate}%`} />
