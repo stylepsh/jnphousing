@@ -297,6 +297,30 @@ export async function updateUnit(ownerId: string, id: string, fd: FormData) {
   }
 }
 
+/** 호실 여러 개 일괄 삭제 (다중 선택). 계약이 걸린 호실은 FK 제약으로 건너뜀. */
+export async function deletePropertiesBulk(ownerId: string, ids: string[]) {
+  try {
+    await requireAdmin();
+    const valid = ids.filter((id) => z.string().uuid().safeParse(id).success);
+    if (valid.length === 0) return { ok: false as const, error: "선택된 호실이 없습니다." };
+    const supabase = createServiceClient();
+    let deleted = 0;
+    const failed: string[] = [];
+    // 한 건씩 삭제해 계약 연결(FK) 등으로 실패한 호실만 골라낸다.
+    for (const id of valid) {
+      const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", ownerId);
+      if (error) failed.push(id);
+      else deleted++;
+    }
+    revalidatePath(`/admin/owners/${ownerId}`);
+    if (deleted === 0) return { ok: false as const, error: "삭제 실패 — 계약이 연결된 호실은 먼저 계약을 해지하세요." };
+    return { ok: true as const, count: deleted, failedCount: failed.length };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false as const, error: e.message };
+    return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
 /** 물건(건물/호실) 삭제. 건물 삭제 시 하위 호실의 parent는 FK on delete set null. */
 export async function deleteProperty(ownerId: string, id: string) {
   try {
