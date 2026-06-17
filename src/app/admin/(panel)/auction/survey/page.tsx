@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
+import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { SurveyRow } from "./survey-row";
 import { BulkEntry } from "./bulk-entry";
@@ -71,27 +72,24 @@ export default async function AuctionSurveyPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-black flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-rose-600" />
-          경매 답사 관리
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          수집된 물건의 현장 답사 결과(공실/점유/재방문)를 기록합니다. 현관 비밀번호·답사자·메모 저장 가능.
-        </p>
-      </div>
+      <PageHeader
+        icon={ClipboardList}
+        title="답사 결과 입력"
+        accent="rose"
+        desc="종이 답사지가 돌아오면 번호 일괄입력으로 공실/거주를 한 번에 반영합니다. 특정 1건만 따로 고칠 땐 아래 목록에서 직접 입력하세요."
+      />
 
       {/* 번호 기반 일괄입력 */}
       <BulkEntry sheets={sheets} />
 
       {/* 상태별 요약 */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
         {SURVEY_STATUS.map((s) => (
-          <div key={s.value} className="rounded-lg border bg-card p-3">
+          <div key={s.value} className="rounded-2xl border bg-card p-3.5 shadow-sm">
             <div className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${s.color}`}>
               {s.label}
             </div>
-            <div className="text-2xl font-black mt-1">{counts[s.value] ?? 0}</div>
+            <div className="text-2xl font-black mt-1 tabular-nums">{counts[s.value] ?? 0}</div>
           </div>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { UserCheck } from "lucide-react";
+import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { JudgmentClient, type OwnerVerdict, type TargetRow, type Verdict } from "./judgment-client";
 
@@ -125,17 +126,18 @@ export default async function AuctionJudgmentPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-black flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-emerald-600" />
-          임대인 판정 · 전수조사
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          1차 표본 답사 결과를 임대인별로 자동 집계합니다. 표본 중 하나라도 거주면 제외,
-          2건 이상 전부 공실이면 <strong className="text-emerald-700">전수조사필수</strong> —
-          그 임대인을 별도 명단(2차)으로 지정해 보유 물건 전체를 재수집합니다.
-        </p>
-      </div>
+      <PageHeader
+        icon={UserCheck}
+        title="임대인 판정 · 전수조사"
+        accent="emerald"
+        desc={
+          <>
+            답사 결과를 임대인별로 자동 집계합니다. 1차 표본은 공실·거주 혼재 시 <strong className="text-amber-700">검토 대기</strong>,
+            전부 공실이면 <strong className="text-emerald-700">전수조사필수</strong>. 2차(전수 명단)는 공실이 거주보다 많으면{" "}
+            <strong className="text-blue-700">추진가능</strong>으로 분기합니다.
+          </>
+        }
+      />
 
       <JudgmentClient owners={owners} targets={targets} />
     </div>

@@ -159,11 +159,11 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
           ["review", "검토 대기", summary.review],
           ["excluded", "패스·제외", summary.passExcluded],
         ] as const).map(([k, label, n]) => (
-          <div key={k} className="rounded-lg border bg-card p-3">
+          <div key={k} className="rounded-2xl border bg-card p-3.5 shadow-sm">
             <div className={cn("inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border", VERDICT_META[k as Verdict].chip)}>
               {label}
             </div>
-            <div className="text-2xl font-black mt-1">{n}</div>
+            <div className="text-2xl font-black mt-1 tabular-nums">{n}</div>
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, X } from "lucide-react";
+import { Gavel, X } from "lucide-react";
+import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionImportForm } from "./import-form";
 import { PoolList, type PoolItem } from "./pool-list";
@@ -70,16 +71,18 @@ export default async function AuctionCollectionPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-black">경매 물건 수집</h1>
-        <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-          <ShieldCheck className="w-4 h-4 text-blue-600" />
-          지지옥션·대법원 검색 결과를 붙여넣으면 채권자가{" "}
-          <strong className="text-blue-700">주택도시보증공사(HUG)</strong> 또는{" "}
-          <strong className="text-purple-700">서울보증보험(SGI)</strong>인 건만 자동 수집됩니다.
-          개인채권·은행 등 기타는 배제.
-        </p>
-      </div>
+      <PageHeader
+        icon={Gavel}
+        title="경매 물건 수집"
+        accent="blue"
+        desc={
+          <>
+            지지옥션·대법원 검색 결과를 붙여넣으면 채권자가{" "}
+            <strong className="text-blue-700">주택도시보증공사(HUG)</strong> 또는{" "}
+            <strong className="text-purple-700">서울보증보험(SGI)</strong>인 건만 자동 수집됩니다. 개인채권·은행 등 기타는 배제.
+          </>
+        }
+      />
 
       <AuctionImportForm />
 

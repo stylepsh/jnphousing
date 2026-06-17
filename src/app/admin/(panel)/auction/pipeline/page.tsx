@@ -9,6 +9,8 @@ import {
   type PipelineState,
 } from "@/lib/auction/pipeline/state-machine";
 import { cn } from "@/lib/utils";
+import { Workflow } from "lucide-react";
+import { PageHeader } from "../../../_components/page-header";
 
 export const metadata: Metadata = { title: "경매 파이프라인" };
 export const dynamic = "force-dynamic";
@@ -45,9 +47,9 @@ async function fetchCounts(): Promise<Record<string, number>> {
 function StateCard({ state, count }: { state: PipelineState; count: number }) {
   const href = STAGE_LINK[state];
   const inner = (
-    <div className={cn("rounded-xl border p-3.5 h-full transition", STATE_COLORS[state], href && "hover:shadow-md hover:-translate-y-0.5")}>
-      <div className="text-xs font-semibold opacity-80">{STATE_LABELS[state]}</div>
-      <div className="text-2xl font-black mt-1">{count}</div>
+    <div className={cn("rounded-2xl border p-4 h-full transition shadow-sm", STATE_COLORS[state], href && "hover:shadow-md hover:-translate-y-0.5 cursor-pointer")}>
+      <div className="text-xs font-bold opacity-80">{STATE_LABELS[state]}</div>
+      <div className="text-2xl font-black mt-1 tabular-nums">{count}</div>
     </div>
   );
   return href ? <Link href={href}>{inner}</Link> : inner;
@@ -59,13 +61,17 @@ export default async function PipelineDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-black">경매 파이프라인</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          수집된 경매물건의 답사→검토→상품화→임대 전 과정. 전체{" "}
-          <strong className="text-foreground">{total}</strong>건. 단계 카드를 누르면 해당 작업 화면으로 이동합니다.
-        </p>
-      </div>
+      <PageHeader
+        icon={Workflow}
+        title="경매 파이프라인"
+        accent="violet"
+        desc={
+          <>
+            수집된 경매물건의 답사→검토→상품화→임대 전 과정. 전체{" "}
+            <strong className="text-foreground">{total}</strong>건. 단계 카드를 누르면 해당 작업 화면으로 이동합니다.
+          </>
+        }
+      />
 
       <section>
         <h2 className="text-xs font-black text-muted-foreground uppercase tracking-wide mb-2">메인 흐름</h2>
@@ -85,15 +91,24 @@ export default async function PipelineDashboard() {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2 text-sm">
-        <Link href="/admin/auction/collection" className="rounded-lg border px-3 py-2 hover:bg-muted">① 수집 풀</Link>
-        <Link href="/admin/auction/pipeline/assign" className="rounded-lg border px-3 py-2 hover:bg-muted">② 답사 배정</Link>
-        <Link href="/admin/auction/inspect" className="rounded-lg border px-3 py-2 hover:bg-muted">③ 답사자 입력</Link>
-        <Link href="/admin/auction/pipeline/review" className="rounded-lg border px-3 py-2 hover:bg-muted">④ 검토</Link>
-        <Link href="/admin/auction/pipeline/vacant" className="rounded-lg border px-3 py-2 hover:bg-muted">⑤ 공실·상품화</Link>
-        <Link href="/admin/auction/pipeline/lease-ready" className="rounded-lg border px-3 py-2 hover:bg-muted">⑥ 임대 계약</Link>
-        <Link href="/admin/auction/pipeline/leased" className="rounded-lg border px-3 py-2 hover:bg-muted">⑦ 임대중·정산</Link>
-      </div>
+      <section>
+        <h2 className="text-xs font-black text-muted-foreground uppercase tracking-wide mb-2">바로가기</h2>
+        <div className="flex flex-wrap gap-2 text-sm">
+          {[
+            ["/admin/auction/collection", "① 수집 풀"],
+            ["/admin/auction/pipeline/assign", "② 답사 배정"],
+            ["/admin/auction/inspect", "③ 답사자 입력"],
+            ["/admin/auction/pipeline/review", "④ 검토"],
+            ["/admin/auction/pipeline/vacant", "⑤ 공실·상품화"],
+            ["/admin/auction/pipeline/lease-ready", "⑥ 임대 계약"],
+            ["/admin/auction/pipeline/leased", "⑦ 임대중·정산"],
+          ].map(([href, label]) => (
+            <Link key={href} href={href} className="rounded-full border bg-card px-3.5 py-2 font-medium hover:border-violet-300 hover:bg-violet-50/50 transition">
+              {label}
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
