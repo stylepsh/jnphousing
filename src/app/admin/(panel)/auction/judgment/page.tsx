@@ -15,21 +15,38 @@ interface PropRow {
   survey_seq: number | null;
 }
 
-function computeVerdict(c: { vacant: number; occupied: number; revisit: number }): Verdict {
-  if (c.occupied >= 1) return "occupied_exists"; // 거주중물건있음 → 제외
-  if (c.vacant >= 2) return "full_survey"; // 전수조사필수
-  if (c.vacant === 1) return "sample_thin"; // 공실 1건(표본부족)
-  if (c.revisit >= 1) return "revisit"; // 재방문 필요
+// 1차(표본)와 2차(전수조사 명단 등록) 판정 기준이 다르다.
+function computeVerdict(
+  c: { vacant: number; occupied: number; revisit: number },
+  isTarget: boolean,
+): Verdict {
+  if (isTarget) {
+    // 2차 — 전수조사 후 공실/거주 갯수로 판단. 공실 과반이면 추진, 아니면 패스.
+    if (c.vacant > c.occupied) return "pursue"; // 공실 과반 → 영업·개방·상품화
+    return "pass"; // 거주 과반 → 보류
+  }
+  // 1차 표본 필터
+  if (c.occupied === 0 && c.vacant >= 2) return "full_survey"; // 전부 공실 → 전수조사필수
+  if (c.occupied === 0 && c.vacant === 1) return "sample_thin"; // 공실 1건(표본부족)
+  if (c.vacant >= 1 && c.occupied >= 1) {
+    // 공실·거주 혼재 → 공실이 거주 이상이면 사람이 판단(검토 대기), 거주 우세면 제외
+    return c.vacant >= c.occupied ? "review" : "excluded";
+  }
+  if (c.vacant === 0 && c.occupied >= 1) return "excluded"; // 공실 없음 → 제외
+  if (c.revisit >= 1) return "revisit";
   return "none";
 }
 
-// 판정 화면 정렬 우선순위
+// 판정 화면 정렬 우선순위 (조치 필요한 순)
 const VERDICT_ORDER: Record<Verdict, number> = {
-  full_survey: 0,
-  sample_thin: 1,
-  revisit: 2,
-  occupied_exists: 3,
-  none: 4,
+  pursue: 0,
+  full_survey: 1,
+  review: 2,
+  sample_thin: 3,
+  revisit: 4,
+  pass: 5,
+  excluded: 6,
+  none: 7,
 };
 
 async function fetchData(): Promise<{ owners: OwnerVerdict[]; targets: TargetRow[] }> {
@@ -71,13 +88,14 @@ async function fetchData(): Promise<{ owners: OwnerVerdict[]; targets: TargetRow
       }
       const surveyed = counts.vacant + counts.occupied + counts.revisit;
       if (surveyed === 0) continue; // 아직 답사 결과 없는 임대인은 판정 대상 아님
+      const targetStatus = targetStatusByOwner.get(owner) ?? null;
       owners.push({
         owner_name: owner,
         total: list.length,
         ...counts,
         surveyed,
-        verdict: computeVerdict(counts),
-        targetStatus: targetStatusByOwner.get(owner) ?? null,
+        verdict: computeVerdict(counts, targetStatus !== null),
+        targetStatus,
         items: list
           .map((p) => ({
             seq: p.survey_seq,

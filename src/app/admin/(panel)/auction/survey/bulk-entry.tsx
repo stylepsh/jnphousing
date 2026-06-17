@@ -27,7 +27,7 @@ function sheetLabel(s: OpenSheet): string {
 }
 
 export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [sheetId, setSheetId] = useState(sheets[0]?.id ?? "");
   const [vacantText, setVacantText] = useState("");
   const [occupiedText, setOccupiedText] = useState("");
@@ -76,22 +76,26 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
   }
 
   return (
-    <section className="rounded-xl border bg-card overflow-hidden">
+    <section className="rounded-2xl border-2 border-rose-200 bg-rose-50/40 overflow-hidden shadow-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-4 py-3 flex items-center gap-2 text-left hover:bg-muted/30"
+        className="w-full px-5 py-4 flex items-center gap-2.5 text-left hover:bg-rose-50/60"
       >
-        <ListChecks className="w-5 h-5 text-rose-600 shrink-0" />
-        <span className="font-bold text-sm">번호 일괄입력</span>
-        <span className="text-xs text-muted-foreground">
-          발급(답사지)을 고르고 종이의 번호만 보고 공실/거주를 한 번에 반영
+        <span className="h-9 w-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
+          <ListChecks className="w-5 h-5" />
         </span>
-        <span className="ml-auto text-xs text-muted-foreground">{open ? "닫기" : "열기"}</span>
+        <span className="min-w-0">
+          <span className="block font-black text-base">번호 일괄입력</span>
+          <span className="block text-xs text-muted-foreground">
+            답사지(발급)를 고르고 종이의 번호만 보고 공실/거주를 한 번에 반영합니다
+          </span>
+        </span>
+        <span className="ml-auto text-xs font-bold text-rose-700">{open ? "닫기" : "열기"}</span>
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-3 border-t pt-3">
+        <div className="px-5 pb-5 space-y-3 border-t border-rose-200 bg-card pt-4">
           {/* 발급(sheet) 선택 */}
           <div>
             <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1">

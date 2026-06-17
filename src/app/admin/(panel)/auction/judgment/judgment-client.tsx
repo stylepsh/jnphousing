@@ -13,7 +13,15 @@ import {
   removeFullSurveyTarget,
 } from "./actions";
 
-export type Verdict = "full_survey" | "sample_thin" | "revisit" | "occupied_exists" | "none";
+export type Verdict =
+  | "pursue" // 2차: 공실 과반 → 추진
+  | "full_survey" // 1차: 전부 공실 → 전수조사필수
+  | "review" // 1차: 공실·거주 혼재(공실 우세) → 검토 대기
+  | "sample_thin" // 1차: 공실 1건뿐
+  | "pass" // 2차: 거주 과반 → 패스
+  | "excluded" // 1차: 거주 우세 → 제외
+  | "revisit"
+  | "none";
 
 export interface OwnerVerdict {
   owner_name: string;
@@ -41,10 +49,13 @@ export interface TargetRow {
 }
 
 const VERDICT_META: Record<Verdict, { label: string; chip: string; desc: string }> = {
+  pursue: { label: "추진가능 (2차)", chip: "bg-blue-100 text-blue-800 border-blue-300", desc: "전수조사 결과 공실 과반 — 거주 일부 있어도 위탁관리 영업·개방·상품화 대상" },
   full_survey: { label: "전수조사필수", chip: "bg-emerald-100 text-emerald-800 border-emerald-300", desc: "표본 전부 공실 — 운용 안 하는 임대인 의심" },
+  review: { label: "검토 대기", chip: "bg-amber-100 text-amber-800 border-amber-300", desc: "공실·거주 혼재(공실 우세) — 전수조사 보낼지 사람이 판단" },
   sample_thin: { label: "공실 1건 · 표본부족", chip: "bg-amber-100 text-amber-800 border-amber-300", desc: "공실이지만 표본 1건뿐 — 추가 답사 권장" },
+  pass: { label: "패스 (2차)", chip: "bg-slate-100 text-slate-600 border-slate-300", desc: "전수조사 결과 거주 과반 — 보류" },
+  excluded: { label: "거주 우세 · 제외", chip: "bg-slate-100 text-slate-600 border-slate-300", desc: "표본에 거주가 더 많음 — 운용 중으로 보고 제외" },
   revisit: { label: "재방문 필요", chip: "bg-sky-100 text-sky-800 border-sky-300", desc: "재방문 표시 — 판정 보류" },
-  occupied_exists: { label: "거주중물건있음 · 제외", chip: "bg-slate-100 text-slate-600 border-slate-300", desc: "표본 중 거주 물건 존재 — 운용 중으로 보고 제외" },
   none: { label: "-", chip: "bg-slate-100 text-slate-500 border-slate-200", desc: "" },
 };
 
@@ -69,8 +80,13 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const summary = useMemo(() => {
-    const s = { full_survey: 0, sample_thin: 0, revisit: 0, occupied_exists: 0 };
-    for (const o of owners) if (o.verdict in s) s[o.verdict as keyof typeof s]++;
+    const s = { pursue: 0, full_survey: 0, review: 0, passExcluded: 0 };
+    for (const o of owners) {
+      if (o.verdict === "pursue") s.pursue++;
+      else if (o.verdict === "full_survey") s.full_survey++;
+      else if (o.verdict === "review") s.review++;
+      else if (o.verdict === "pass" || o.verdict === "excluded") s.passExcluded++;
+    }
     return s;
   }, [owners]);
 
@@ -138,10 +154,10 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
       {/* 요약 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {([
+          ["pursue", "추진가능(2차)", summary.pursue],
           ["full_survey", "전수조사필수", summary.full_survey],
-          ["sample_thin", "표본부족(공실1)", summary.sample_thin],
-          ["revisit", "재방문 필요", summary.revisit],
-          ["occupied_exists", "거주중·제외", summary.occupied_exists],
+          ["review", "검토 대기", summary.review],
+          ["excluded", "패스·제외", summary.passExcluded],
         ] as const).map(([k, label, n]) => (
           <div key={k} className="rounded-lg border bg-card p-3">
             <div className={cn("inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border", VERDICT_META[k as Verdict].chip)}>
@@ -235,7 +251,7 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold", STATUS_META[o.targetStatus as TargetRow["status"]]?.chip ?? "bg-slate-100 text-slate-500")}>
                           명단등록 · {STATUS_META[o.targetStatus as TargetRow["status"]]?.label ?? o.targetStatus}
                         </span>
-                      ) : o.verdict === "full_survey" || o.verdict === "sample_thin" ? (
+                      ) : o.verdict === "full_survey" || o.verdict === "review" || o.verdict === "sample_thin" ? (
                         <Button size="sm" disabled={pending} onClick={() => designate(o)} className="gap-1 h-7">
                           <Target className="w-3.5 h-3.5" /> 전수조사 지정
                         </Button>

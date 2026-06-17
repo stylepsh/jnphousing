@@ -85,13 +85,15 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <AdminSidebar counts={counts} adminName={adminName} isSuper={isSuper} />
-      <div className="flex-1 lg:ml-64">
-        {configured ? children : (
-          <NotConfiguredBanner
-            title="관리자 패널 준비 중"
-            description=".env.local 의 Supabase 키를 설정하면 모든 데이터가 표시됩니다."
-          />
-        )}
+      <div className="flex-1 lg:ml-64 min-w-0">
+        <main className="mx-auto w-full max-w-[1600px] px-5 sm:px-7 lg:px-10 pt-16 lg:pt-8 pb-12">
+          {configured ? children : (
+            <NotConfiguredBanner
+              title="관리자 패널 준비 중"
+              description=".env.local 의 Supabase 키를 설정하면 모든 데이터가 표시됩니다."
+            />
+          )}
+        </main>
       </div>
     </div>
   );
