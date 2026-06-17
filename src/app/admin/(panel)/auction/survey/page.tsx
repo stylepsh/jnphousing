@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SurveyRow } from "./survey-row";
+import { BulkEntry } from "./bulk-entry";
+import { getOpenSheets } from "./survey-actions";
 import { SURVEY_STATUS, type SurveyItem } from "./survey-status";
 
 export const metadata: Metadata = { title: "경매 답사 관리" };
@@ -52,6 +54,7 @@ async function fetchSurvey(): Promise<Row[]> {
 
 export default async function AuctionSurveyPage() {
   const rows = await fetchSurvey();
+  const sheets = await getOpenSheets();
 
   // 상태별 카운트
   const counts: Record<string, number> = {};
@@ -77,6 +80,9 @@ export default async function AuctionSurveyPage() {
           수집된 물건의 현장 답사 결과(공실/점유/재방문)를 기록합니다. 현관 비밀번호·답사자·메모 저장 가능.
         </p>
       </div>
+
+      {/* 번호 기반 일괄입력 */}
+      <BulkEntry sheets={sheets} />
 
       {/* 상태별 요약 */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">

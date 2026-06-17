@@ -10,20 +10,23 @@ import { ensureKoreanFonts } from "./fonts";
 ensureKoreanFonts();
 
 export interface SurveyPdfItem {
+  survey_seq: number; // 출력 시 부여된 통짜 번호(1~N) — 입력 매칭 키
   case_number: string;
   court: string | null;
   category: string | null;
   address: string;
   owner_name: string | null;
-  creditor: string | null;
-  appraisal_value: number | null;
-  minimum_bid: number | null;
-  auction_date: string | null;
-  dividend_deadline: string | null;
+  // 아래는 정렬/식별용으로만 받고 1차 답사지에는 인쇄하지 않음
+  creditor?: string | null;
+  appraisal_value?: number | null;
+  minimum_bid?: number | null;
+  auction_date?: string | null;
+  dividend_deadline?: string | null;
 }
 
 export interface SurveyPdfData {
   printedAt: string; // YYYY-MM-DD
+  sheetLabel?: string; // 발급 지역 라벨 (어느 답사지인지 종이에서 식별)
   items: SurveyPdfItem[];
 }
 
@@ -31,6 +34,7 @@ const styles = StyleSheet.create({
   page: { paddingTop: 24, paddingBottom: 30, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 8 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 },
   title: { fontSize: 13, fontWeight: "bold" },
+  legend: { fontSize: 7.5, color: "#64748b", marginTop: 2 },
   sub: { fontSize: 8, color: "#64748b", marginTop: 2 },
   infoBox: { flexDirection: "row", gap: 10 },
   infoItem: { fontSize: 8, color: "#334155" },
@@ -39,24 +43,21 @@ const styles = StyleSheet.create({
   groupCount: { fontSize: 8, color: "#475569" },
   // 표
   trHead: { flexDirection: "row", backgroundColor: "#f1f5f9", borderBottomWidth: 1, borderColor: "#cbd5e1" },
-  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 36, alignItems: "center" },
-  th: { fontSize: 7, fontWeight: "bold", color: "#475569", paddingVertical: 3, paddingHorizontal: 3 },
-  td: { fontSize: 7.5, paddingVertical: 3, paddingHorizontal: 3 },
-  cNo: { width: 18, textAlign: "center" },
-  cAddr: { width: 188 },
-  cOwner: { width: 52 },
-  cOcc: { width: 66, textAlign: "center" },
-  cMail: { width: 30, textAlign: "center" },
-  cMeter: { width: 30, textAlign: "center" },
-  cNotice: { width: 30, textAlign: "center" },
-  cDoor: { width: 30, textAlign: "center" },
-  cCode: { width: 60 },
-  cMgmt: { width: 88 },
+  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 40, alignItems: "center" },
+  th: { fontSize: 7.5, fontWeight: "bold", color: "#475569", paddingVertical: 4, paddingHorizontal: 3 },
+  td: { fontSize: 8, paddingVertical: 4, paddingHorizontal: 3 },
+  cNo: { width: 34, textAlign: "center" },
+  cAddr: { width: 230 },
+  cOwner: { width: 64 },
+  cOcc: { width: 86, textAlign: "center" },
+  cMeter: { width: 58, textAlign: "center" },
+  cMail: { width: 58, textAlign: "center" },
+  cCode: { width: 72, textAlign: "center" },
   cMemo: { flex: 1 },
-  checkbox: { fontSize: 7.5 },
-  caseMono: { fontSize: 7, color: "#1d4ed8" },
-  mgmtLabel: { fontSize: 6, color: "#94a3b8" },
-  mgmtLine: { borderBottomWidth: 0.5, borderColor: "#cbd5e1", height: 7, marginTop: 2 },
+  noBig: { fontSize: 13, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
+  occBig: { fontSize: 9, fontWeight: "bold", color: "#0f172a" },
+  checkbox: { fontSize: 8 },
+  caseMono: { fontSize: 7.5, color: "#1d4ed8" },
   footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
   signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
 });
@@ -66,8 +67,9 @@ function regionKey(address: string): string {
   return parts.slice(0, 3).join(" ") || "(지역 미상)";
 }
 
-function groupByRegion(items: SurveyPdfItem[]): [string, SurveyPdfItem[]][] {
-  const m = new Map<string, SurveyPdfItem[]>();
+// 지역별 그룹 + 정렬. PDF 레이아웃과 번호 부여(route)가 동일 순서를 쓰도록 공유.
+export function groupByRegion<T extends { address: string }>(items: T[]): [string, T[]][] {
+  const m = new Map<string, T[]>();
   for (const it of items) {
     const k = regionKey(it.address);
     if (!m.has(k)) m.set(k, []);
@@ -78,28 +80,24 @@ function groupByRegion(items: SurveyPdfItem[]): [string, SurveyPdfItem[]][] {
   return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 }
 
-function Row({ it, no }: { it: SurveyPdfItem; no: number }) {
+// 답사지에 인쇄되는 순서대로 평탄화 — route가 이 순서로 survey_seq(1~N)를 부여한다.
+export function flattenInPrintOrder<T extends { address: string }>(items: T[]): T[] {
+  return groupByRegion(items).flatMap(([, list]) => list);
+}
+
+function Row({ it }: { it: SurveyPdfItem }) {
   return (
     <View style={styles.tr} wrap={false}>
-      <Text style={[styles.td, styles.cNo]}>{no}</Text>
+      <Text style={[styles.td, styles.cNo, styles.noBig]}>{it.survey_seq}</Text>
       <View style={[styles.td, styles.cAddr]}>
         <Text>{it.address}</Text>
         <Text style={styles.caseMono}>{it.case_number}{it.category ? ` · ${it.category}` : ""}</Text>
       </View>
-      <Text style={[styles.td, styles.cOwner]}>
-        {it.owner_name ?? "-"}{it.creditor ? `\n${it.creditor.slice(0, 8)}` : ""}
-      </Text>
-      <Text style={[styles.td, styles.cOcc, styles.checkbox]}>☐공실 ☐거주 ☐재방</Text>
-      <Text style={[styles.td, styles.cMail, styles.checkbox]}>O / X</Text>
-      <Text style={[styles.td, styles.cMeter, styles.checkbox]}>O / X</Text>
-      <Text style={[styles.td, styles.cNotice, styles.checkbox]}>O / X</Text>
-      <Text style={[styles.td, styles.cDoor, styles.checkbox]}>Y / N</Text>
-      <Text style={[styles.td, styles.cCode]}>비번:</Text>
-      <View style={[styles.td, styles.cMgmt]}>
-        <Text style={styles.mgmtLabel}>관리실명</Text>
-        <View style={styles.mgmtLine} />
-        <View style={styles.mgmtLine} />
-      </View>
+      <Text style={[styles.td, styles.cOwner]}>{it.owner_name ?? "-"}</Text>
+      <Text style={[styles.td, styles.cOcc, styles.occBig]}>☐ 공실   ☐ 거주</Text>
+      <Text style={[styles.td, styles.cMeter, styles.checkbox]}>정지 ☐</Text>
+      <Text style={[styles.td, styles.cMail, styles.checkbox]}>쌓임 ☐</Text>
+      <Text style={[styles.td, styles.cCode]}> </Text>
       <Text style={[styles.td, styles.cMemo]}> </Text>
     </View>
   );
@@ -115,7 +113,8 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.header} fixed>
           <View>
-            <Text style={styles.title}>경매 물건 답사지</Text>
+            <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
+            <Text style={styles.legend}>각 줄 앞 번호로 입력합니다 · 점유는 ☐공실 / ☐거주 중 하나만 · 계량기 정지·우편 쌓임은 공실 근거</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoItem}>출력일 {data.printedAt}</Text>
@@ -132,20 +131,17 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
               <Text style={styles.groupCount}>{list.length}건</Text>
             </View>
             <View style={styles.trHead} wrap={false}>
-              <Text style={[styles.th, styles.cNo]}>No</Text>
+              <Text style={[styles.th, styles.cNo]}>번호</Text>
               <Text style={[styles.th, styles.cAddr]}>상세 주소 / 사건</Text>
-              <Text style={[styles.th, styles.cOwner]}>임대인/채권</Text>
+              <Text style={[styles.th, styles.cOwner]}>임대인</Text>
               <Text style={[styles.th, styles.cOcc]}>점유상태</Text>
-              <Text style={[styles.th, styles.cMail]}>우편</Text>
               <Text style={[styles.th, styles.cMeter]}>계량기</Text>
-              <Text style={[styles.th, styles.cNotice]}>안내문</Text>
-              <Text style={[styles.th, styles.cDoor]}>개문</Text>
+              <Text style={[styles.th, styles.cMail]}>우편함</Text>
               <Text style={[styles.th, styles.cCode]}>현관비번</Text>
-              <Text style={[styles.th, styles.cMgmt]}>관리실</Text>
               <Text style={[styles.th, styles.cMemo]}>비고</Text>
             </View>
             {list.map((it, i) => (
-              <Row key={`${it.case_number}-${i}`} it={it} no={i + 1} />
+              <Row key={`${it.case_number}-${i}`} it={it} />
             ))}
           </View>
         ))}
