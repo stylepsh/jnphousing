@@ -57,6 +57,7 @@ const bulkSchema = z.object({
   sheet_id: z.string().uuid(),
   vacant: z.array(z.number().int().positive()).default([]),
   occupied: z.array(z.number().int().positive()).default([]),
+  fill_rest: z.boolean().default(false), // 공실로 지정 안 된 나머지를 전부 거주로 처리
   survey_by: z.string().max(100).optional().or(z.literal("")).transform((v) => v || null),
   survey_date: z.string().optional().or(z.literal("")).transform((v) => v || null),
 });
@@ -74,6 +75,7 @@ export async function bulkSurveyByNumber(input: {
   sheet_id: string;
   vacant: number[];
   occupied: number[];
+  fill_rest?: boolean;
   survey_by?: string;
   survey_date?: string;
 }): Promise<BulkSurveyResult> {
@@ -83,9 +85,10 @@ export async function bulkSurveyByNumber(input: {
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
     }
+    const fillRest = parsed.data.fill_rest;
     const vacant = Array.from(new Set(parsed.data.vacant));
-    const occupied = Array.from(new Set(parsed.data.occupied));
-    if (vacant.length === 0 && occupied.length === 0) {
+    let occupied = Array.from(new Set(parsed.data.occupied));
+    if (vacant.length === 0 && occupied.length === 0 && !fillRest) {
       return { ok: false, error: "입력된 번호가 없습니다." };
     }
     const conflicts = vacant.filter((n) => occupied.includes(n));
@@ -108,8 +111,15 @@ export async function bulkSurveyByNumber(input: {
       return { ok: false, error: "선택한 발급의 물건을 찾을 수 없습니다." };
     }
 
-    const allInput = [...vacant, ...occupied];
-    const unmatched = allInput.filter((n) => !seqToId.has(n));
+    // 미일치 번호는 입력한 것 기준으로 판정 (fill_rest 면 거주는 자동이라 공실만 검사)
+    const typed = fillRest ? vacant : [...vacant, ...occupied];
+    const unmatched = typed.filter((n) => !seqToId.has(n));
+
+    // "나머지 전부 거주" — 이 발급에서 공실로 지정되지 않은 모든 번호를 거주로
+    if (fillRest) {
+      const vacantSet = new Set(vacant);
+      occupied = Array.from(seqToId.keys()).filter((n) => !vacantSet.has(n));
+    }
 
     const surveyDate = parsed.data.survey_date ?? new Date().toISOString().slice(0, 10);
     const surveyBy = parsed.data.survey_by;

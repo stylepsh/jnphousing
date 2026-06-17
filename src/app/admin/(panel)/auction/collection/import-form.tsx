@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ClipboardPaste, Sparkles, ShieldCheck } from "lucide-react";
+import { Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,16 +18,6 @@ export function AuctionImportForm() {
   const [lastResult, setLastResult] = useState<ImportResult | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
-
-  async function pasteFromClipboard() {
-    try {
-      const t = await navigator.clipboard.readText();
-      setText(t);
-      toast.info(`${t.split("\n").length}줄 붙여넣기 완료`);
-    } catch {
-      toast.error("클립보드 읽기 권한이 필요합니다.");
-    }
-  }
 
   function handleImport() {
     if (!text.trim()) {
@@ -67,14 +57,6 @@ export function AuctionImportForm() {
           <Sparkles className="w-4 h-4" />
           {pending ? "수집 중…" : "파싱 후 저장"}
         </Button>
-        <button
-          type="button"
-          onClick={pasteFromClipboard}
-          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
-        >
-          <ClipboardPaste className="w-3.5 h-3.5" />
-          클립보드 붙여넣기
-        </button>
         {text && (
           <span className="text-xs text-muted-foreground">
             {text.split("\n").filter(Boolean).length}줄 입력됨
@@ -135,9 +117,7 @@ export function AuctionImportForm() {
           onChange={(e) => setText(e.target.value)}
           rows={10}
           className="font-mono text-xs"
-          placeholder={
-            "지지옥션 등에서 검색 결과 행을 복사해서 붙여넣으세요.\n채권자 칼럼에 '주택도시보증공사' 또는 '서울보증보험(SGI)' 가 들어있는 건만 임포트됩니다.\n개인채권, 은행, 기타는 자동 배제.\n\n예시:\n서부6계\n2026-50501\n[강제경매] 다세대(생활주택)\n서울 은평구 갈현동 521-22 하나블루힐스 2층 202호\n채권자 : 주택도시보증공사 | 채무자 : 대성하우징 | 소유자 : 대성하우징\n220,000,000\n296,000,000\n2026.04.30"
-          }
+          placeholder="지지옥션·대법원 검색 결과를 여기에 붙여넣으세요."
         />
       </div>
 

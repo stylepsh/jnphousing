@@ -22,8 +22,14 @@ export function RegionPicker({ regions, total }: { regions: RegionCount[]; total
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     const list = s ? regions.filter((r) => r.region.toLowerCase().includes(s)) : regions;
-    return list.slice(0, 120);
+    return list.slice(0, 200);
   }, [regions, q]);
+
+  // 표시용 짧은 라벨 — 시/도 접두어(첫 토큰) 제거. 링크는 전체 region 사용.
+  function shortLabel(region: string): string {
+    const parts = region.trim().split(/\s+/);
+    return parts.length > 1 ? parts.slice(1).join(" ") : region || "(지역 미상)";
+  }
 
   function goOwner() {
     const v = owner.trim();
@@ -80,15 +86,16 @@ export function RegionPicker({ regions, total }: { regions: RegionCount[]; total
         {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">해당 지역이 없습니다.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
             {filtered.map((r) => (
               <button
                 key={r.region}
+                title={r.region}
                 onClick={() => router.push(`/admin/auction/collection?region=${encodeURIComponent(r.region)}`)}
-                className="flex items-center justify-between gap-2 rounded-lg border bg-background px-3 py-2 text-left hover:border-teal-400 hover:bg-teal-50/50 transition"
+                className="flex items-center justify-between gap-1.5 rounded-lg border bg-background pl-2.5 pr-2 py-1.5 text-left hover:border-teal-400 hover:bg-teal-50/50 transition"
               >
-                <span className="text-sm font-medium truncate">{r.region || "(지역 미상)"}</span>
-                <span className="text-sm font-black text-teal-700 shrink-0">{r.pending_count.toLocaleString()}</span>
+                <span className="text-[13px] font-medium truncate">{shortLabel(r.region)}</span>
+                <span className="text-[13px] font-black text-teal-700 shrink-0 tabular-nums">{r.pending_count.toLocaleString()}</span>
               </button>
             ))}
           </div>

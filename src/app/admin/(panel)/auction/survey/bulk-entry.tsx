@@ -7,6 +7,7 @@ import { ListChecks, FileStack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { bulkSurveyByNumber, type OpenSheet } from "./survey-actions";
 
 /** 텍스트에서 양의 정수만 추출 (콤마·공백·줄바꿈 아무거나 구분). */
@@ -29,6 +30,7 @@ function sheetLabel(s: OpenSheet): string {
 export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
   const [open, setOpen] = useState(true);
   const [sheetId, setSheetId] = useState(sheets[0]?.id ?? "");
+  const [fillRest, setFillRest] = useState(true); // 나머지 자동 거주
   const [vacantText, setVacantText] = useState("");
   const [occupiedText, setOccupiedText] = useState("");
   const [surveyBy, setSurveyBy] = useState("");
@@ -45,7 +47,7 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
       toast.error("발급(답사지)을 먼저 선택하세요.");
       return;
     }
-    if (vacant.length === 0 && occupied.length === 0) {
+    if (vacant.length === 0 && occupied.length === 0 && !fillRest) {
       toast.error("공실 또는 거주 번호를 입력하세요.");
       return;
     }
@@ -53,7 +55,8 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
       const res = await bulkSurveyByNumber({
         sheet_id: sheetId,
         vacant,
-        occupied,
+        occupied: fillRest ? [] : occupied,
+        fill_rest: fillRest,
         survey_by: surveyBy || undefined,
         survey_date: surveyDate || undefined,
       });
@@ -125,7 +128,23 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 나머지 자동 거주 토글 */}
+          <label className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3.5 py-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={fillRest}
+              onChange={(e) => setFillRest(e.target.checked)}
+              className="w-4 h-4 mt-0.5 accent-emerald-600"
+            />
+            <span className="text-sm">
+              <b>공실 번호만 입력 → 나머지는 전부 거주로 자동 처리</b>
+              <span className="block text-[11px] text-muted-foreground mt-0.5">
+                답사팀이 다 돌고 온 발급이면 켜두세요. 공실 50개만 치면 나머지 150개는 거주로 들어갑니다. (끄면 거주도 직접 입력)
+              </span>
+            </span>
+          </label>
+
+          <div className={cn("grid gap-3", fillRest ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
             <div>
               <label className="text-xs font-bold text-emerald-700 mb-1 block">
                 공실 번호 {vacant.length > 0 && <span className="text-muted-foreground">({vacant.length})</span>}
@@ -138,18 +157,31 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
                 className="font-mono text-sm"
               />
             </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">
-                거주 번호 {occupied.length > 0 && <span className="text-muted-foreground">({occupied.length})</span>}
-              </label>
-              <Textarea
-                value={occupiedText}
-                onChange={(e) => setOccupiedText(e.target.value)}
-                placeholder={"거주(점유) 중인 번호\n비워두면 그대로 둠"}
-                rows={4}
-                className="font-mono text-sm"
-              />
-            </div>
+            {fillRest ? (
+              <div className="rounded-lg bg-muted/40 px-3 py-2 text-sm self-end">
+                {selectedSheet ? (
+                  <>
+                    공실 <b className="text-emerald-700">{vacant.length}건</b> · 나머지{" "}
+                    <b className="text-slate-700">{Math.max(0, selectedSheet.total_count - vacant.length)}건</b> 거주로 처리됩니다.
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">발급을 선택하면 자동 처리 건수가 표시됩니다.</span>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                  거주 번호 {occupied.length > 0 && <span className="text-muted-foreground">({occupied.length})</span>}
+                </label>
+                <Textarea
+                  value={occupiedText}
+                  onChange={(e) => setOccupiedText(e.target.value)}
+                  placeholder={"거주(점유) 중인 번호\n비워두면 그대로 둠"}
+                  rows={4}
+                  className="font-mono text-sm"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -164,7 +196,9 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            입력하지 않은 번호는 건드리지 않습니다. 같은 번호를 공실·거주 양쪽에 넣으면 오류로 막힙니다.
+            {fillRest
+              ? "공실로 안 넣은 번호는 전부 거주로 처리됩니다. 일부만 답사됐으면 토글을 끄고 공실·거주를 각각 입력하세요."
+              : "입력하지 않은 번호는 건드리지 않습니다. 같은 번호를 공실·거주 양쪽에 넣으면 오류로 막힙니다."}
           </p>
 
           <div className="flex justify-end">
