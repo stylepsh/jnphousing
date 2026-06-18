@@ -186,17 +186,18 @@ export async function getOpenSheets(): Promise<OpenSheet[]> {
     const list = (sheets ?? []) as Omit<OpenSheet, "entered_count">[];
     if (list.length === 0) return [];
 
-    // 발급별 입력완료(미답사 아님) 건수
-    const out: OpenSheet[] = [];
-    for (const s of list) {
-      const { count } = await supabase
-        .from("auction_property")
-        .select("id", { count: "exact", head: true })
-        .eq("sheet_id", s.id)
-        .neq("survey_status", "pending");
-      out.push({ ...s, entered_count: count ?? 0 });
+    // 발급별 입력완료(미답사 아님) 건수 — 발급당 조회(N+1) 대신 한 번에 집계.
+    const sheetIds = list.map((s) => s.id);
+    const { data: enteredRows } = await supabase
+      .from("auction_property")
+      .select("sheet_id")
+      .in("sheet_id", sheetIds)
+      .neq("survey_status", "pending");
+    const enteredBySheet = new Map<string, number>();
+    for (const r of (enteredRows ?? []) as { sheet_id: string | null }[]) {
+      if (r.sheet_id) enteredBySheet.set(r.sheet_id, (enteredBySheet.get(r.sheet_id) ?? 0) + 1);
     }
-    return out;
+    return list.map((s) => ({ ...s, entered_count: enteredBySheet.get(s.id) ?? 0 }));
   } catch {
     return [];
   }

@@ -91,13 +91,15 @@ export async function importAuctionText(input: {
 
     const supabase = createServiceClient();
 
-    // 중복 차단: 같은 상세주소 + 미답사(pending) 상태가 이미 존재하면 skip
+    // 중복 차단: 같은 상세주소가 이미 풀에 존재하면 skip (거부된 건 제외).
+    // pending 뿐 아니라 이미 답사 끝난(vacant/occupied 등) 주소도 막아야
+    // 2차 전수조사 재수집 시 같은 물건이 새 property_no로 중복 생성되지 않는다.
     const addressesToCheck = toImport.map((p) => p.address || "(주소 미상)");
     const { data: existingRows } = await supabase
       .from("auction_property")
       .select("address")
       .in("address", addressesToCheck)
-      .eq("survey_status", "pending");
+      .neq("survey_status", "rejected");
     const existingAddrSet = new Set(
       ((existingRows ?? []) as { address: string }[]).map((e) => e.address.trim()),
     );
