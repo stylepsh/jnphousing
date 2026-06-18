@@ -43,8 +43,8 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
   const selectedSheet = sheets.find((s) => s.id === sheetId) ?? null;
 
   function handleSubmit() {
-    if (!sheetId) {
-      toast.error("발급(답사지)을 먼저 선택하세요.");
+    if (fillRest && !sheetId) {
+      toast.error("‘나머지 자동 거주’는 어느 답사지(발급)인지 먼저 고르세요.");
       return;
     }
     if (vacant.length === 0 && occupied.length === 0 && !fillRest) {
@@ -53,7 +53,7 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
     }
     startTransition(async () => {
       const res = await bulkSurveyByNumber({
-        sheet_id: sheetId,
+        sheet_id: sheetId || undefined,
         vacant,
         occupied: fillRest ? [] : occupied,
         fill_rest: fillRest,
@@ -69,7 +69,10 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
       if (res.occupiedUpdated) parts.push(`거주 ${res.occupiedUpdated}`);
       toast.success(`반영 완료 — ${parts.join(" · ") || "0건"}`);
       if (res.unmatched && res.unmatched.length > 0) {
-        toast.warning(`이 답사지에 없는 번호: ${res.unmatched.join(", ")}`, { duration: 8000 });
+        toast.warning(
+          `${fillRest ? "이 발급에 없는" : "존재하지 않는"} 물건번호: ${res.unmatched.join(", ")}`,
+          { duration: 8000 },
+        );
       }
       setVacantText("");
       setOccupiedText("");
@@ -91,7 +94,7 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
         <span className="min-w-0">
           <span className="block font-black text-base">번호 일괄입력</span>
           <span className="block text-xs text-muted-foreground">
-            답사지(발급)를 고르고 종이의 번호만 보고 공실/거주를 한 번에 반영합니다
+            종이의 물건번호만 보고 공실/거주를 한 번에 반영합니다 (번호는 전국 고유)
           </span>
         </span>
         <span className="ml-auto text-xs font-bold text-rose-700">{open ? "닫기" : "열기"}</span>
@@ -99,14 +102,17 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
 
       {open && (
         <div className="px-5 pb-5 space-y-3 border-t border-rose-200 bg-card pt-4">
-          {/* 발급(sheet) 선택 */}
+          {/* 발급(sheet) 선택 — '나머지 자동 거주' 범위 산정용. 일반 입력은 불필요. */}
           <div>
             <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1">
               <FileStack className="w-3.5 h-3.5" /> 어느 답사지(발급)인가요?
+              <span className="font-normal text-muted-foreground/70">
+                {fillRest ? "— ‘나머지 자동 거주’에 필요" : "— 선택(일반 입력은 번호만으로 처리)"}
+              </span>
             </label>
             {sheets.length === 0 ? (
               <p className="text-sm text-amber-600 rounded-lg bg-amber-50 px-3 py-2">
-                발급된 답사지가 없습니다. 수집 화면에서 지역을 골라 답사지 PDF를 먼저 출력하세요.
+                발급된 답사지가 없습니다. ‘나머지 자동 거주’를 쓰려면 수집 화면에서 답사지 PDF를 먼저 출력하세요.
               </p>
             ) : (
               <select
@@ -123,7 +129,7 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
             )}
             {selectedSheet && (
               <p className="text-[11px] text-muted-foreground mt-1">
-                번호 범위 1~{selectedSheet.total_count} · 종이 답사지 제목과 같은 발급인지 확인하세요.
+                이 발급 {selectedSheet.total_count}건 · 번호는 종이에 적힌 물건번호 그대로 입력하세요(발급마다 안 바뀜).
               </p>
             )}
           </div>
@@ -202,7 +208,7 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
           </p>
 
           <div className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={pending || sheets.length === 0} className="gap-1">
+            <Button onClick={handleSubmit} disabled={pending || (fillRest && sheets.length === 0)} className="gap-1">
               <ListChecks className="w-4 h-4" />
               {pending ? "반영 중…" : "일괄 반영"}
             </Button>

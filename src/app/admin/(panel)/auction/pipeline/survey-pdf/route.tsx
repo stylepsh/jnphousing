@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServiceClient();
     const { data } = await supabase
       .from("auction_property")
-      .select("id, case_number, court, category, address, owner_name")
+      .select("id, property_no, case_number, court, category, address, owner_name")
       .in("id", ids);
 
     const rows = (data ?? []) as (SurveyPdfItem & { id: string })[];
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "물건을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    // 답사지에 인쇄될 순서(지역별 그룹) 그대로 평탄화 → 그 순서로 통짜 번호(1~N).
-    // 동일 정렬을 PDF가 공유하므로 종이의 "47번"이 흔들리지 않는다.
+    // 답사지 인쇄 순서(지역별 그룹·동선) 그대로 평탄화. 번호는 물건 고유번호라
+    // 정렬과 무관하게 고정 — 어느 발급에 인쇄돼도 같은 물건은 같은 번호.
     const groups = groupByRegion(rows);
     const ordered = groups.flatMap(([, list]) => list);
     // A안: 주소 앞 3토큰 자동 라벨. 여러 지역이면 "… 외 N곳".
@@ -40,11 +40,8 @@ export async function POST(req: NextRequest) {
       groups.length === 1 ? groups[0][0] : `${groups[0][0]} 외 ${groups.length - 1}곳`;
 
     const printedAtIso = new Date().toISOString();
-    ordered.forEach((it, i) => {
-      it.survey_seq = i + 1;
-    });
 
-    // 1) 발급(sheet) 레코드 생성
+    // 1) 발급(sheet) 레코드 생성 — "나머지 전부 거주" 범위 산정용
     const { data: sheetRow, error: sheetErr } = await supabase
       .from("auction_survey_sheet")
       .insert({ region_label: regionLabel, printed_at: printedAtIso, total_count: ordered.length })
@@ -55,7 +52,8 @@ export async function POST(req: NextRequest) {
     }
     const sheetId = (sheetRow as { id: string }).id;
 
-    // 2) 각 물건에 발급ID·번호 부여 (대량 대비 청크 처리)
+    // 2) 각 물건을 이 발급에 연결 (대량 대비 청크 처리). 번호는 property_no 고정이라
+    //    덮어쓰지 않는다 — 발급은 "이번에 어느 물건들을 들고 나갔나"의 묶음일 뿐.
     const CHUNK = 40;
     for (let i = 0; i < ordered.length; i += CHUNK) {
       const slice = ordered.slice(i, i + CHUNK);
@@ -63,7 +61,7 @@ export async function POST(req: NextRequest) {
         slice.map((it) =>
           supabase
             .from("auction_property")
-            .update({ survey_seq: it.survey_seq, sheet_id: sheetId })
+            .update({ sheet_id: sheetId })
             .eq("id", it.id),
         ),
       );

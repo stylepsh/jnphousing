@@ -10,7 +10,7 @@ import { ensureKoreanFonts } from "./fonts";
 ensureKoreanFonts();
 
 export interface SurveyPdfItem {
-  survey_seq: number; // 출력 시 부여된 통짜 번호(1~N) — 입력 매칭 키
+  property_no: number; // 물건 전역 고유번호 — 어느 답사지에 인쇄돼도 동일 (입력 매칭 키)
   case_number: string;
   court: string | null;
   category: string | null;
@@ -46,18 +46,24 @@ const styles = StyleSheet.create({
   tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 40, alignItems: "center" },
   th: { fontSize: 7.5, fontWeight: "bold", color: "#475569", paddingVertical: 4, paddingHorizontal: 3 },
   td: { fontSize: 8, paddingVertical: 4, paddingHorizontal: 3 },
-  cNo: { width: 34, textAlign: "center" },
-  cAddr: { width: 230 },
-  cOwner: { width: 64 },
-  cOcc: { width: 86, textAlign: "center" },
-  cMeter: { width: 58, textAlign: "center" },
-  cMail: { width: 58, textAlign: "center" },
-  cCode: { width: 72, textAlign: "center" },
+  cNo: { width: 40, textAlign: "center" },
+  cAddr: { width: 180 },
+  cOwner: { width: 50 },
+  cOcc: { width: 84 },
+  cMeter: { width: 46 },
+  cMail: { width: 84 },
+  cCode: { width: 52, textAlign: "center" },
+  cMgmt: { width: 78 },
   cMemo: { flex: 1 },
-  noBig: { fontSize: 13, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
-  occBig: { fontSize: 9, fontWeight: "bold", color: "#0f172a" },
-  checkbox: { fontSize: 8 },
+  noBig: { fontSize: 11, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
   caseMono: { fontSize: 7.5, color: "#1d4ed8" },
+  // 체크칸 — ☐ 글자는 폰트에 없어 안 보이므로 사각형을 직접 그린다.
+  checkCell: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center" },
+  checkItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 3, marginVertical: 1 },
+  box: { width: 9, height: 9, borderWidth: 1, borderColor: "#334155", marginRight: 2.5 },
+  boxLabel: { fontSize: 8, color: "#0f172a", fontWeight: "bold" },
+  mgmtLabel: { fontSize: 6.5, color: "#94a3b8" },
+  mgmtLine: { borderBottomWidth: 0.7, borderColor: "#cbd5e1", height: 12 },
   footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
   signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
 });
@@ -80,24 +86,47 @@ export function groupByRegion<T extends { address: string }>(items: T[]): [strin
   return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 }
 
-// 답사지에 인쇄되는 순서대로 평탄화 — route가 이 순서로 survey_seq(1~N)를 부여한다.
+// 답사지에 인쇄되는 순서대로 평탄화 (지역별 그룹·동선 정렬). 번호는 물건 고유번호라
+// 정렬과 무관하게 고정 — 여기선 인쇄 레이아웃 순서만 정한다.
 export function flattenInPrintOrder<T extends { address: string }>(items: T[]): T[] {
   return groupByRegion(items).flatMap(([, list]) => list);
+}
+
+// 직접 그린 체크박스 + 라벨 (폰트에 ☐ 글자가 없어 사각형을 그린다)
+function Check({ label }: { label: string }) {
+  return (
+    <View style={styles.checkItem}>
+      <View style={styles.box} />
+      <Text style={styles.boxLabel}>{label}</Text>
+    </View>
+  );
 }
 
 function Row({ it }: { it: SurveyPdfItem }) {
   return (
     <View style={styles.tr} wrap={false}>
-      <Text style={[styles.td, styles.cNo, styles.noBig]}>{it.survey_seq}</Text>
+      <Text style={[styles.td, styles.cNo, styles.noBig]}>{it.property_no}</Text>
       <View style={[styles.td, styles.cAddr]}>
         <Text>{it.address}</Text>
         <Text style={styles.caseMono}>{it.case_number}{it.category ? ` · ${it.category}` : ""}</Text>
       </View>
       <Text style={[styles.td, styles.cOwner]}>{it.owner_name ?? "-"}</Text>
-      <Text style={[styles.td, styles.cOcc, styles.occBig]}>☐ 공실   ☐ 거주</Text>
-      <Text style={[styles.td, styles.cMeter, styles.checkbox]}>정지 ☐</Text>
-      <Text style={[styles.td, styles.cMail, styles.checkbox]}>쌓임 ☐</Text>
+      <View style={[styles.td, styles.cOcc, styles.checkCell]}>
+        <Check label="공실" />
+        <Check label="거주" />
+      </View>
+      <View style={[styles.td, styles.cMeter, styles.checkCell]}>
+        <Check label="정지" />
+      </View>
+      <View style={[styles.td, styles.cMail, styles.checkCell]}>
+        <Check label="쌓임" />
+        <Check label="깨끗" />
+      </View>
       <Text style={[styles.td, styles.cCode]}> </Text>
+      <View style={[styles.td, styles.cMgmt]}>
+        <Text style={styles.mgmtLabel}>관리실 번호</Text>
+        <View style={styles.mgmtLine} />
+      </View>
       <Text style={[styles.td, styles.cMemo]}> </Text>
     </View>
   );
@@ -114,7 +143,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
-            <Text style={styles.legend}>각 줄 앞 번호로 입력합니다 · 점유는 ☐공실 / ☐거주 중 하나만 · 계량기 정지·우편 쌓임은 공실 근거</Text>
+            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 우편함 쌓임/깨끗에 V · 계량기 정지·우편 쌓임은 공실 근거</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoItem}>출력일 {data.printedAt}</Text>
@@ -138,6 +167,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
               <Text style={[styles.th, styles.cMeter]}>계량기</Text>
               <Text style={[styles.th, styles.cMail]}>우편함</Text>
               <Text style={[styles.th, styles.cCode]}>현관비번</Text>
+              <Text style={[styles.th, styles.cMgmt]}>관리실 번호</Text>
               <Text style={[styles.th, styles.cMemo]}>비고</Text>
             </View>
             {list.map((it, i) => (

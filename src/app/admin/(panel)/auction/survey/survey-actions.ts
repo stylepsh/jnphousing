@@ -48,13 +48,14 @@ export async function updateSurveyResult(input: {
   }
 }
 
-// ─── 번호 기반 일괄 입력 (발급 sheet 단위) ────────────────────────────
+// ─── 물건번호(property_no) 기반 일괄 입력 ──────────────────────────────
 // 종이 답사지가 돌아오면 사진/OCR 없이 "공실 번호·거주 번호"만 입력.
-// 여러 지역 발급분이 동시에 미회수 상태로 존재하므로, 어느 발급(sheet)인지
-// 골라서 그 sheet의 survey_seq로만 매칭한다(번호 충돌 차단).
+// 번호는 물건 전역 고유번호라 발급을 고를 필요 없이 번호만으로 전역 매칭한다.
+// "나머지 전부 거주(fill_rest)"만은 "나머지"의 범위가 필요하므로 발급(sheet)을 고른다.
 
 const bulkSchema = z.object({
-  sheet_id: z.string().uuid(),
+  // 일반 입력은 발급 불필요. fill_rest 일 때만 "나머지" 범위로 발급을 고른다.
+  sheet_id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || null),
   vacant: z.array(z.number().int().positive()).default([]),
   occupied: z.array(z.number().int().positive()).default([]),
   fill_rest: z.boolean().default(false), // 공실로 지정 안 된 나머지를 전부 거주로 처리
@@ -67,12 +68,12 @@ export interface BulkSurveyResult {
   error?: string;
   vacantUpdated?: number;
   occupiedUpdated?: number;
-  unmatched?: number[]; // 이 발급에 없는 번호
+  unmatched?: number[]; // 존재하지 않는(또는 발급에 없는) 물건번호
   conflicts?: number[]; // 공실·거주 양쪽에 동시 입력된 번호
 }
 
 export async function bulkSurveyByNumber(input: {
-  sheet_id: string;
+  sheet_id?: string | null;
   vacant: number[];
   occupied: number[];
   fill_rest?: boolean;
@@ -98,34 +99,47 @@ export async function bulkSurveyByNumber(input: {
 
     const supabase = createServiceClient();
 
-    // 선택한 발급(sheet)의 번호→id 매핑
-    const { data: setRows } = await supabase
-      .from("auction_property")
-      .select("id, survey_seq")
-      .eq("sheet_id", parsed.data.sheet_id);
-    const seqToId = new Map<number, string>();
-    for (const r of (setRows ?? []) as { id: string; survey_seq: number | null }[]) {
-      if (typeof r.survey_seq === "number") seqToId.set(r.survey_seq, r.id);
-    }
-    if (seqToId.size === 0) {
-      return { ok: false, error: "선택한 발급의 물건을 찾을 수 없습니다." };
-    }
+    // 물건번호(property_no) → id 매핑
+    const noToId = new Map<number, string>();
+    let unmatched: number[];
 
-    // 미일치 번호는 입력한 것 기준으로 판정 (fill_rest 면 거주는 자동이라 공실만 검사)
-    const typed = fillRest ? vacant : [...vacant, ...occupied];
-    const unmatched = typed.filter((n) => !seqToId.has(n));
-
-    // "나머지 전부 거주" — 이 발급에서 공실로 지정되지 않은 모든 번호를 거주로
     if (fillRest) {
+      // "나머지 전부 거주" — 범위가 필요하므로 발급(sheet) 단위로 한정.
+      if (!parsed.data.sheet_id) {
+        return { ok: false, error: "나머지 자동 거주는 어느 답사지(발급)인지 골라야 합니다." };
+      }
+      const { data: setRows } = await supabase
+        .from("auction_property")
+        .select("id, property_no")
+        .eq("sheet_id", parsed.data.sheet_id);
+      for (const r of (setRows ?? []) as { id: string; property_no: number | null }[]) {
+        if (typeof r.property_no === "number") noToId.set(r.property_no, r.id);
+      }
+      if (noToId.size === 0) {
+        return { ok: false, error: "선택한 발급의 물건을 찾을 수 없습니다." };
+      }
+      // 공실로 지정 안 된 이 발급의 모든 번호를 거주로
       const vacantSet = new Set(vacant);
-      occupied = Array.from(seqToId.keys()).filter((n) => !vacantSet.has(n));
+      occupied = Array.from(noToId.keys()).filter((n) => !vacantSet.has(n));
+      unmatched = vacant.filter((n) => !noToId.has(n)); // 이 발급에 없는 공실번호
+    } else {
+      // 일반 입력 — 입력한 번호만 전역 매칭 (발급 무관)
+      const typed = Array.from(new Set([...vacant, ...occupied]));
+      const { data: rows } = await supabase
+        .from("auction_property")
+        .select("id, property_no")
+        .in("property_no", typed);
+      for (const r of (rows ?? []) as { id: string; property_no: number | null }[]) {
+        if (typeof r.property_no === "number") noToId.set(r.property_no, r.id);
+      }
+      unmatched = typed.filter((n) => !noToId.has(n)); // 존재하지 않는 물건번호
     }
 
     const surveyDate = parsed.data.survey_date ?? new Date().toISOString().slice(0, 10);
     const surveyBy = parsed.data.survey_by;
 
-    async function applyStatus(seqs: number[], status: "vacant" | "occupied"): Promise<number> {
-      const ids = seqs.map((n) => seqToId.get(n)).filter((v): v is string => !!v);
+    async function applyStatus(nos: number[], status: "vacant" | "occupied"): Promise<number> {
+      const ids = nos.map((n) => noToId.get(n)).filter((v): v is string => !!v);
       if (ids.length === 0) return 0;
       const patch: Record<string, unknown> = {
         survey_status: status,

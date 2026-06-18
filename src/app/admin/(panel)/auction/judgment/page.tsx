@@ -13,7 +13,7 @@ interface PropRow {
   address: string;
   case_number: string;
   survey_status: string;
-  survey_seq: number | null;
+  property_no: number | null;
 }
 
 // 1차(표본)와 2차(전수조사 명단 등록) 판정 기준이 다르다.
@@ -56,7 +56,7 @@ async function fetchData(): Promise<{ owners: OwnerVerdict[]; targets: TargetRow
 
     const { data: propData } = await supabase
       .from("auction_property")
-      .select("id, owner_name, address, case_number, survey_status, survey_seq")
+      .select("id, owner_name, address, case_number, survey_status, property_no")
       .neq("survey_status", "rejected")
       .order("owner_name", { ascending: true });
 
@@ -99,12 +99,12 @@ async function fetchData(): Promise<{ owners: OwnerVerdict[]; targets: TargetRow
         targetStatus,
         items: list
           .map((p) => ({
-            seq: p.survey_seq,
+            seq: p.property_no,
             address: p.address,
             case_number: p.case_number,
             survey_status: p.survey_status,
           }))
-          .sort((a, b) => (a.seq ?? 9999) - (b.seq ?? 9999)),
+          .sort((a, b) => (a.seq ?? 9999999) - (b.seq ?? 9999999)),
       });
     }
 
