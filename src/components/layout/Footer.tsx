@@ -41,7 +41,7 @@ const COLS: FooterCol[] = [
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-200">
+    <footer className="bg-primary text-slate-200">
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <div className="grid gap-8 md:grid-cols-12">
           {/* 회사 정보 (왼쪽 크게) */}

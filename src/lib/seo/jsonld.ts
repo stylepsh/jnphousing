@@ -20,7 +20,7 @@ export function buildOrganizationLd() {
     url: BASE,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
-    image: `${BASE}/og-default.png`,
+    image: `${BASE}/api/og`,
     logo: `${BASE}/favicon.svg`,
     address: {
       "@type": "PostalAddress",
@@ -45,7 +45,7 @@ export function buildLocalBusinessLd() {
     url: BASE,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
-    image: `${BASE}/og-default.png`,
+    image: `${BASE}/api/og`,
     priceRange: "₩₩",
     address: {
       "@type": "PostalAddress",
@@ -106,7 +106,7 @@ export function buildArticleLd(args: {
     "@type": "Article",
     headline: args.title,
     description: args.description,
-    image: args.imageUrl ?? `${BASE}/og-default.png`,
+    image: args.imageUrl ?? `${BASE}/api/og`,
     datePublished: args.datePublished,
     dateModified: args.dateModified ?? args.datePublished,
     author: { "@type": "Organization", name: args.authorName ?? COMPANY.brand },
