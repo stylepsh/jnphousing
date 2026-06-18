@@ -62,11 +62,10 @@ async function processLeaseExpiry(daysBefore: number) {
 }
 
 export async function GET(req: Request) {
-  if (CRON_SECRET) {
-    const auth = req.headers.get("x-cron-secret") ?? req.headers.get("authorization");
-    if (!auth?.includes(CRON_SECRET)) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+  // fail-closed: CRON_SECRET 미설정이거나 불일치면 거부 (daily/monthly와 동일 정책)
+  const auth = req.headers.get("x-cron-secret") ?? req.headers.get("authorization");
+  if (!CRON_SECRET || !auth?.includes(CRON_SECRET)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
     const results = {
