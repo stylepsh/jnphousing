@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { createServiceClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { AuctionSurveyPdf, groupByRegion, type SurveyPdfItem } from "@/lib/pdf/auction-survey-pdf";
+import { normalizeOwnerName, ownerNameAnchor } from "@/lib/auction/court-auction";
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,18 +34,24 @@ export async function POST(req: NextRequest) {
     // 자동 합친다. 답사자가 같은 집을 두 번 가는 낭비를 막는 핵심. (재방문 요망=revisit 은
     // 아직 답사 대상이라 자동포함 안 함 — 빈칸으로 직접 선택해야 나옴)
     const selectedIds = new Set(selRows.map((r) => r.id));
-    const owners = Array.from(
-      new Set(selRows.map((r) => r.owner_name).filter((v): v is string => !!v)),
+    // 선택분 임대인을 "정규화 키"로 묶는다 — "대성하우징(주)"·"(주)대성하우징"·"대성 하우징"을 한 임대인으로 (②)
+    const ownerKeys = new Set(
+      selRows.map((r) => normalizeOwnerName(r.owner_name)).filter(Boolean),
+    );
+    const anchors = Array.from(
+      new Set(selRows.map((r) => ownerNameAnchor(r.owner_name)).filter((a) => a.length >= 2)),
     );
     let surveyedExtra: (SurveyPdfItem & { id: string })[] = [];
-    if (owners.length > 0) {
+    if (ownerKeys.size > 0 && anchors.length > 0) {
+      // ilike 앵커로 후보를 넓게 가져온 뒤, 정규화 키 동일성으로 정밀 매칭
+      const orFilter = anchors.map((a) => `owner_name.ilike.%${a}%`).join(",");
       const { data: extra } = await supabase
         .from("auction_property")
         .select(SEL)
-        .in("owner_name", owners)
-        .in("survey_status", ["vacant", "occupied", "skip"]);
+        .in("survey_status", ["vacant", "occupied", "skip"])
+        .or(orFilter);
       surveyedExtra = ((extra ?? []) as (SurveyPdfItem & { id: string })[]).filter(
-        (r) => !selectedIds.has(r.id),
+        (r) => !selectedIds.has(r.id) && ownerKeys.has(normalizeOwnerName(r.owner_name)),
       );
     }
 
