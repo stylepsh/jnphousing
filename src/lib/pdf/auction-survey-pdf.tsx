@@ -16,6 +16,7 @@ export interface SurveyPdfItem {
   category: string | null;
   address: string;
   owner_name: string | null;
+  survey_status?: string | null; // 'pending' = 이번 답사 대상. vacant/occupied 등 = 기존 답사완료(회색 표시)
   // 아래는 정렬/식별용으로만 받고 1차 답사지에는 인쇄하지 않음
   creditor?: string | null;
   appraisal_value?: number | null;
@@ -60,10 +61,16 @@ const styles = StyleSheet.create({
   // 체크칸 — ☐ 글자는 폰트에 없어 안 보이므로 사각형을 직접 그린다.
   checkCell: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center" },
   checkItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 3, marginVertical: 1 },
-  box: { width: 9, height: 9, borderWidth: 1, borderColor: "#334155", marginRight: 2.5 },
+  box: { width: 9, height: 9, borderWidth: 1, borderColor: "#334155", marginRight: 2.5, alignItems: "center", justifyContent: "center" },
+  boxChecked: { backgroundColor: "#0f172a" },     // 채워진 박스 = 체크됨
+  boxCheck: { fontSize: 7, fontWeight: "bold", color: "#ffffff", lineHeight: 1 }, // 박스 안 V
   boxLabel: { fontSize: 8, color: "#0f172a", fontWeight: "bold" },
   mgmtLabel: { fontSize: 6.5, color: "#94a3b8" },
   mgmtLine: { borderBottomWidth: 0.7, borderColor: "#cbd5e1", height: 12 },
+  // 기존 답사완료 행 — 회색 줄
+  trDone: { backgroundColor: "#f1f5f9" },
+  doneTag: { fontSize: 7.5, fontWeight: "bold", color: "#b91c1c" },     // "기존 답사완료" 빨강 강조
+  mutedNo: { fontSize: 11, fontWeight: "bold", color: "#94a3b8", textAlign: "center" },
   footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
   signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
 });
@@ -92,28 +99,36 @@ export function flattenInPrintOrder<T extends { address: string }>(items: T[]): 
   return groupByRegion(items).flatMap(([, list]) => list);
 }
 
-// 직접 그린 체크박스 + 라벨 (폰트에 ☐ 글자가 없어 사각형을 그린다)
-function Check({ label }: { label: string }) {
+// 직접 그린 체크박스 + 라벨 (폰트에 ☐ 글자가 없어 사각형을 그린다). checked면 채워서 V.
+function Check({ label, checked }: { label: string; checked?: boolean }) {
   return (
     <View style={styles.checkItem}>
-      <View style={styles.box} />
+      <View style={[styles.box, checked ? styles.boxChecked : {}]}>
+        {checked ? <Text style={styles.boxCheck}>V</Text> : null}
+      </View>
       <Text style={styles.boxLabel}>{label}</Text>
     </View>
   );
 }
 
+const DONE_STATUSES = new Set(["vacant", "occupied", "revisit", "skip"]);
+
 function Row({ it }: { it: SurveyPdfItem }) {
+  // 기존 답사완료 = pending 이 아닌 결과 상태. 회색 줄 + 결과 자동 체크 + "기존 답사완료" 표기.
+  const done = !!it.survey_status && DONE_STATUSES.has(it.survey_status);
+  const wasVacant = it.survey_status === "vacant";
+  const wasOccupied = it.survey_status === "occupied";
   return (
-    <View style={styles.tr} wrap={false}>
-      <Text style={[styles.td, styles.cNo, styles.noBig]}>{it.property_no}</Text>
+    <View style={[styles.tr, done ? styles.trDone : {}]} wrap={false}>
+      <Text style={[styles.td, styles.cNo, done ? styles.mutedNo : styles.noBig]}>{it.property_no}</Text>
       <View style={[styles.td, styles.cAddr]}>
         <Text>{it.address}</Text>
         <Text style={styles.caseMono}>{it.case_number}{it.category ? ` · ${it.category}` : ""}</Text>
       </View>
       <Text style={[styles.td, styles.cOwner]}>{it.owner_name ?? "-"}</Text>
       <View style={[styles.td, styles.cOcc, styles.checkCell]}>
-        <Check label="공실" />
-        <Check label="거주" />
+        <Check label="공실" checked={done && wasVacant} />
+        <Check label="거주" checked={done && wasOccupied} />
       </View>
       <View style={[styles.td, styles.cMeter, styles.checkCell]}>
         <Check label="정지" />
@@ -127,7 +142,7 @@ function Row({ it }: { it: SurveyPdfItem }) {
         <Text style={styles.mgmtLabel}>관리실 번호</Text>
         <View style={styles.mgmtLine} />
       </View>
-      <Text style={[styles.td, styles.cMemo]}> </Text>
+      <Text style={[styles.td, styles.cMemo]}>{done ? <Text style={styles.doneTag}>기존 답사완료 · 방문 마세요</Text> : " "}</Text>
     </View>
   );
 }
@@ -136,18 +151,22 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
   const groups = groupByRegion(data.items);
   const regionCount = groups.length;
   const ownerCount = new Set(data.items.map((i) => i.owner_name || "(미상)")).size;
+  const doneCount = data.items.filter((i) => !!i.survey_status && i.survey_status !== "pending").length;
+  const todoCount = data.items.length - doneCount;
 
   return (
-    <Document title={`답사지_${data.printedAt}_${data.items.length}건`}>
+    <Document title={`답사지_${data.printedAt}_${todoCount}건`}>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
             <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 우편함 쌓임/깨끗에 V · 계량기 정지·우편 쌓임은 공실 근거</Text>
+            <Text style={styles.legend}>※ 회색 줄 = 기존 답사완료(공실/거주 자동 표시) — 방문하지 마세요</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoItem}>출력일 {data.printedAt}</Text>
-            <Text style={styles.infoItem}>총 {data.items.length}건</Text>
+            <Text style={styles.infoItem}>답사 {todoCount}건</Text>
+            {doneCount > 0 ? <Text style={styles.infoItem}>기존완료 {doneCount}건</Text> : null}
             <Text style={styles.infoItem}>지역 {regionCount}</Text>
             <Text style={styles.infoItem}>소유자 {ownerCount}</Text>
           </View>

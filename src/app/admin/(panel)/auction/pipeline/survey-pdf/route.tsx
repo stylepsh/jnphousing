@@ -20,10 +20,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "선택된 물건이 없습니다." }, { status: 400 });
     }
 
+    const COLS = "id, property_no, case_number, court, category, address, owner_name, survey_status";
     const supabase = createServiceClient();
     const { data } = await supabase
       .from("auction_property")
-      .select("id, property_no, case_number, court, category, address, owner_name")
+      .select(COLS)
       .in("id", ids);
 
     const rows = (data ?? []) as (SurveyPdfItem & { id: string })[];
@@ -38,6 +39,27 @@ export async function POST(req: NextRequest) {
     // A안: 주소 앞 3토큰 자동 라벨. 여러 지역이면 "… 외 N곳".
     const regionLabel =
       groups.length === 1 ? groups[0][0] : `${groups[0][0]} 외 ${groups.length - 1}곳`;
+
+    // ─── 같은 지역(주소 앞 3토큰)의 "기존 답사완료" 물건도 회색 줄로 함께 인쇄 ───
+    //   → 현장팀이 이미 답사한 집을 두 번 방문하지 않게. 답사 대상(ordered)이 아니라
+    //     참고용이므로 발급(sheet) 연결은 하지 않는다.
+    const regionPrefix = (addr: string) =>
+      (addr || "").trim().split(/\s+/).slice(0, 3).join(" ");
+    const prefixes = Array.from(new Set(rows.map((r) => regionPrefix(r.address)).filter(Boolean)));
+    const selectedIds = new Set(ids);
+    const doneById = new Map<string, SurveyPdfItem & { id: string }>();
+    for (const prefix of prefixes) {
+      const { data: doneRows } = await supabase
+        .from("auction_property")
+        .select(COLS)
+        .ilike("address", `${prefix}%`)
+        .not("survey_status", "in", "(pending,rejected)")
+        .limit(2000);
+      for (const r of (doneRows ?? []) as (SurveyPdfItem & { id: string })[]) {
+        if (!selectedIds.has(r.id)) doneById.set(r.id, r);
+      }
+    }
+    const doneItems = Array.from(doneById.values());
 
     const printedAtIso = new Date().toISOString();
 
@@ -73,7 +95,8 @@ export async function POST(req: NextRequest) {
         data={{
           printedAt: today,
           sheetLabel: regionLabel,
-          items: ordered,
+          // 답사 대상(ordered) + 같은 지역 기존완료(doneItems). PDF가 지역별로 재정렬.
+          items: [...ordered, ...doneItems],
         }}
       />,
     );
