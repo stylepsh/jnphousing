@@ -56,6 +56,32 @@ export function isTargetCreditor(creditor: string | null | undefined): boolean {
   return classifyCreditor(creditor) !== "OTHER";
 }
 
+// ============================================================
+// 임대인(소유자) 이름 정규화 — "대성하우징(주)" / "(주)대성하우징" / "대성 하우징"
+// 을 같은 임대인으로 묶기 위한 비교 키. 답사지 자동합치기 매칭에 사용.
+// ============================================================
+
+const COMPANY_TOKENS =
+  /(주식회사|유한회사|합자회사|합명회사|유한책임회사|\(주\)|\(유\)|㈜|㈜|\(사\)|주식회사)/g;
+
+/** 비교용 정규화 키: 회사 표기·괄호·공백 제거 후 소문자. 표기 흔들림 흡수. */
+export function normalizeOwnerName(name: string | null | undefined): string {
+  if (!name) return "";
+  return name
+    .replace(COMPANY_TOKENS, "")
+    .replace(/[()\[\]<>·.,'"\s]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** ilike 후보 수집용 앵커 — 회사표기 제거 후 첫 토큰의 한글/영숫자만. */
+export function ownerNameAnchor(name: string | null | undefined): string {
+  if (!name) return "";
+  const cleaned = name.replace(COMPANY_TOKENS, "").trim();
+  const first = cleaned.split(/\s+/)[0] ?? "";
+  return first.replace(/[^0-9a-zA-Z가-힣]/g, "");
+}
+
 /** 분류별 통계: { HUG: 30, SGI: 20, OTHER: 50 } */
 export function countByCreditorType(
   parsed: ParsedAuctionCase[],

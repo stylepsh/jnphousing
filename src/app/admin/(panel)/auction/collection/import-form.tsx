@@ -38,7 +38,13 @@ export function AuctionImportForm() {
         toast.error(data.error ?? "임포트 실패");
         return;
       }
-      const dupNote = data.duplicates > 0 ? ` (중복 ${data.duplicates}건 제외)` : "";
+      const alreadySurveyed = data.alreadyVacant + data.alreadyOccupied + data.alreadyOtherSurveyed;
+      const dupNote =
+        alreadySurveyed > 0
+          ? ` (이미 답사 ${alreadySurveyed}건 제외 — 공실 ${data.alreadyVacant}·거주중 ${data.alreadyOccupied})`
+          : data.duplicates > 0
+            ? ` (중복 ${data.duplicates}건 제외)`
+            : "";
       toast.success(
         `보증채권 ${data.imported}건 임포트 (HUG ${data.importedHug} · SGI ${data.importedSgi})${dupNote}`,
       );
@@ -133,6 +139,28 @@ export function AuctionImportForm() {
             <Stat label="기타 (제외)" value={lastResult.other} color="amber" />
             <Stat label="중복 (제외)" value={lastResult.duplicates} color="amber" />
           </div>
+
+          {/* 이미 답사한 현장 — 답사자 재방문 방지를 위해 자동 제외된 내역 */}
+          {lastResult.alreadyVacant +
+            lastResult.alreadyOccupied +
+            lastResult.alreadyOtherSurveyed >
+            0 && (
+            <div className="rounded-lg border border-rose-200 bg-rose-50/60 p-3">
+              <div className="text-xs font-bold text-rose-700 mb-2">
+                이미 답사한 현장 (재방문 불필요 — 자동 제외)
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <Stat label="이미 공실" value={lastResult.alreadyVacant} color="emerald" />
+                <Stat label="이미 거주중" value={lastResult.alreadyOccupied} color="rose" />
+                <Stat
+                  label="기타 답사완료"
+                  value={lastResult.alreadyOtherSurveyed}
+                  color="amber"
+                />
+                <Stat label="미답사 중복" value={lastResult.alreadyPending} color="slate" />
+              </div>
+            </div>
+          )}
           {lastResult.ok && (
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
               <div className="text-xs font-bold text-emerald-700">실제 저장</div>
@@ -177,13 +205,15 @@ function Stat({
 }: {
   label: string;
   value: number;
-  color: "slate" | "blue" | "purple" | "amber";
+  color: "slate" | "blue" | "purple" | "amber" | "emerald" | "rose";
 }) {
   const colors: Record<string, string> = {
     slate: "bg-background border-border text-foreground",
     blue: "bg-blue-50 border-blue-200 text-blue-800",
     purple: "bg-purple-50 border-purple-200 text-purple-800",
     amber: "bg-amber-50 border-amber-200 text-amber-800",
+    emerald: "bg-emerald-50 border-emerald-200 text-emerald-800",
+    rose: "bg-rose-50 border-rose-200 text-rose-800",
   };
   return (
     <div className={`rounded-lg border p-3 ${colors[color]}`}>

@@ -21,6 +21,11 @@ export interface ImportResult {
   sgi: number;
   other: number;
   duplicates: number;
+  // 중복 세부 — 이미 답사한 현장은 답사자 재방문 방지를 위해 제외
+  alreadyVacant: number; // 이미 공실 (제외)
+  alreadyOccupied: number; // 이미 거주중 (제외)
+  alreadyOtherSurveyed: number; // 재방문/제외 등 기타 답사완료 (제외)
+  alreadyPending: number; // 미답사 중복 (이미 풀에 있음)
   imported: number;
   importedHug: number;
   importedSgi: number;
@@ -51,6 +56,10 @@ export async function importAuctionText(input: {
     sgi: 0,
     other: 0,
     duplicates: 0,
+    alreadyVacant: 0,
+    alreadyOccupied: 0,
+    alreadyOtherSurveyed: 0,
+    alreadyPending: 0,
     imported: 0,
     importedHug: 0,
     importedSgi: 0,
@@ -91,38 +100,71 @@ export async function importAuctionText(input: {
 
     const supabase = createServiceClient();
 
-    // 중복 차단: 같은 상세주소가 이미 풀에 존재하면 skip (거부된 건 제외).
-    // pending 뿐 아니라 이미 답사 끝난(vacant/occupied 등) 주소도 막아야
-    // 2차 전수조사 재수집 시 같은 물건이 새 property_no로 중복 생성되지 않는다.
-    const addressesToCheck = toImport.map((p) => p.address || "(주소 미상)");
+    // 중복 차단: 같은 상세주소가 이미 풀에 존재하면(거부 제외) skip.
+    //   - 이전에 답사해 공실/거주중 등으로 확정된 현장은 답사자 재방문 방지를 위해 제외
+    //   - 거부(rejected)한 건은 제외 대상에서 빼서 재수집 허용
+    const addressesToCheck = Array.from(
+      new Set(toImport.map((p) => (p.address || "(주소 미상)").trim())),
+    );
     const { data: existingRows } = await supabase
       .from("auction_property")
-      .select("address")
+      .select("address, survey_status")
       .in("address", addressesToCheck)
       .neq("survey_status", "rejected");
-    const existingAddrSet = new Set(
-      ((existingRows ?? []) as { address: string }[]).map((e) => e.address.trim()),
-    );
 
-    // 이번 임포트 내부 중복도 제거
+    // 주소 → 기존 답사상태(가장 확정적인 상태 우선) 매핑
+    const STATUS_RANK: Record<string, number> = {
+      vacant: 5,
+      occupied: 4,
+      revisit: 3,
+      skip: 2,
+      pending: 1,
+    };
+    const existingStatusByAddr = new Map<string, string>();
+    for (const r of (existingRows ?? []) as { address: string; survey_status: string }[]) {
+      const a = r.address.trim();
+      const prev = existingStatusByAddr.get(a);
+      if (!prev || (STATUS_RANK[r.survey_status] ?? 0) > (STATUS_RANK[prev] ?? 0)) {
+        existingStatusByAddr.set(a, r.survey_status);
+      }
+    }
+
+    // 이번 임포트 내부 중복도 제거 + 제외 사유 집계
     const seenInBatch = new Set<string>();
+    let alreadyVacant = 0;
+    let alreadyOccupied = 0;
+    let alreadyOtherSurveyed = 0;
+    let alreadyPending = 0;
     const dedupedImport = toImport.filter((p) => {
       const addr = (p.address || "(주소 미상)").trim();
-      if (seenInBatch.has(addr)) return false;
+      if (seenInBatch.has(addr)) {
+        alreadyPending += 1; // 같은 배치 내 중복 (이미 신규 후보로 잡음)
+        return false;
+      }
       seenInBatch.add(addr);
-      return !existingAddrSet.has(addr);
+      const ex = existingStatusByAddr.get(addr);
+      if (!ex) return true; // 신규 — 답사 대상
+      if (ex === "vacant") alreadyVacant += 1;
+      else if (ex === "occupied") alreadyOccupied += 1;
+      else if (ex === "pending") alreadyPending += 1;
+      else alreadyOtherSurveyed += 1; // revisit / skip
+      return false;
     });
     const skippedDuplicates = toImport.length - dedupedImport.length;
+    const dupDetail = { alreadyVacant, alreadyOccupied, alreadyOtherSurveyed, alreadyPending };
 
     if (dedupedImport.length === 0) {
       return {
         ...empty,
-        error: `대상 후보가 모두 중복(이미 풀에 존재). HUG/SGI ${toImport.length}건 중 ${skippedDuplicates}건 중복.`,
+        error:
+          `대상 후보가 모두 기존에 있음(신규 답사 대상 0). HUG/SGI ${toImport.length}건 중 ` +
+          `이미 공실 ${alreadyVacant} · 거주중 ${alreadyOccupied} · 기타 답사완료 ${alreadyOtherSurveyed} · 미답사 중복 ${alreadyPending}.`,
         parsedTotal: valid.length,
         hug: stats.HUG,
         sgi: stats.SGI,
         other: stats.OTHER,
         duplicates: skippedDuplicates,
+        ...dupDetail,
       };
     }
 
@@ -193,6 +235,7 @@ export async function importAuctionText(input: {
       sgi: stats.SGI,
       other: stats.OTHER,
       duplicates: skippedDuplicates,
+      ...dupDetail,
       imported: dedupedImport.length,
       importedHug: importedStats.HUG,
       importedSgi: importedStats.SGI,

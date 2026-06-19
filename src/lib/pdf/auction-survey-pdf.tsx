@@ -111,7 +111,8 @@ function Check({ label, checked }: { label: string; checked?: boolean }) {
   );
 }
 
-const DONE_STATUSES = new Set(["vacant", "occupied", "revisit", "skip"]);
+// 재방문(revisit)은 아직 답사 대상이라 회색 처리하지 않는다 (route 의 isDone 과 동일 기준).
+const DONE_STATUSES = new Set(["vacant", "occupied", "skip"]);
 
 function Row({ it }: { it: SurveyPdfItem }) {
   // 기존 답사완료 = pending 이 아닌 결과 상태. 회색 줄 + 결과 자동 체크 + "기존 답사완료" 표기.

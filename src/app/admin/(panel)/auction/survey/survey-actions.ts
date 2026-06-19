@@ -1,10 +1,77 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin, type AdminContext } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { type PipelineState, stateLabel } from "@/lib/auction/pipeline/state-machine";
+
+// 간이 답사 결과 → 파이프라인 단계 매핑.
+//   공실 = 바로 상품화 트랙(상품화준비), 거주 = 거주중보관(분기), 재방문 = 재확인필요.
+//   pending/skip 은 파이프라인을 건드리지 않는다(아직 미정/수동 제외 영역).
+const SURVEY_TO_PIPELINE: Partial<Record<string, PipelineState>> = {
+  vacant: "WorkPrep",
+  occupied: "OccupiedHold",
+  revisit: "Recheck",
+};
+const SURVEY_LABEL: Record<string, string> = { vacant: "공실", occupied: "거주", revisit: "재방문" };
+
+// 간이 답사가 파이프라인을 자동 이동시켜도 되는 "초기" 단계.
+//   이미 상품화/임대로 진행됐거나 제외된 물건은 답사 상태를 고쳐도 후퇴시키지 않는다.
+const SYNCABLE_STATES: string[] = [
+  "Collected",
+  "Selected",
+  "Inspecting",
+  "Reviewing",
+  "Approved",
+  "Recheck",
+  "OccupiedHold",
+];
+
+/**
+ * 답사결과 저장에 맞춰 파이프라인 단계를 자동 동기화.
+ *   공실 저장 → 상품화준비(WorkPrep)로 올려 "⑤ 공실·상품화" 보드에 바로 등장.
+ *   단, 이미 상품화/임대로 진행됐거나 제외된 물건은 후퇴시키지 않는다(초기 단계만 이동).
+ *   각 이동은 auction_pipeline_event 에 감사로그로 남긴다.
+ */
+async function syncPipelineForStatus(
+  supabase: ReturnType<typeof createServiceClient>,
+  ctx: AdminContext,
+  ids: string[],
+  surveyStatus: string,
+): Promise<void> {
+  const target = SURVEY_TO_PIPELINE[surveyStatus];
+  if (!target || ids.length === 0) return;
+
+  const { data: rows } = await supabase
+    .from("auction_property")
+    .select("id, pipeline_state")
+    .in("id", ids);
+  const movable = ((rows ?? []) as { id: string; pipeline_state: string | null }[]).filter((r) => {
+    const cur = r.pipeline_state ?? "Collected";
+    return SYNCABLE_STATES.includes(cur) && cur !== target;
+  });
+  if (movable.length === 0) return;
+
+  const ts = new Date().toISOString();
+  await supabase
+    .from("auction_property")
+    .update({ pipeline_state: target, pipeline_entered_at: ts })
+    .in("id", movable.map((r) => r.id));
+
+  await supabase.from("auction_pipeline_event").insert(
+    movable.map((r) => ({
+      auction_property_id: r.id,
+      from_state: r.pipeline_state ?? "Collected",
+      to_state: target,
+      action: "SURVEY_SYNC",
+      performed_by_id: ctx.user.id,
+      performed_by: ctx.admin.name,
+      detail: `답사결과(${SURVEY_LABEL[surveyStatus] ?? surveyStatus}) → ${stateLabel(target)} 자동 이동`,
+    })),
+  );
+}
 
 const surveySchema = z.object({
   id: z.string().uuid(),
@@ -25,7 +92,7 @@ export async function updateSurveyResult(input: {
   survey_memo?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    const ctx = await requireAdmin();
     const parsed = surveySchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -39,8 +106,14 @@ export async function updateSurveyResult(input: {
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
 
+    // 공실 → 상품화준비 등 파이프라인 자동 동기화 (①)
+    await syncPipelineForStatus(supabase, ctx, [id], parsed.data.survey_status);
+
     revalidatePath("/admin/auction/survey");
     revalidatePath("/admin/auction/collection");
+    revalidatePath("/admin/auction/pipeline");
+    revalidatePath("/admin/auction/pipeline/vacant");
+    revalidatePath("/admin/auction/pipeline/occupied");
     return { ok: true };
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
@@ -81,7 +154,7 @@ export async function bulkSurveyByNumber(input: {
   survey_date?: string;
 }): Promise<BulkSurveyResult> {
   try {
-    await requireAdmin();
+    const ctx = await requireAdmin();
     const parsed = bulkSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -155,9 +228,18 @@ export async function bulkSurveyByNumber(input: {
     const vacantUpdated = await applyStatus(vacant, "vacant");
     const occupiedUpdated = await applyStatus(occupied, "occupied");
 
+    // 공실 → 상품화준비, 거주 → 거주중보관 파이프라인 자동 동기화 (①)
+    const vacantIds = vacant.map((n) => noToId.get(n)).filter((v): v is string => !!v);
+    const occupiedIds = occupied.map((n) => noToId.get(n)).filter((v): v is string => !!v);
+    await syncPipelineForStatus(supabase, ctx, vacantIds, "vacant");
+    await syncPipelineForStatus(supabase, ctx, occupiedIds, "occupied");
+
     revalidatePath("/admin/auction/survey");
     revalidatePath("/admin/auction/collection");
     revalidatePath("/admin/auction/judgment");
+    revalidatePath("/admin/auction/pipeline");
+    revalidatePath("/admin/auction/pipeline/vacant");
+    revalidatePath("/admin/auction/pipeline/occupied");
     return { ok: true, vacantUpdated, occupiedUpdated, unmatched };
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
