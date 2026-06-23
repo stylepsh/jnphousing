@@ -42,3 +42,9 @@ supabase/.temp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 엑셀 원장 이관 작업 산출물 — 임차인 개인정보(이름·전화·주소) 포함, 커밋 금지
+# (스키마는 025_*.sql 로 버전관리, 데이터는 운영 DB에 1회 적용 완료)
+_import/
+.omc/
+supabase/migrations/*_excel_data_load.sql
