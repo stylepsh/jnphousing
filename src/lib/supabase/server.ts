@@ -84,6 +84,12 @@ export async function createClient() {
 
   const cookieStore = await cookies();
   return createServerClient(env.url, env.anon, {
+    // 토큰 갱신(회전)은 쿠키를 쓸 수 있는 미들웨어에서만 수행한다.
+    // 서버 컴포넌트/액션의 이 클라이언트가 렌더 중 토큰을 회전시키면 setAll 이
+    // 막혀(아래 catch) 회전된 refresh_token 이 유실 → 세션이 풀린다.
+    // autoRefreshToken:false 로 서버 클라이언트는 절대 회전하지 않게 한다.
+    // (미들웨어가 매 요청 전 토큰을 신선하게 갱신하므로 안전.)
+    auth: { autoRefreshToken: false, persistSession: false },
     cookies: {
       getAll() {
         return cookieStore.getAll();
