@@ -7,6 +7,7 @@ import { requireAdmin, type AdminContext } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import {
   getNextState,
+  STATE_LABELS,
   type PipelineAction,
   type PipelineState,
   type TransitionData,
@@ -315,11 +316,66 @@ export async function addWorkItem(input: z.input<typeof workItemSchema>): Promis
   }
 }
 
+const moveTargetSchema = z.enum([
+  "Approved",
+  "WorkPrep",
+  "Merchandising",
+  "Available",
+  "OccupiedHold",
+  "Rejected",
+]);
+
+/**
+ * 유연한 수동 단계 이동 + 소프트 삭제(Rejected).
+ * 상태머신 검증을 우회해 관리자가 자유롭게 단계를 옮길 수 있게 한다.
+ */
+export async function moveAuctionStage(propertyId: string, target: string): Promise<ActionResult> {
+  try {
+    const ctx = await requireAdmin();
+    const parsed = moveTargetSchema.safeParse(target);
+    if (!parsed.success) return { ok: false, error: "이동할 단계가 올바르지 않습니다." };
+    const to = parsed.data;
+    const supabase = createServiceClient();
+
+    const { data: row, error: readErr } = await supabase
+      .from("auction_property")
+      .select("id, pipeline_state")
+      .eq("id", propertyId)
+      .single();
+    if (readErr || !row) return { ok: false, error: "물건을 찾을 수 없습니다." };
+
+    const from = (row as { pipeline_state: PipelineState }).pipeline_state ?? "Collected";
+
+    const { error: updErr } = await supabase
+      .from("auction_property")
+      .update({ pipeline_state: to, pipeline_entered_at: new Date().toISOString() })
+      .eq("id", propertyId);
+    if (updErr) return { ok: false, error: updErr.message };
+
+    await supabase.from("auction_pipeline_event").insert({
+      auction_property_id: propertyId,
+      from_state: from,
+      to_state: to,
+      action: "MANUAL_MOVE",
+      performed_by_id: ctx.user.id,
+      performed_by: ctx.admin.name,
+      detail: `수동 이동: ${STATE_LABELS[from] ?? from} → ${STATE_LABELS[to] ?? to}`,
+    });
+
+    revalidateAll();
+    return { ok: true };
+  } catch (e) {
+    return err(e);
+  }
+}
+
 const handoffSchema = z.object({
   propertyId: z.string().uuid(),
   monthlyRent: z.coerce.number().int().min(0).default(0),
   managementFeeRate: z.coerce.number().min(0).max(100).default(0),
   individualTaxRate: z.coerce.number().min(0).max(100).default(0),
+  deposit: z.coerce.number().int().min(0).default(0),
+  rentCollectionMemo: z.string().max(200).optional().transform((v) => (v && v.trim() ? v.trim() : null)),
   tenantName: z.string().max(100).optional().transform((v) => (v && v.trim() ? v.trim() : null)),
   startDate: z.string().optional().transform((v) => (v && v.trim() ? v.trim() : null)),
   endDate: z.string().optional().transform((v) => (v && v.trim() ? v.trim() : null)),
@@ -343,6 +399,8 @@ export async function handoffToLease(input: z.input<typeof handoffSchema>): Prom
         management_fee_rate: p.managementFeeRate,
         individual_tax_rate: p.individualTaxRate,
         monthly_rent: p.monthlyRent,
+        deposit: p.deposit,
+        rent_collection_memo: p.rentCollectionMemo,
         tenant_name: p.tenantName,
         ...(p.leaseId ? { lease_id: p.leaseId } : {}),
       },

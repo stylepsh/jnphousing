@@ -24,8 +24,24 @@ async function fetchVacant(): Promise<VacantItem[]> {
   }
 }
 
-export default async function VacantPage() {
-  const items = await fetchVacant();
+export default async function VacantPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q: rawQ } = await searchParams;
+  const q = (rawQ ?? "").trim();
+  const all = await fetchVacant();
+  const items = q
+    ? all.filter((i) => {
+        const needle = q.toLowerCase();
+        return (
+          (i.case_number ?? "").toLowerCase().includes(needle) ||
+          (i.address ?? "").toLowerCase().includes(needle) ||
+          (i.owner_name ?? "").toLowerCase().includes(needle)
+        );
+      })
+    : all;
 
   return (
     <div className="space-y-5">
@@ -63,6 +79,21 @@ export default async function VacantPage() {
         <p className="text-sm text-muted-foreground mt-1">
           승인된 공실 물건을 상품화 준비→진행→임대가능으로 진행합니다. 단계별 작업비를 기록하면 정산에 반영됩니다.
         </p>
+        <form method="get" className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="사건번호·상세주소·임대인 검색"
+            className="h-9 w-full max-w-sm rounded-lg border bg-background px-3 text-sm"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-sm font-semibold hover:bg-muted"
+          >
+            검색
+          </button>
+        </form>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

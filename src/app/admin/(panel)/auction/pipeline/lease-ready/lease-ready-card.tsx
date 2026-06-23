@@ -27,6 +27,8 @@ export function LeaseReadyCard({ it }: { it: LeaseReadyItem }) {
   const [taxRate, setTaxRate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [deposit, setDeposit] = useState("");
+  const [rentCollectionMemo, setRentCollectionMemo] = useState("");
 
   const preview = useMemo(
     () =>
@@ -51,6 +53,8 @@ export function LeaseReadyCard({ it }: { it: LeaseReadyItem }) {
         monthlyRent: r,
         managementFeeRate: Number(feeRate) || 0,
         individualTaxRate: Number(taxRate) || 0,
+        deposit: Number(deposit.replace(/[^\d]/g, "")) || 0,
+        rentCollectionMemo: rentCollectionMemo || undefined,
         tenantName: tenantName || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -90,6 +94,14 @@ export function LeaseReadyCard({ it }: { it: LeaseReadyItem }) {
         <div className="space-y-1">
           <Label className="text-xs">세율 %</Label>
           <Input value={taxRate} onChange={(e) => setTaxRate(e.target.value)} className="h-8 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">보증금(원)</Label>
+          <Input value={deposit} onChange={(e) => setDeposit(e.target.value)} className="h-8 text-sm" placeholder="예: 5000000" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">수금일</Label>
+          <Input value={rentCollectionMemo} onChange={(e) => setRentCollectionMemo(e.target.value)} className="h-8 text-sm" placeholder="예: 매월 25일 / 이달 27일" />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">시작일</Label>

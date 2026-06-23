@@ -6,9 +6,16 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { runAction, addWorkItem } from "../actions";
+import { runAction, addWorkItem, moveAuctionStage } from "../actions";
 import { formatWon } from "@/lib/auction/case-stages";
 import type { PipelineAction } from "@/lib/auction/pipeline/state-machine";
+
+const MOVE_TARGETS = [
+  ["Approved", "승인"],
+  ["WorkPrep", "상품화준비"],
+  ["Merchandising", "상품화진행"],
+  ["Available", "임대가능"],
+] as const;
 
 export type VacantItem = {
   id: string;
@@ -59,6 +66,31 @@ export function VacantCard({ it }: { it: VacantItem }) {
     });
   }
 
+  function moveTo(target: string) {
+    startTransition(async () => {
+      const res = await moveAuctionStage(it.id, target);
+      if (!res.ok) {
+        toast.error(res.error ?? "이동 실패");
+        return;
+      }
+      toast.success("단계 이동됨");
+      router.refresh();
+    });
+  }
+
+  function softDelete() {
+    if (!window.confirm("이 물건을 목록에서 제외할까요? (복구 가능)")) return;
+    startTransition(async () => {
+      const res = await moveAuctionStage(it.id, "Rejected");
+      if (!res.ok) {
+        toast.error(res.error ?? "제외 실패");
+        return;
+      }
+      toast.success("목록에서 제외됨");
+      router.refresh();
+    });
+  }
+
   function saveWork() {
     const amt = Number(amount.replace(/[^\d]/g, ""));
     if (!amt || amt <= 0) {
@@ -101,6 +133,31 @@ export function VacantCard({ it }: { it: VacantItem }) {
           <Button size="sm" onClick={saveWork} disabled={pending}>저장</Button>
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value) moveTo(e.target.value);
+          }}
+          disabled={pending}
+          className="h-8 rounded-md border bg-background px-2 text-xs"
+        >
+          <option value="">단계 이동…</option>
+          {MOVE_TARGETS.filter(([v]) => v !== it.pipeline_state).map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={softDelete}
+          disabled={pending}
+          className="text-red-600 border-red-200 hover:bg-red-50"
+        >
+          삭제
+        </Button>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {next && (

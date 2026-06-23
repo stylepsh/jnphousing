@@ -102,6 +102,7 @@ export default async function PipelineDashboard() {
             ["/admin/auction/pipeline/vacant", "⑤ 공실·상품화"],
             ["/admin/auction/pipeline/lease-ready", "⑥ 임대 계약"],
             ["/admin/auction/pipeline/leased", "⑦ 임대중·정산"],
+            ["/admin/auction/leases", "⑧ 임차 현황판"],
           ].map(([href, label]) => (
             <Link key={href} href={href} className="rounded-full border bg-card px-3.5 py-2 font-medium hover:border-violet-300 hover:bg-violet-50/50 transition">
               {label}
