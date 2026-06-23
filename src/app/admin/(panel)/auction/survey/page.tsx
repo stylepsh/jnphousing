@@ -4,6 +4,7 @@ import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { SurveyRow } from "./survey-row";
 import { BulkEntry } from "./bulk-entry";
+import { SurveyUpload } from "./survey-upload";
 import { getOpenSheets } from "./survey-actions";
 import { SURVEY_STATUS, type SurveyItem } from "./survey-status";
 
@@ -78,6 +79,9 @@ export default async function AuctionSurveyPage() {
         accent="rose"
         desc="종이 답사지가 돌아오면 번호 일괄입력으로 공실/거주를 한 번에 반영합니다. 특정 1건만 따로 고칠 땐 아래 목록에서 직접 입력하세요."
       />
+
+      {/* 답사표 엑셀 왕복 업로드 */}
+      <SurveyUpload />
 
       {/* 번호 기반 일괄입력 */}
       <BulkEntry sheets={sheets} />
