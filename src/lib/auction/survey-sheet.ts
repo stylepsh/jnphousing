@@ -213,6 +213,7 @@ export function rowsFromMatrix(matrix: string[][]): { region: string | null; row
     if (!cells || cells.every((c) => !String(c ?? "").trim())) continue;
     const r = blank();
     for (const [idxStr, field] of Object.entries(fieldByIdx)) {
+      if (!field) continue;
       const v = cells[Number(idxStr)];
       r[field] = v != null && String(v).trim() ? String(v) : null;
     }

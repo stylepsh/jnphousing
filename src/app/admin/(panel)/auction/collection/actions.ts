@@ -106,13 +106,26 @@ export async function importAuctionText(input: {
     const addressesToCheck = Array.from(
       new Set(toImport.map((p) => (p.address || "(주소 미상)").trim())),
     );
-    const { data: existingRows } = await supabase
-      .from("auction_property")
-      .select("address, survey_status")
-      .in("address", addressesToCheck)
-      .neq("survey_status", "rejected");
+    const caseNumsToCheck = Array.from(
+      new Set(toImport.map((p) => (p.caseNumber || "").replace(/\s/g, "")).filter(Boolean)),
+    );
+    const [addrRes, caseRes] = await Promise.all([
+      supabase
+        .from("auction_property")
+        .select("address, survey_status")
+        .in("address", addressesToCheck)
+        .neq("survey_status", "rejected"),
+      caseNumsToCheck.length
+        ? supabase
+            .from("auction_property")
+            .select("case_number, survey_status")
+            .in("case_number", caseNumsToCheck)
+            .neq("survey_status", "rejected")
+        : Promise.resolve({ data: [] as { case_number: string; survey_status: string }[] }),
+    ]);
+    const existingRows = addrRes.data;
 
-    // 주소 → 기존 답사상태(가장 확정적인 상태 우선) 매핑
+    // 주소/사건번호 → 기존 답사상태(가장 확정적인 상태 우선) 매핑
     const STATUS_RANK: Record<string, number> = {
       vacant: 5,
       occupied: 4,
@@ -128,21 +141,35 @@ export async function importAuctionText(input: {
         existingStatusByAddr.set(a, r.survey_status);
       }
     }
+    // 사건번호 우선 매핑 — 주소 포맷이 달라도 점유 등 답사완료 건 누수 방지
+    const existingStatusByCase = new Map<string, string>();
+    for (const r of (caseRes.data ?? []) as { case_number: string; survey_status: string }[]) {
+      const k = (r.case_number || "").replace(/\s/g, "");
+      if (!k) continue;
+      const prev = existingStatusByCase.get(k);
+      if (!prev || (STATUS_RANK[r.survey_status] ?? 0) > (STATUS_RANK[prev] ?? 0)) {
+        existingStatusByCase.set(k, r.survey_status);
+      }
+    }
 
     // 이번 임포트 내부 중복도 제거 + 제외 사유 집계
     const seenInBatch = new Set<string>();
+    const seenCaseInBatch = new Set<string>();
     let alreadyVacant = 0;
     let alreadyOccupied = 0;
     let alreadyOtherSurveyed = 0;
     let alreadyPending = 0;
     const dedupedImport = toImport.filter((p) => {
       const addr = (p.address || "(주소 미상)").trim();
-      if (seenInBatch.has(addr)) {
+      const cnum = (p.caseNumber || "").replace(/\s/g, "");
+      if ((cnum && seenCaseInBatch.has(cnum)) || seenInBatch.has(addr)) {
         alreadyPending += 1; // 같은 배치 내 중복 (이미 신규 후보로 잡음)
         return false;
       }
+      if (cnum) seenCaseInBatch.add(cnum);
       seenInBatch.add(addr);
-      const ex = existingStatusByAddr.get(addr);
+      // 사건번호 매칭 우선, 없으면 주소 매칭
+      const ex = (cnum && existingStatusByCase.get(cnum)) || existingStatusByAddr.get(addr);
       if (!ex) return true; // 신규 — 답사 대상
       if (ex === "vacant") alreadyVacant += 1;
       else if (ex === "occupied") alreadyOccupied += 1;
