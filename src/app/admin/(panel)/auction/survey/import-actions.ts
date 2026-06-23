@@ -88,7 +88,7 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       .insert({
         name: `${region ?? "답사표"} 업로드`,
         area: region,
-        status: "imported",
+        status: "completed",
         total_count: rows.length,
       })
       .select("id")
@@ -141,7 +141,7 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
             address_short: n.addressShort,
             pipeline_state: nextState,
             pipeline_entered_at: nowIso,
-            sheet_id: batchId,
+            batch_id: batchId,
             updated_at: nowIso,
           })
           .eq("id", propertyId);
@@ -151,7 +151,6 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
           .from("auction_property")
           .insert({
             batch_id: batchId,
-            sheet_id: batchId,
             case_number: n.caseNumber,
             address: n.address || "(주소 미상)",
             address_short: n.addressShort,
