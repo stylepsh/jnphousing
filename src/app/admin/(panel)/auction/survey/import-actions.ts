@@ -114,11 +114,14 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       let nextState = JUDGE_STATE[n.occupancy];
       if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
-      const { data: existing } = await supabase
+      // 사건번호는 유니크가 아님(수집 중복행 존재) → 가장 먼저 수집된 1건을 갱신.
+      const { data: matchRows } = await supabase
         .from("auction_property")
         .select("id, pipeline_state")
         .eq("case_number", n.caseNumber)
-        .maybeSingle();
+        .order("created_at", { ascending: true })
+        .limit(1);
+      const existing = (matchRows ?? [])[0] ?? null;
 
       let propertyId: string;
       let fromState = "Collected";
