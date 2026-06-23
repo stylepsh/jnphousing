@@ -35,14 +35,30 @@ export default async function VacantPage() {
         </Link>
         <div className="flex items-center justify-between gap-3 flex-wrap mt-2">
           <h1 className="text-xl font-black">⑤ 공실 · 상품화</h1>
-          <a
-            href="/admin/auction/pipeline/vacant-pdf"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-sm font-semibold hover:bg-muted"
-          >
-            B팀 공실 인계 PDF
-          </a>
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href="/admin/auction/pipeline/vacant-export"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-sm font-semibold text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+            >
+              공실 상세 엑셀
+            </a>
+            <a
+              href="/admin/auction/pipeline/vacant-detail-pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-sm font-semibold text-sky-700 border-sky-200 hover:bg-sky-50"
+            >
+              공실 상세 PDF
+            </a>
+            <a
+              href="/admin/auction/pipeline/vacant-pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border text-sm font-semibold hover:bg-muted"
+            >
+              B팀 인계 PDF
+            </a>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           승인된 공실 물건을 상품화 준비→진행→임대가능으로 진행합니다. 단계별 작업비를 기록하면 정산에 반영됩니다.
