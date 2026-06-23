@@ -75,6 +75,24 @@ const SIHEUNG_CSV = `시흥 단기임대,,,,,,,,,,,
 2,정왕동,"1942-1 계룡2차 212동 10층 1002호
 [정왕대로28번길 8]",2025-53851,아파트,박성호 주택도시보증공사,O,X,O,X,관리실:,퇴거 예정이라고 함`;
 
+// 안산식: 사건번호 칸이 없는 답사표도 감지되어야 한다.
+const ANSAN_CSV = `안산 단기임대,,,,,,,,,
+순번,동,상세 주소,임대인·채권,점유 상태,우편,계량기,현관비번,관리실,비고
+1,건건동,"594 블레스빌 101동 202호
+[건건7길 18]",박희천1 주택도시보증공사,X,,O,#4669#,관리실: 010-...,5월 전기 27920`;
+
+describe("extractRowsFromCsv (사건번호 없는 시트)", () => {
+  it("parses 안산식 sheet without 사건번호 column", () => {
+    const { region, rows } = extractRowsFromCsv(ANSAN_CSV);
+    expect(region).toBe("안산 단기임대");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].caseNumber).toBeNull();
+    expect(rows[0].occupancy).toBe("X");
+    expect(rows[0].ownerCreditor).toBe("박희천1 주택도시보증공사");
+    expect(rows[0].dong).toBe("건건동");
+  });
+});
+
 describe("extractRowsFromCsv", () => {
   it("detects region title and parses rows with multiline cells", () => {
     const { region, rows } = extractRowsFromCsv(SIHEUNG_CSV);

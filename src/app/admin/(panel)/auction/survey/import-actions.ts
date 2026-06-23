@@ -17,6 +17,7 @@ export interface SurveyImportResult {
   ok: boolean;
   error?: string;
   region?: string;
+  regions?: string[];
   total: number;
   matched: number;
   created: number;
@@ -36,34 +37,42 @@ const JUDGE_STATE: Record<string, string> = {
   occupied: "OccupiedHold",
   recheck: "Recheck",
 };
-// inspection.occupancy(recheck) → auction_property.survey_status(revisit) 어휘 차이 보정
+// inspection.occupancy(recheck) → auction_property.survey_status(revisit) 어휘 보정
 const SURVEY_STATUS: Record<string, string> = {
   vacant: "vacant",
   occupied: "occupied",
   recheck: "revisit",
 };
 
-async function extractFromFile(
-  file: File,
-): Promise<{ region: string | null; rows: SurveySheetRow[] }> {
+interface SheetData {
+  region: string | null;
+  rows: SurveySheetRow[];
+}
+
+// 파일 → 시트별 데이터 (xlsx는 시트=지역, csv는 1개)
+async function extractSheets(file: File): Promise<SheetData[]> {
   const name = file.name.toLowerCase();
   if (name.endsWith(".csv")) {
     const text = new TextDecoder("utf-8").decode(await file.arrayBuffer());
-    return extractRowsFromCsv(text);
+    const { region, rows } = extractRowsFromCsv(text);
+    return rows.length ? [{ region, rows }] : [];
   }
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(await file.arrayBuffer());
-  const ws = wb.worksheets[0];
-  if (!ws) return { region: null, rows: [] };
-  const matrix: string[][] = [];
-  ws.eachRow({ includeEmpty: true }, (row) => {
-    const cells: string[] = [];
-    row.eachCell({ includeEmpty: true }, (cell) => {
-      cells.push(cell.text ?? "");
+  const sheets: SheetData[] = [];
+  for (const ws of wb.worksheets) {
+    const matrix: string[][] = [];
+    ws.eachRow({ includeEmpty: true }, (row) => {
+      const cells: string[] = [];
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        cells.push(cell.text ?? "");
+      });
+      matrix.push(cells);
     });
-    matrix.push(cells);
-  });
-  return rowsFromMatrix(matrix);
+    const { region, rows } = rowsFromMatrix(matrix);
+    if (rows.length) sheets.push({ region: region ?? ws.name, rows });
+  }
+  return sheets;
 }
 
 export async function importSurveySheet(formData: FormData): Promise<SurveyImportResult> {
@@ -77,151 +86,121 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       return { ...EMPTY, error: "파일이 너무 큽니다(5MB 초과)." };
     }
 
-    const { region, rows } = await extractFromFile(file);
-    if (rows.length === 0) {
-      return { ...EMPTY, error: "답사표 행을 찾지 못했습니다. 헤더(사건번호·점유상태)를 확인하세요." };
+    const sheets = await extractSheets(file);
+    if (sheets.length === 0) {
+      return { ...EMPTY, error: "답사표 행을 찾지 못했습니다. 헤더(점유 상태·주소)를 확인하세요." };
     }
 
     const supabase = createServiceClient();
-    const { data: batch } = await supabase
-      .from("auction_survey_batch")
-      .insert({
-        name: `${region ?? "답사표"} 업로드`,
-        area: region,
-        status: "completed",
-        total_count: rows.length,
-      })
-      .select("id")
-      .single();
-    const batchId = (batch as { id: string } | null)?.id ?? null;
-
-    const result: SurveyImportResult = {
-      ...EMPTY,
-      ok: true,
-      region: region ?? undefined,
-      total: rows.length,
-    };
+    const result: SurveyImportResult = { ...EMPTY, ok: true, total: 0, regions: [] };
     const nowIso = new Date().toISOString();
     const today = nowIso.slice(0, 10);
 
-    for (const raw of rows) {
-      const n = normalizeRow(raw);
-      if (!n.caseNumber || !n.occupancy) {
-        result.skipped++;
-        continue;
-      }
-      const surveyStatus = SURVEY_STATUS[n.occupancy];
-      let nextState = JUDGE_STATE[n.occupancy];
-      if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
+    for (const sheet of sheets) {
+      const region = sheet.region;
+      if (region) result.regions!.push(region);
 
-      // 사건번호는 유니크가 아님(수집 중복행 존재) → 가장 먼저 수집된 1건을 갱신.
-      const { data: matchRows } = await supabase
-        .from("auction_property")
-        .select("id, pipeline_state")
-        .eq("case_number", n.caseNumber)
-        .order("created_at", { ascending: true })
-        .limit(1);
-      const existing = (matchRows ?? [])[0] ?? null;
+      const { data: batch } = await supabase
+        .from("auction_survey_batch")
+        .insert({
+          name: `${region ?? "답사표"} 업로드`,
+          area: region,
+          status: "completed",
+          total_count: sheet.rows.length,
+        })
+        .select("id")
+        .single();
+      const batchId = (batch as { id: string } | null)?.id ?? null;
+      let bVacant = 0, bOccupied = 0, bRecheck = 0;
 
-      let propertyId: string;
-      let fromState = "Collected";
-      if (existing) {
-        const ex = existing as { id: string; pipeline_state: string | null };
-        propertyId = ex.id;
-        fromState = ex.pipeline_state ?? "Collected";
-        await supabase
-          .from("auction_property")
-          .update({
-            door_code: n.doorCode,
-            meter_check: n.meterCheck,
-            survey_memo: n.memo,
-            survey_status: surveyStatus,
-            survey_date: today,
-            survey_by: ctx.admin.name,
-            address_short: n.addressShort,
-            pipeline_state: nextState,
-            pipeline_entered_at: nowIso,
-            batch_id: batchId,
-            updated_at: nowIso,
-          })
-          .eq("id", propertyId);
-        result.matched++;
-      } else {
-        const { data: created, error: insErr } = await supabase
-          .from("auction_property")
-          .insert({
-            batch_id: batchId,
-            case_number: n.caseNumber,
-            address: n.address || "(주소 미상)",
-            address_short: n.addressShort,
-            owner_name: n.ownerName ?? "(소유자 미상)",
-            creditor: n.creditor,
-            creditor_type: n.creditorType,
-            category: n.category,
-            door_code: n.doorCode,
-            meter_check: n.meterCheck,
-            survey_memo: n.memo,
-            survey_status: surveyStatus,
-            survey_date: today,
-            survey_by: ctx.admin.name,
-            pipeline_state: nextState,
-            pipeline_entered_at: nowIso,
-          })
-          .select("id")
-          .single();
-        if (insErr || !created) {
+      for (const raw of sheet.rows) {
+        const n = normalizeRow(raw);
+        if (!n.occupancy) {
           result.skipped++;
           continue;
         }
-        propertyId = (created as { id: string }).id;
-        result.created++;
+        result.total++;
+        const surveyStatus = SURVEY_STATUS[n.occupancy];
+        let nextState = JUDGE_STATE[n.occupancy];
+        if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
+
+        // 사건번호 있을 때만 기존 풀과 매칭(최초 수집건). 없으면 신규.
+        let existing: { id: string; pipeline_state: string | null } | null = null;
+        if (n.caseNumber) {
+          const { data: matchRows } = await supabase
+            .from("auction_property")
+            .select("id, pipeline_state")
+            .eq("case_number", n.caseNumber)
+            .order("created_at", { ascending: true })
+            .limit(1);
+          existing = (matchRows ?? [])[0] ?? null;
+        }
+
+        let propertyId: string;
+        let fromState = "Collected";
+        if (existing) {
+          propertyId = existing.id;
+          fromState = existing.pipeline_state ?? "Collected";
+          await supabase
+            .from("auction_property")
+            .update({
+              door_code: n.doorCode, meter_check: n.meterCheck, survey_memo: n.memo,
+              survey_status: surveyStatus, survey_date: today, survey_by: ctx.admin.name,
+              address_short: n.addressShort, pipeline_state: nextState, pipeline_entered_at: nowIso,
+              batch_id: batchId, updated_at: nowIso,
+            })
+            .eq("id", propertyId);
+          result.matched++;
+        } else {
+          const { data: created, error: insErr } = await supabase
+            .from("auction_property")
+            .insert({
+              batch_id: batchId, case_number: n.caseNumber ?? "(미상)",
+              address: n.address || "(주소 미상)", address_short: n.addressShort,
+              owner_name: n.ownerName ?? "(소유자 미상)", creditor: n.creditor,
+              creditor_type: n.creditorType, category: n.category,
+              door_code: n.doorCode, meter_check: n.meterCheck, survey_memo: n.memo,
+              survey_status: surveyStatus, survey_date: today, survey_by: ctx.admin.name,
+              pipeline_state: nextState, pipeline_entered_at: nowIso,
+            })
+            .select("id")
+            .single();
+          if (insErr || !created) {
+            result.skipped++;
+            continue;
+          }
+          propertyId = (created as { id: string }).id;
+          result.created++;
+        }
+
+        await supabase.from("auction_inspection").insert({
+          auction_property_id: propertyId, inspector_name: ctx.admin.name,
+          requested_by_id: ctx.user.id, requested_by_name: ctx.admin.name,
+          occupancy: n.occupancy, mail_status: n.mail, can_open: n.canOpen,
+          merchandising_ready: n.merch, comment: n.memo ?? "(엑셀 업로드)",
+          status: "reviewed", submitted_at: nowIso,
+          reviewed_by_id: ctx.user.id, reviewed_by_name: ctx.admin.name, reviewed_at: nowIso,
+        });
+        await supabase.from("auction_pipeline_event").insert({
+          auction_property_id: propertyId, from_state: fromState, to_state: nextState,
+          action: "IMPORT_SURVEY", performed_by_id: ctx.user.id, performed_by: ctx.admin.name,
+          detail: `답사표 업로드(${region ?? "-"})`,
+        });
+
+        if (n.occupancy === "vacant") { result.vacant++; bVacant++; }
+        else if (n.occupancy === "occupied") { result.occupied++; bOccupied++; }
+        else { result.recheck++; bRecheck++; }
       }
 
-      // 답사기록(엑셀 업로드분) — 이미 검토완료 상태로 적재
-      await supabase.from("auction_inspection").insert({
-        auction_property_id: propertyId,
-        inspector_name: ctx.admin.name,
-        requested_by_id: ctx.user.id,
-        requested_by_name: ctx.admin.name,
-        occupancy: n.occupancy,
-        mail_status: n.mail,
-        can_open: n.canOpen,
-        merchandising_ready: n.merch,
-        comment: n.memo ?? "(엑셀 업로드)",
-        status: "reviewed",
-        submitted_at: nowIso,
-        reviewed_by_id: ctx.user.id,
-        reviewed_by_name: ctx.admin.name,
-        reviewed_at: nowIso,
-      });
-
-      await supabase.from("auction_pipeline_event").insert({
-        auction_property_id: propertyId,
-        from_state: fromState,
-        to_state: nextState,
-        action: "IMPORT_SURVEY",
-        performed_by_id: ctx.user.id,
-        performed_by: ctx.admin.name,
-        detail: `답사표 업로드(${region ?? "-"})`,
-      });
-
-      if (n.occupancy === "vacant") result.vacant++;
-      else if (n.occupancy === "occupied") result.occupied++;
-      else result.recheck++;
+      if (batchId) {
+        await supabase
+          .from("auction_survey_batch")
+          .update({ vacant_count: bVacant, occupied_count: bOccupied, revisit_count: bRecheck, updated_at: nowIso })
+          .eq("id", batchId);
+      }
     }
 
-    if (batchId) {
-      await supabase
-        .from("auction_survey_batch")
-        .update({
-          vacant_count: result.vacant,
-          occupied_count: result.occupied,
-          revisit_count: result.recheck,
-          updated_at: nowIso,
-        })
-        .eq("id", batchId);
-    }
-
+    result.region = result.regions && result.regions.length ? result.regions.join(", ") : undefined;
     revalidatePath("/admin/auction/survey");
     revalidatePath("/admin/auction/pipeline");
     revalidatePath("/admin/auction/collection");

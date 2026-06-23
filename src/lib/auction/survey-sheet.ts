@@ -181,10 +181,12 @@ export function mapHeaderToFields(header: string[]): Partial<Record<number, keyo
 }
 
 export function rowsFromMatrix(matrix: string[][]): { region: string | null; rows: SurveySheetRow[] } {
+  // 헤더 = '점유'(답사시트의 표식) + 주소/임대인/사건번호 중 하나 포함.
+  // 안산/수원처럼 사건번호 칸이 없는 시트도 감지되도록 사건번호 필수 조건 제거.
   let headerIdx = -1;
   for (let i = 0; i < matrix.length; i++) {
     const joined = matrix[i].join("").replace(/\s/g, "");
-    if (/사건번호|타경/.test(joined) && /(점유|물건종류|상세주소|주소)/.test(joined)) {
+    if (/점유/.test(joined) && /(상세주소|주소|임대인|사건번호|타경)/.test(joined)) {
       headerIdx = i;
       break;
     }
