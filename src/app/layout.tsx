@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { KakaoChatFloat } from "@/components/shared/KakaoChatFloat";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -17,9 +17,15 @@ export const metadata: Metadata = {
     "HUG 대위변제·부실 건물·세입자 분쟁까지 축적된 현장 노하우로 해결하는 위탁임대 전문기업. 제이앤피 주택관리, 전국 어디든.",
   metadataBase: new URL("https://jnphousing.co.kr"),
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/favicon.svg" }],
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png" }],
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "JNP관리", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "ko_KR",
@@ -39,6 +45,10 @@ export const metadata: Metadata = {
       "naver-site-verification": process.env.NAVER_SITE_VERIFICATION ?? "",
     },
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1C3A5E",
 };
 
 export default function RootLayout({
