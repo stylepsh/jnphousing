@@ -5,7 +5,7 @@
 
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { ensureKoreanFonts } from "./fonts";
-import { COMPANY } from "@/lib/company";
+import { AUCTION_BRAND } from "@/lib/company";
 
 ensureKoreanFonts();
 
@@ -56,7 +56,7 @@ export function AuctionVacantPdf({ data }: { data: VacantPdfData }) {
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>공실 인계 리스트 <Text style={styles.badge}>(B팀 작업 의뢰서)</Text></Text>
-            <Text style={styles.sub}>{COMPANY.brand} · 출력일 {data.printedAt} · 총 {data.items.length}건</Text>
+            <Text style={styles.sub}>{AUCTION_BRAND} · 출력일 {data.printedAt} · 총 {data.items.length}건</Text>
           </View>
         </View>
 
@@ -84,7 +84,7 @@ export function AuctionVacantPdf({ data }: { data: VacantPdfData }) {
         ))}
 
         <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) =>
-          `각 호실 작업 완료 시 체크 → 임차 완료 시 A팀 회신  ·  ${COMPANY.brand}  ·  ${pageNumber}/${totalPages}`
+          `각 호실 작업 완료 시 체크 → 임차 완료 시 A팀 회신  ·  ${AUCTION_BRAND}  ·  ${pageNumber}/${totalPages}`
         } />
       </Page>
     </Document>

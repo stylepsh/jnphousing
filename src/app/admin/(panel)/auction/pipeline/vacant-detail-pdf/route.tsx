@@ -56,7 +56,7 @@ export async function GET(_req: NextRequest) {
 
     const today = new Date().toISOString().slice(0, 10);
     const buf = await renderToBuffer(<AuctionVacancyDetailPdf data={{ printedAt: today, items }} />);
-    const filename = `JNP_공실상세_${today}_${items.length}건.pdf`;
+    const filename = `전국한마음자산관리_공실상세_${today}_${items.length}건.pdf`;
     return new NextResponse(new Uint8Array(buf) as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",

@@ -30,7 +30,7 @@ export async function buildSurveyTemplate(opts: {
 
   const region = opts.region ?? "답사표";
   const wb = new ExcelJS.Workbook();
-  wb.creator = "JNP주택관리 시스템";
+  wb.creator = "전국한마음자산관리";
   wb.created = new Date();
   const ws = wb.addWorksheet(region.slice(0, 28));
 

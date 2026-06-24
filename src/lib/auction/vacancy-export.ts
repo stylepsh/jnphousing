@@ -51,7 +51,7 @@ export async function buildVacancyWorkbook(): Promise<{ buffer: Buffer; count: n
   const meter = (r: VacRow, k: string) => (r.meter_check && r.meter_check[k]) || "";
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "JNP주택관리 시스템";
+  wb.creator = "전국한마음자산관리";
   wb.created = new Date();
 
   // ── 임대인별 요약 ──

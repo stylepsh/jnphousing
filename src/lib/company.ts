@@ -51,3 +51,9 @@ export const COMPANY = {
     openDate: "2022",
   },
 } as const;
+
+/**
+ * 경매 사업 표기 회사명. 경매 관련 출력물(답사지·인계 PDF·공실 엑셀 등)은
+ * JNP주택관리가 아니라 이 회사명으로 표기한다. (박성혁 2026-06-24)
+ */
+export const AUCTION_BRAND = "전국한마음자산관리";

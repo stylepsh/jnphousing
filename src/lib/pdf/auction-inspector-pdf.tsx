@@ -5,7 +5,7 @@
 
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { ensureKoreanFonts } from "./fonts";
-import { COMPANY } from "@/lib/company";
+import { AUCTION_BRAND } from "@/lib/company";
 
 ensureKoreanFonts();
 
@@ -63,7 +63,7 @@ export function AuctionInspectorPdf({ data }: { data: InspectorPdfData }) {
               <Text style={styles.title}>현장 답사 보고서</Text>
               <Text style={styles.sub}>답사자 {data.inspectorName} · {idx + 1}/{data.units.length}</Text>
             </View>
-            <Text style={styles.sub}>{COMPANY.brand} · {data.printedAt}</Text>
+            <Text style={styles.sub}>{AUCTION_BRAND} · {data.printedAt}</Text>
           </View>
 
           <View style={styles.caseRow}>
@@ -113,7 +113,7 @@ export function AuctionInspectorPdf({ data }: { data: InspectorPdfData }) {
             <View style={styles.memoLine} />
           </View>
 
-          <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) => `${COMPANY.brand}  ·  ${pageNumber} / ${totalPages}`} />
+          <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) => `${AUCTION_BRAND}  ·  ${pageNumber} / ${totalPages}`} />
         </Page>
       ))}
     </Document>

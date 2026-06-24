@@ -4,7 +4,7 @@
  */
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { ensureKoreanFonts } from "./fonts";
-import { COMPANY } from "@/lib/company";
+import { AUCTION_BRAND } from "@/lib/company";
 
 ensureKoreanFonts();
 
@@ -52,7 +52,7 @@ export function AuctionVacancyDetailPdf({ data }: { data: VacancyDetailData }) {
     <Document title={`공실상세_${data.printedAt}_${data.items.length}건`}>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <Text style={styles.title}>공실 · 상품화 후보 상세</Text>
-        <Text style={styles.sub}>{COMPANY.brand} · 출력일 {data.printedAt} · 총 {data.items.length}건 (답사결과 공실)</Text>
+        <Text style={styles.sub}>{AUCTION_BRAND} · 출력일 {data.printedAt} · 총 {data.items.length}건 (답사결과 공실)</Text>
 
         <View style={styles.trHead} fixed>
           <Text style={[styles.th, styles.cNo]}>No</Text>
@@ -84,7 +84,7 @@ export function AuctionVacancyDetailPdf({ data }: { data: VacancyDetailData }) {
         ))}
 
         <Text style={styles.footer} fixed render={({ pageNumber, totalPages }) =>
-          `${COMPANY.brand} · 공실 상품화 후보 · ${pageNumber}/${totalPages}`
+          `${AUCTION_BRAND} · 공실 상품화 후보 · ${pageNumber}/${totalPages}`
         } />
       </Page>
     </Document>

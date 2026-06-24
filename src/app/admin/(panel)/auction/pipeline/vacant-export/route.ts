@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest) {
     await requireAdmin();
     const { buffer, count } = await buildVacancyWorkbook();
     const today = new Date().toISOString().slice(0, 10);
-    const filename = `JNP_공실_상품화후보_${today}_${count}건.xlsx`;
+    const filename = `전국한마음자산관리_공실_상품화후보_${today}_${count}건.xlsx`;
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
