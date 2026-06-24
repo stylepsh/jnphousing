@@ -24,6 +24,7 @@ export type VacantItem = {
   owner_name: string | null;
   pipeline_state: string;
   total_work_cost: number | null;
+  pipeline_entered_at: string | null;
 };
 
 const NEXT: Record<string, { action: PipelineAction; label: string } | undefined> = {
@@ -42,6 +43,22 @@ const WORK_CATEGORIES = [
   ["photo", "사진"],
   ["etc", "기타"],
 ] as const;
+
+function SlaBadge({ enteredAt }: { enteredAt: string | null }) {
+  if (!enteredAt) return null;
+  const days = Math.floor((Date.now() - new Date(enteredAt).getTime()) / 86_400_000);
+  const cls =
+    days > 14
+      ? "bg-rose-50 text-rose-700"
+      : days >= 8
+        ? "bg-amber-50 text-amber-700"
+        : "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {days}일 경과
+    </span>
+  );
+}
 
 export function VacantCard({ it }: { it: VacantItem }) {
   const router = useRouter();
@@ -113,7 +130,10 @@ export function VacantCard({ it }: { it: VacantItem }) {
   return (
     <div className="rounded-xl border bg-card p-3.5 space-y-2.5">
       <div>
-        <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+          <SlaBadge enteredAt={it.pipeline_entered_at} />
+        </div>
         <div className="text-sm line-clamp-1">{it.address}</div>
         <div className="text-xs text-muted-foreground">{it.owner_name ?? "-"}</div>
       </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/auction/case-stages";
@@ -49,12 +50,15 @@ async function fetchData(): Promise<{ kpi: Kpi; rows: LeaseRow[] }> {
   }
 }
 
-function KpiCard({ label, value, accent }: { label: string; value: number; accent: string }) {
+function KpiCard({ label, value, accent, href }: { label: string; value: number; accent: string; href: string }) {
   return (
-    <div className={`rounded-2xl border p-4 ${accent}`}>
+    <Link
+      href={href}
+      className={`rounded-2xl border p-4 ${accent} cursor-pointer hover:shadow-md transition-shadow`}
+    >
       <div className="text-xs font-bold opacity-80">{label}</div>
       <div className="text-2xl font-black mt-1 tabular-nums">{value}</div>
-    </div>
+    </Link>
   );
 }
 
@@ -71,10 +75,10 @@ export default async function AuctionLeasesPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        <KpiCard label="공실" value={kpi.vacant} accent="bg-teal-50 text-teal-700 border-teal-200" />
-        <KpiCard label="임차중" value={kpi.leased} accent="bg-emerald-50 text-emerald-700 border-emerald-200" />
-        <KpiCard label="점유제외" value={kpi.occupied} accent="bg-purple-50 text-purple-700 border-purple-200" />
-        <KpiCard label="재방문" value={kpi.recheck} accent="bg-rose-50 text-rose-700 border-rose-200" />
+        <KpiCard label="공실" value={kpi.vacant} accent="bg-teal-50 text-teal-700 border-teal-200" href="/admin/auction/pipeline/vacant" />
+        <KpiCard label="임차중" value={kpi.leased} accent="bg-emerald-50 text-emerald-700 border-emerald-200" href="/admin/auction/pipeline/leased" />
+        <KpiCard label="점유제외" value={kpi.occupied} accent="bg-purple-50 text-purple-700 border-purple-200" href="/admin/auction/pipeline/occupied" />
+        <KpiCard label="재방문" value={kpi.recheck} accent="bg-rose-50 text-rose-700 border-rose-200" href="/admin/auction/pipeline/assign" />
       </div>
 
       {rows.length === 0 ? (

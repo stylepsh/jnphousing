@@ -16,7 +16,7 @@ type InspRow = {
   can_open: string | null;
   merchandising_ready: string | null;
   comment: string | null;
-  auction_property: { case_number: string; address: string; owner_name: string | null; pipeline_state: string } | null;
+  auction_property: { case_number: string; address: string; owner_name: string | null; pipeline_state: string; pipeline_entered_at: string | null } | null;
 };
 
 async function fetchReviewables(): Promise<ReviewItem[]> {
@@ -25,7 +25,7 @@ async function fetchReviewables(): Promise<ReviewItem[]> {
     const { data } = await supabase
       .from("auction_inspection")
       .select(
-        "id, auction_property_id, inspector_name, occupancy, mail_status, can_open, merchandising_ready, comment, auction_property:auction_property_id(case_number, address, owner_name, pipeline_state)",
+        "id, auction_property_id, inspector_name, occupancy, mail_status, can_open, merchandising_ready, comment, auction_property:auction_property_id(case_number, address, owner_name, pipeline_state, pipeline_entered_at)",
       )
       .eq("status", "submitted")
       .order("submitted_at", { ascending: true });
@@ -44,6 +44,7 @@ async function fetchReviewables(): Promise<ReviewItem[]> {
         can_open: r.can_open,
         merchandising_ready: r.merchandising_ready,
         comment: r.comment,
+        pipeline_entered_at: r.auction_property?.pipeline_entered_at ?? null,
       }));
   } catch {
     return [];

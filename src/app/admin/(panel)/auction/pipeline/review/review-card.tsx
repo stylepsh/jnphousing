@@ -23,7 +23,24 @@ export type ReviewItem = {
   can_open: string | null;
   merchandising_ready: string | null;
   comment: string | null;
+  pipeline_entered_at: string | null;
 };
+
+function SlaBadge({ enteredAt }: { enteredAt: string | null }) {
+  if (!enteredAt) return null;
+  const days = Math.floor((Date.now() - new Date(enteredAt).getTime()) / 86_400_000);
+  const cls =
+    days > 14
+      ? "bg-rose-50 text-rose-700"
+      : days >= 8
+        ? "bg-amber-50 text-amber-700"
+        : "bg-slate-100 text-slate-600";
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {days}일 경과
+    </span>
+  );
+}
 
 function Tag({ children, tone }: { children: React.ReactNode; tone?: "green" | "red" | "amber" | "slate" }) {
   const c =
@@ -59,7 +76,10 @@ export function ReviewCard({ it }: { it: ReviewItem }) {
   return (
     <div className="rounded-xl border bg-card p-4 space-y-3">
       <div>
-        <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+          <SlaBadge enteredAt={it.pipeline_entered_at} />
+        </div>
         <div className="text-sm font-medium line-clamp-1">{it.address}</div>
         <div className="text-xs text-muted-foreground">
           {[it.owner_name, `답사: ${it.inspector_name}`].filter(Boolean).join(" · ")}

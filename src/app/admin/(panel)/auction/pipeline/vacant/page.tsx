@@ -15,7 +15,7 @@ async function fetchVacant(): Promise<VacantItem[]> {
     const supabase = await createClient();
     const { data } = await supabase
       .from("auction_property")
-      .select("id, case_number, address, owner_name, pipeline_state, total_work_cost")
+      .select("id, case_number, address, owner_name, pipeline_state, total_work_cost, pipeline_entered_at")
       .in("pipeline_state", COLS)
       .order("pipeline_entered_at", { ascending: true });
     return (data ?? []) as VacantItem[];
