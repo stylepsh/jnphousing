@@ -12,6 +12,7 @@ import {
   normalizeRow,
   type SurveySheetRow,
 } from "@/lib/auction/survey-sheet";
+import { SURVEY_STATUS_OF, JUDGE_STATE_OF, type Occupancy } from "@/lib/auction/occupancy";
 
 export interface SurveyImportResult {
   ok: boolean;
@@ -29,19 +30,6 @@ export interface SurveyImportResult {
 
 const EMPTY: SurveyImportResult = {
   ok: false, total: 0, matched: 0, created: 0, vacant: 0, occupied: 0, recheck: 0, skipped: 0,
-};
-
-// 답사 점유 → 파이프라인 판정 상태
-const JUDGE_STATE: Record<string, string> = {
-  vacant: "Approved",
-  occupied: "OccupiedHold",
-  recheck: "Recheck",
-};
-// inspection.occupancy(recheck) → auction_property.survey_status(revisit) 어휘 보정
-const SURVEY_STATUS: Record<string, string> = {
-  vacant: "vacant",
-  occupied: "occupied",
-  recheck: "revisit",
 };
 
 interface SheetData {
@@ -120,8 +108,8 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
           continue;
         }
         result.total++;
-        const surveyStatus = SURVEY_STATUS[n.occupancy];
-        let nextState = JUDGE_STATE[n.occupancy];
+        const surveyStatus = SURVEY_STATUS_OF[n.occupancy as Occupancy] ?? n.occupancy;
+        let nextState = JUDGE_STATE_OF[n.occupancy as Occupancy] ?? "Approved";
         if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
         // 사건번호 있을 때만 기존 풀과 매칭(최초 수집건). 없으면 신규.

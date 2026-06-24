@@ -277,7 +277,7 @@ const workItemSchema = z.object({
   memo: z.string().max(1000).optional().transform((v) => (v && v.trim() ? v.trim() : null)),
 });
 
-/** 상품화 작업 비용 항목 추가 + total_work_cost 재집계 */
+/** 상품화 작업 비용 항목 추가 (total_work_cost 는 DB 트리거가 자동 집계) */
 export async function addWorkItem(input: z.input<typeof workItemSchema>): Promise<ActionResult> {
   try {
     const ctx = await requireAdmin();
@@ -298,17 +298,6 @@ export async function addWorkItem(input: z.input<typeof workItemSchema>): Promis
     });
     if (insErr) return { ok: false, error: insErr.message };
 
-    // 누적비용 재집계
-    const { data: items } = await supabase
-      .from("auction_work_item")
-      .select("amount")
-      .eq("auction_property_id", p.propertyId);
-    const total = ((items ?? []) as { amount: number }[]).reduce((s, i) => s + (i.amount || 0), 0);
-    await supabase
-      .from("auction_property")
-      .update({ total_work_cost: total })
-      .eq("id", p.propertyId);
-
     revalidateAll();
     return { ok: true };
   } catch (e) {
@@ -325,9 +314,19 @@ const moveTargetSchema = z.enum([
   "Rejected",
 ]);
 
+// 수동 이동 허용 전이표 — 이 목록에 없는 이동은 거부한다.
+const MANUAL_MOVE_ALLOWED: Record<string, string[]> = {
+  Approved: ["WorkPrep", "Merchandising", "Available", "OccupiedHold", "Rejected"],
+  WorkPrep: ["Approved", "Merchandising", "Available", "OccupiedHold", "Rejected"],
+  Merchandising: ["Approved", "WorkPrep", "Available", "OccupiedHold", "Rejected"],
+  Available: ["Approved", "WorkPrep", "Merchandising", "OccupiedHold", "Rejected"],
+  OccupiedHold: ["Approved", "Rejected"],
+  Recheck: ["Approved", "Rejected"],
+};
+
 /**
  * 유연한 수동 단계 이동 + 소프트 삭제(Rejected).
- * 상태머신 검증을 우회해 관리자가 자유롭게 단계를 옮길 수 있게 한다.
+ * MANUAL_MOVE_ALLOWED 전이표로 허용된 이동만 진행한다.
  */
 export async function moveAuctionStage(propertyId: string, target: string): Promise<ActionResult> {
   try {
@@ -345,6 +344,16 @@ export async function moveAuctionStage(propertyId: string, target: string): Prom
     if (readErr || !row) return { ok: false, error: "물건을 찾을 수 없습니다." };
 
     const from = (row as { pipeline_state: PipelineState }).pipeline_state ?? "Collected";
+
+    if (from !== to) {
+      const allowed = MANUAL_MOVE_ALLOWED[from];
+      if (!allowed || !allowed.includes(to)) {
+        return {
+          ok: false,
+          error: `'${STATE_LABELS[from] ?? from}' 에서 '${STATE_LABELS[to] ?? to}' 로는 이동할 수 없습니다.`,
+        };
+      }
+    }
 
     const { error: updErr } = await supabase
       .from("auction_property")
