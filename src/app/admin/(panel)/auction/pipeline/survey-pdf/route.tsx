@@ -25,7 +25,13 @@ export async function POST(req: NextRequest) {
 
     const SEL = "id, property_no, case_number, court, category, address, owner_name, survey_status, survey_date";
     const supabase = createServiceClient();
-    const { data } = await supabase.from("auction_property").select(SEL).in("id", ids);
+    // 지역▸임대인 일관 정렬: 임대인 → 주소 (최종 그룹핑은 groupByRegion 이 지역별로 재정렬)
+    const { data } = await supabase
+      .from("auction_property")
+      .select(SEL)
+      .in("id", ids)
+      .order("owner_name", { ascending: true })
+      .order("address", { ascending: true });
 
     const selRows = (data ?? []) as (SurveyPdfItem & { id: string })[];
     if (selRows.length === 0) {

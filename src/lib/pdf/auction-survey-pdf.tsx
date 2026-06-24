@@ -58,6 +58,8 @@ const styles = StyleSheet.create({
   cMemo: { flex: 1 },
   noBig: { fontSize: 11, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
   caseMono: { fontSize: 7.5, color: "#1d4ed8" },
+  ownerFirst: { fontSize: 8, fontWeight: "bold", color: "#0f172a" }, // 임대인 블록 첫 행 = 굵게
+  ownerRepeat: { fontSize: 8, color: "#cbd5e1" }, // 같은 임대인 반복 행 = 점선 표기(시각적 그룹핑)
   // 체크칸 — ☐ 글자는 폰트에 없어 안 보이므로 사각형을 직접 그린다.
   checkCell: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center" },
   checkItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 3, marginVertical: 1 },
@@ -81,15 +83,23 @@ function regionKey(address: string): string {
 }
 
 // 지역별 그룹 + 정렬. PDF 레이아웃과 번호 부여(route)가 동일 순서를 쓰도록 공유.
-export function groupByRegion<T extends { address: string }>(items: T[]): [string, T[]][] {
+// 엑셀 출력(지역▸임대인)과 일관되게: 지역 내에서 임대인명 → 주소순으로 정렬해
+// 같은 임대인의 물건이 인접하도록 한다.
+export function groupByRegion<T extends { address: string; owner_name?: string | null }>(
+  items: T[],
+): [string, T[]][] {
   const m = new Map<string, T[]>();
   for (const it of items) {
     const k = regionKey(it.address);
     if (!m.has(k)) m.set(k, []);
     m.get(k)!.push(it);
   }
-  // 지역 내 주소순, 지역은 건수 많은 순
-  for (const [, list] of m) list.sort((a, b) => a.address.localeCompare(b.address));
+  // 지역 내 임대인순 → 주소순, 지역은 건수 많은 순
+  for (const [, list] of m)
+    list.sort(
+      (a, b) =>
+        (a.owner_name ?? "").localeCompare(b.owner_name ?? "") || a.address.localeCompare(b.address),
+    );
   return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 }
 
@@ -114,7 +124,7 @@ function Check({ label, checked }: { label: string; checked?: boolean }) {
 // 재방문(revisit)은 아직 답사 대상이라 회색 처리하지 않는다 (route 의 isDone 과 동일 기준).
 const DONE_STATUSES = new Set(["vacant", "occupied", "skip"]);
 
-function Row({ it }: { it: SurveyPdfItem }) {
+function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
   // 기존 답사완료 = pending 이 아닌 결과 상태. 회색 줄 + 결과 자동 체크 + "기존 답사완료" 표기.
   const done = !!it.survey_status && DONE_STATUSES.has(it.survey_status);
   const wasVacant = it.survey_status === "vacant";
@@ -126,7 +136,10 @@ function Row({ it }: { it: SurveyPdfItem }) {
         <Text>{it.address}</Text>
         <Text style={styles.caseMono}>{it.case_number}{it.category ? ` · ${it.category}` : ""}</Text>
       </View>
-      <Text style={[styles.td, styles.cOwner]}>{it.owner_name ?? "-"}</Text>
+      {/* 임대인 그룹핑: 블록 첫 행만 임대인명 굵게, 같은 임대인 반복 행은 〃 로 표시 */}
+      <Text style={[styles.td, styles.cOwner, ownerFirst ? styles.ownerFirst : styles.ownerRepeat]}>
+        {ownerFirst ? (it.owner_name ?? "-") : "〃"}
+      </Text>
       <View style={[styles.td, styles.cOcc, styles.checkCell]}>
         <Check label="공실" checked={done && wasVacant} />
         <Check label="거주" checked={done && wasOccupied} />
@@ -191,7 +204,11 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
               <Text style={[styles.th, styles.cMemo]}>비고</Text>
             </View>
             {list.map((it, i) => (
-              <Row key={`${it.case_number}-${i}`} it={it} />
+              <Row
+                key={`${it.case_number}-${i}`}
+                it={it}
+                ownerFirst={i === 0 || (list[i - 1].owner_name ?? "") !== (it.owner_name ?? "")}
+              />
             ))}
           </View>
         ))}
