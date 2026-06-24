@@ -77,17 +77,6 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    group: "경매",
-    superOnly: true,
-    items: [
-      { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
-      { href: "/admin/auction/survey", label: "답사 결과 입력", icon: ClipboardList },
-      { href: "/admin/auction/judgment", label: "임대인 판정·전수", icon: UserCheck },
-      { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
-      { href: "/admin/auction/leases", label: "임차 현황판", icon: Building2 },
-    ],
-  },
-  {
     group: "장부·정산",
     items: [
       { href: "/admin/ledger", label: "월별 손익", icon: Wallet },
@@ -121,6 +110,19 @@ const NAV: NavGroup[] = [
       { href: "/admin/cms/certs", label: "인증서·자격증", icon: ShieldCheck },
       { href: "/admin/qr", label: "QR 생성", icon: QrCode },
       { href: "/admin/downloads", label: "서류 관리", icon: FileText },
+    ],
+  },
+  // ───────── ⑤ 경매 (나만 사용 — 맨 하단) ─────────
+  {
+    group: "경매",
+    superOnly: true,
+    divider: true,
+    items: [
+      { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
+      { href: "/admin/auction/survey", label: "답사 결과 입력", icon: ClipboardList },
+      { href: "/admin/auction/judgment", label: "임대인 판정·전수", icon: UserCheck },
+      { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
+      { href: "/admin/auction/leases", label: "임차 현황판", icon: Building2 },
     ],
   },
 ];
