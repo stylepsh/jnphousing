@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gavel, X } from "lucide-react";
+import { Gavel, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionImportForm } from "./import-form";
@@ -10,7 +10,7 @@ import { RegionPicker, type RegionCount } from "./region-picker";
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
 
-const MAX_LOAD = 3000; // 한 지역/임대인 로드 상한 (브라우저 보호)
+const PAGE_SIZE = 100;
 
 async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }> {
   try {
@@ -28,9 +28,15 @@ async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }
   }
 }
 
-async function fetchFiltered(filter: { region?: string; owner?: string }): Promise<{ items: PoolItem[]; capped: boolean }> {
+async function fetchFiltered(
+  filter: { region?: string; owner?: string },
+  page: number,
+): Promise<{ items: PoolItem[]; hasNext: boolean }> {
   try {
     const supabase = await createClient();
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
     let query = supabase
       .from("auction_property")
       .select(
@@ -41,32 +47,33 @@ async function fetchFiltered(filter: { region?: string; owner?: string }): Promi
     if (filter.owner) query = query.eq("owner_name", filter.owner);
     else if (filter.region) query = query.ilike("address", `${filter.region}%`);
 
-    const { data } = await query.order("created_at", { ascending: false }).limit(MAX_LOAD + 1);
+    const { data } = await query.order("created_at", { ascending: false }).range(from, to + 1);
     const rows = (data ?? []) as PoolItem[];
-    const capped = rows.length > MAX_LOAD;
+    const hasNext = rows.length > PAGE_SIZE;
 
     // 상세주소 중복 제거 (정확히 같은 주소면 최근 1건만)
     const seen = new Set<string>();
-    const items = rows.slice(0, MAX_LOAD).filter((p) => {
+    const items = rows.slice(0, PAGE_SIZE).filter((p) => {
       const key = (p.address ?? "").trim();
       if (!key) return true;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-    return { items, capped };
+    return { items, hasNext };
   } catch {
-    return { items: [], capped: false };
+    return { items: [], hasNext: false };
   }
 }
 
 export default async function AuctionCollectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ region?: string; owner?: string }>;
+  searchParams: Promise<{ region?: string; owner?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const filter = { region: sp.region, owner: sp.owner };
+  const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
   const hasFilter = !!(filter.region || filter.owner);
 
   return (
@@ -87,7 +94,7 @@ export default async function AuctionCollectionPage({
       <AuctionImportForm />
 
       {hasFilter ? (
-        <FilteredPool filter={filter} />
+        <FilteredPool filter={filter} page={page} />
       ) : (
         <RegionGate />
       )}
@@ -100,10 +107,18 @@ async function RegionGate() {
   return <RegionPicker regions={regions} total={total} />;
 }
 
-async function FilteredPool({ filter }: { filter: { region?: string; owner?: string } }) {
-  const { items, capped } = await fetchFiltered(filter);
+async function FilteredPool({ filter, page }: { filter: { region?: string; owner?: string }; page: number }) {
+  const { items, hasNext } = await fetchFiltered(filter, page);
   const ownerCount = new Set(items.map((p) => p.owner_name || "(미상)")).size;
   const label = filter.owner ? `임대인 "${filter.owner}"` : filter.region;
+
+  function buildHref(p: number) {
+    const params = new URLSearchParams();
+    if (filter.region) params.set("region", filter.region);
+    if (filter.owner) params.set("owner", filter.owner);
+    if (p > 0) params.set("page", String(p));
+    return `/admin/auction/collection?${params.toString()}`;
+  }
 
   return (
     <section className="space-y-3">
@@ -122,12 +137,35 @@ async function FilteredPool({ filter }: { filter: { region?: string; owner?: str
           </Link>
         </div>
       </div>
-      {capped && (
-        <p className="text-xs text-amber-600 rounded-lg bg-amber-50 px-3 py-2">
-          이 범위가 {MAX_LOAD.toLocaleString()}건을 넘어 일부만 불러왔습니다. 더 좁은 지역으로 나눠 발급하세요.
-        </p>
-      )}
       <PoolList items={items} />
+      {/* 페이지 내비게이션 */}
+      <div className="flex items-center justify-center gap-3 py-2">
+        {page > 0 ? (
+          <Link
+            href={buildHref(page - 1)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold hover:bg-muted"
+          >
+            <ChevronLeft className="w-4 h-4" /> 이전
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+            <ChevronLeft className="w-4 h-4" /> 이전
+          </span>
+        )}
+        <span className="text-sm font-bold text-muted-foreground">페이지 {page + 1}</span>
+        {hasNext ? (
+          <Link
+            href={buildHref(page + 1)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold hover:bg-muted"
+          >
+            다음 <ChevronRight className="w-4 h-4" />
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+            다음 <ChevronRight className="w-4 h-4" />
+          </span>
+        )}
+      </div>
     </section>
   );
 }

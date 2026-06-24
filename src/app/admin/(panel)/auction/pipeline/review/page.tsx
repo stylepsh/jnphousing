@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ReviewCard, type ReviewItem } from "./review-card";
+import { type ReviewItem } from "./review-card";
+import { ReviewList } from "./review-list";
 
 export const metadata: Metadata = { title: "답사 검토" };
 export const dynamic = "force-dynamic";
@@ -71,11 +72,7 @@ export default async function ReviewPage() {
           검토 대기 중인 답사가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {items.map((it) => (
-            <ReviewCard key={it.inspection_id} it={it} />
-          ))}
-        </div>
+        <ReviewList items={items} />
       )}
     </div>
   );

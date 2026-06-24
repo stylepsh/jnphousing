@@ -51,7 +51,15 @@ function Tag({ children, tone }: { children: React.ReactNode; tone?: "green" | "
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded ${c}`}>{children}</span>;
 }
 
-export function ReviewCard({ it }: { it: ReviewItem }) {
+export function ReviewCard({
+  it,
+  selected,
+  onToggle,
+}: {
+  it: ReviewItem;
+  selected?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -74,10 +82,21 @@ export function ReviewCard({ it }: { it: ReviewItem }) {
   const vacant = it.occupancy === "vacant";
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-3">
+    <div className={`rounded-xl border bg-card p-4 space-y-3 ${selected ? "ring-2 ring-blue-500" : ""}`}>
       <div>
         <div className="flex items-center justify-between gap-2">
-          <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+          <div className="flex items-center gap-2">
+            {onToggle && (
+              <input
+                type="checkbox"
+                checked={selected ?? false}
+                onChange={() => onToggle(it.inspection_id)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
+              />
+            )}
+            <div className="font-mono text-xs font-semibold text-blue-700">{it.case_number}</div>
+          </div>
           <SlaBadge enteredAt={it.pipeline_entered_at} />
         </div>
         <div className="text-sm font-medium line-clamp-1">{it.address}</div>

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Receipt } from "lucide-react";
+import { Receipt, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/auction/case-stages";
 import { PageHeader } from "../../../_components/page-header";
+
+const PAGE_SIZE = 100;
 
 export const metadata: Metadata = { title: "경매 임차 현황판" };
 export const dynamic = "force-dynamic";
@@ -25,7 +27,7 @@ type LeaseRow = {
 
 type Kpi = { vacant: number; leased: number; occupied: number; recheck: number };
 
-async function fetchData(): Promise<{ kpi: Kpi; rows: LeaseRow[] }> {
+async function fetchData(page: number): Promise<{ kpi: Kpi; rows: LeaseRow[]; hasNext: boolean }> {
   try {
     const supabase = await createClient();
     const { data: states } = await supabase.from("auction_property").select("pipeline_state");
@@ -38,15 +40,21 @@ async function fetchData(): Promise<{ kpi: Kpi; rows: LeaseRow[] }> {
       else if (s === "Recheck") kpi.recheck++;
     }
 
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
     const { data: rows } = await supabase
       .from("auction_property")
       .select("id, case_number, address, owner_name, tenant_name, monthly_rent, deposit, rent_collection_memo, management_fee_rate, pipeline_state")
       .eq("pipeline_state", "Leased")
-      .order("pipeline_entered_at", { ascending: false });
+      .order("pipeline_entered_at", { ascending: false })
+      .range(from, to + 1);
 
-    return { kpi, rows: (rows ?? []) as LeaseRow[] };
+    const allRows = (rows ?? []) as LeaseRow[];
+    const hasNext = allRows.length > PAGE_SIZE;
+    return { kpi, rows: allRows.slice(0, PAGE_SIZE), hasNext };
   } catch {
-    return { kpi: { vacant: 0, leased: 0, occupied: 0, recheck: 0 }, rows: [] };
+    return { kpi: { vacant: 0, leased: 0, occupied: 0, recheck: 0 }, rows: [], hasNext: false };
   }
 }
 
@@ -62,8 +70,14 @@ function KpiCard({ label, value, accent, href }: { label: string; value: number;
   );
 }
 
-export default async function AuctionLeasesPage() {
-  const { kpi, rows } = await fetchData();
+export default async function AuctionLeasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
+  const { kpi, rows, hasNext } = await fetchData(page);
 
   return (
     <div className="space-y-5">
@@ -81,44 +95,74 @@ export default async function AuctionLeasesPage() {
         <KpiCard label="재방문" value={kpi.recheck} accent="bg-rose-50 text-rose-700 border-rose-200" href="/admin/auction/pipeline/assign" />
       </div>
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && page === 0 ? (
         <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
           임차중인 물건이 없습니다.
         </div>
       ) : (
-        <div className="rounded-xl border overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-xs text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 font-semibold">사건/주소</th>
-                <th className="px-3 py-2 font-semibold">임차인</th>
-                <th className="px-3 py-2 font-semibold">임대인</th>
-                <th className="px-3 py-2 font-semibold text-right">월세</th>
-                <th className="px-3 py-2 font-semibold text-right">보증금</th>
-                <th className="px-3 py-2 font-semibold">수금일</th>
-                <th className="px-3 py-2 font-semibold text-right">수수료율</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b align-top">
-                  <td className="px-3 py-2.5">
-                    <div className="font-mono text-xs text-blue-700">{r.case_number}</div>
-                    <div className="line-clamp-1 max-w-[220px]">{r.address}</div>
-                  </td>
-                  <td className="px-3 py-2.5">{r.tenant_name ?? "-"}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.owner_name ?? "-"}</td>
-                  <td className="px-3 py-2.5 text-right">{formatWon(r.monthly_rent ?? 0)}</td>
-                  <td className="px-3 py-2.5 text-right">{formatWon(r.deposit ?? 0)}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.rent_collection_memo ?? "-"}</td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground">
-                    {r.management_fee_rate != null ? `${r.management_fee_rate}%` : "-"}
-                  </td>
+        <>
+          <div className="rounded-xl border overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/50 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">사건/주소</th>
+                  <th className="px-3 py-2 font-semibold">임차인</th>
+                  <th className="px-3 py-2 font-semibold">임대인</th>
+                  <th className="px-3 py-2 font-semibold text-right">월세</th>
+                  <th className="px-3 py-2 font-semibold text-right">보증금</th>
+                  <th className="px-3 py-2 font-semibold">수금일</th>
+                  <th className="px-3 py-2 font-semibold text-right">수수료율</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b align-top">
+                    <td className="px-3 py-2.5">
+                      <div className="font-mono text-xs text-blue-700">{r.case_number}</div>
+                      <div className="line-clamp-1 max-w-[220px]">{r.address}</div>
+                    </td>
+                    <td className="px-3 py-2.5">{r.tenant_name ?? "-"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{r.owner_name ?? "-"}</td>
+                    <td className="px-3 py-2.5 text-right">{formatWon(r.monthly_rent ?? 0)}</td>
+                    <td className="px-3 py-2.5 text-right">{formatWon(r.deposit ?? 0)}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{r.rent_collection_memo ?? "-"}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">
+                      {r.management_fee_rate != null ? `${r.management_fee_rate}%` : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* 페이지 내비게이션 */}
+          <div className="flex items-center justify-center gap-3 py-2">
+            {page > 0 ? (
+              <Link
+                href={page - 1 === 0 ? "/admin/auction/leases" : `/admin/auction/leases?page=${page - 1}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold hover:bg-muted"
+              >
+                <ChevronLeft className="w-4 h-4" /> 이전
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+                <ChevronLeft className="w-4 h-4" /> 이전
+              </span>
+            )}
+            <span className="text-sm font-bold text-muted-foreground">페이지 {page + 1}</span>
+            {hasNext ? (
+              <Link
+                href={`/admin/auction/leases?page=${page + 1}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold hover:bg-muted"
+              >
+                다음 <ChevronRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+                다음 <ChevronRight className="w-4 h-4" />
+              </span>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

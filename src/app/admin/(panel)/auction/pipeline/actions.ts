@@ -268,6 +268,66 @@ export async function reviewInspection(
   }
 }
 
+const batchReviewSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        inspectionId: z.string().uuid(),
+        propertyId: z.string().uuid(),
+      }),
+    )
+    .min(1, "선택된 항목이 없습니다"),
+  action: z.enum(["APPROVE", "REQUEST_RECHECK", "MARK_OCCUPIED", "REJECT"]),
+});
+
+/** 다건 일괄 검토 결정 */
+export async function batchReviewInspections(
+  items: { inspectionId: string; propertyId: string }[],
+  action: "APPROVE" | "REQUEST_RECHECK" | "MARK_OCCUPIED" | "REJECT",
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireAdmin();
+    const parsed = batchReviewSchema.safeParse({ items, action });
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    const { items: validItems, action: validAction } = parsed.data;
+
+    const supabase = createServiceClient();
+    let count = 0;
+
+    for (const { inspectionId, propertyId } of validItems) {
+      const { data: insp } = await supabase
+        .from("auction_inspection")
+        .select("occupancy, can_open")
+        .eq("id", inspectionId)
+        .single();
+      const data: TransitionData = {
+        occupancy: (insp as { occupancy?: string } | null)?.occupancy,
+        canOpen: (insp as { can_open?: string } | null)?.can_open,
+      };
+
+      const r = await doTransition(ctx, propertyId, validAction, { data });
+      if (!r.ok) continue;
+
+      await supabase
+        .from("auction_inspection")
+        .update({
+          status: "reviewed",
+          reviewed_by_id: ctx.user.id,
+          reviewed_by_name: ctx.admin.name,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", inspectionId);
+
+      count++;
+    }
+
+    revalidateAll();
+    return { ok: true, count };
+  } catch (e) {
+    return err(e);
+  }
+}
+
 const workItemSchema = z.object({
   propertyId: z.string().uuid(),
   category: z.string().min(1).max(50),
