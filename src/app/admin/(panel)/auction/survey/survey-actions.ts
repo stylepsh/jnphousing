@@ -247,6 +247,50 @@ export async function bulkSurveyByNumber(input: {
   }
 }
 
+// ─── 배치 상태 수동 변경 ─────────────────────────────────────────────────────
+
+const batchStatusSchema = z.object({
+  batchId: z.string().uuid(),
+  status: z.enum(["created", "assigned", "in_progress", "completed"]),
+});
+
+/** 배치 상태를 수동으로 변경한다. completed 로 바꾸면 closed_at 을 세팅하고, 되돌리면 null 로 초기화한다. */
+export async function setBatchStatus(
+  batchId: string,
+  status: "created" | "assigned" | "in_progress" | "completed",
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireAdmin();
+    const parsed = batchStatusSchema.safeParse({ batchId, status });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+    }
+
+    const supabase = createServiceClient();
+    const patch: Record<string, unknown> = {
+      status: parsed.data.status,
+      updated_at: new Date().toISOString(),
+    };
+    if (parsed.data.status === "completed") {
+      patch.closed_at = new Date().toISOString();
+    } else {
+      patch.closed_at = null;
+    }
+
+    const { error } = await supabase
+      .from("auction_survey_batch")
+      .update(patch)
+      .eq("id", parsed.data.batchId);
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath("/admin/auction/survey");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
 export interface OpenSheet {
   id: string;
   region_label: string;
