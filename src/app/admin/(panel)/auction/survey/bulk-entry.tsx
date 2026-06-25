@@ -28,7 +28,7 @@ function sheetLabel(s: OpenSheet): string {
 }
 
 export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [sheetId, setSheetId] = useState(sheets[0]?.id ?? "");
   const [fillRest, setFillRest] = useState(true); // 나머지 자동 거주
   const [vacantText, setVacantText] = useState("");
@@ -82,26 +82,26 @@ export function BulkEntry({ sheets }: { sheets: OpenSheet[] }) {
   }
 
   return (
-    <section className="rounded-2xl border-2 border-rose-200 bg-rose-50/40 overflow-hidden shadow-sm">
+    <section className="rounded-xl border bg-card overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-5 py-4 flex items-center gap-2.5 text-left hover:bg-rose-50/60"
+        className="w-full px-4 py-3 flex items-center gap-2.5 text-left hover:bg-muted/40"
       >
-        <span className="h-9 w-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
-          <ListChecks className="w-5 h-5" />
+        <span className="h-8 w-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+          <ListChecks className="w-4 h-4" />
         </span>
         <span className="min-w-0">
-          <span className="block font-black text-base">번호 일괄입력</span>
-          <span className="block text-xs text-muted-foreground">
-            종이의 물건번호만 보고 공실/거주를 한 번에 반영합니다 (번호는 전국 고유)
+          <span className="block font-bold text-sm text-slate-700">번호 일괄입력 <span className="text-[10px] font-bold text-slate-400 align-middle">백업</span></span>
+          <span className="block text-[11px] text-muted-foreground">
+            종이(PDF)로 받았거나 일부만 손볼 때 — 물건번호로 공실/거주를 한 번에
           </span>
         </span>
-        <span className="ml-auto text-xs font-bold text-rose-700">{open ? "닫기" : "열기"}</span>
+        <span className="ml-auto text-xs font-bold text-muted-foreground">{open ? "닫기" : "열기"}</span>
       </button>
 
       {open && (
-        <div className="px-5 pb-5 space-y-3 border-t border-rose-200 bg-card pt-4">
+        <div className="px-5 pb-5 space-y-3 border-t bg-card pt-4">
           {/* 발급(sheet) 선택 — '나머지 자동 거주' 범위 산정용. 일반 입력은 불필요. */}
           <div>
             <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1">
