@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gavel, X, ChevronLeft, ChevronRight, MapPin, Users, User } from "lucide-react";
+import { Gavel, X, ChevronLeft, ChevronRight, MapPin, Users } from "lucide-react";
 import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionImportForm } from "./import-form";
 import { PoolList, type PoolItem } from "./pool-list";
 import { RegionPicker, type RegionCount } from "./region-picker";
-
-interface OwnerPending {
-  owner_name: string;
-  pending_count: number;
-  creditor_types: string | null;
-}
+import { OwnerGrid, type OwnerPending } from "./owner-grid";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 100;
+// 선택한 지역/임대인 한 묶음은 보통 수백 건 → 한 번에 올려 '전체 선택'이 전부를 잡도록.
+// (전체 30k 보호는 앞단 게이트가 담당. 단일 묶음이 이 한도를 넘으면 페이지네이션 유지.)
+const PAGE_SIZE = 1000;
 
 async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }> {
   try {
@@ -35,13 +32,16 @@ async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }
 }
 
 async function fetchFiltered(
-  filter: { region?: string; owner?: string },
+  filter: { regions: string[]; owner?: string },
   page: number,
 ): Promise<{ items: PoolItem[]; hasNext: boolean; total: number }> {
   try {
     const supabase = await createClient();
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
+
+    // 여러 지역은 OR(ilike prefix)로 묶는다. PostgREST or-필터는 와일드카드가 '*'.
+    const regionOr = filter.regions.map((r) => `address.ilike.${r}*`).join(",");
 
     let query = supabase
       .from("auction_property")
@@ -51,7 +51,8 @@ async function fetchFiltered(
       .eq("survey_status", "pending");
 
     if (filter.owner) query = query.eq("owner_name", filter.owner);
-    else if (filter.region) query = query.ilike("address", `${filter.region}%`);
+    else if (filter.regions.length === 1) query = query.ilike("address", `${filter.regions[0]}%`);
+    else if (filter.regions.length > 1) query = query.or(regionOr);
 
     // 현재 필터의 정확한 전체 건수 (페이지와 무관) — 헤더에 "총 N건" 표시용
     let countQuery = supabase
@@ -59,7 +60,8 @@ async function fetchFiltered(
       .select("id", { count: "exact", head: true })
       .eq("survey_status", "pending");
     if (filter.owner) countQuery = countQuery.eq("owner_name", filter.owner);
-    else if (filter.region) countQuery = countQuery.ilike("address", `${filter.region}%`);
+    else if (filter.regions.length === 1) countQuery = countQuery.ilike("address", `${filter.regions[0]}%`);
+    else if (filter.regions.length > 1) countQuery = countQuery.or(regionOr);
 
     const [{ data }, { count }] = await Promise.all([
       query.order("created_at", { ascending: false }).range(from, to + 1),
@@ -86,13 +88,22 @@ async function fetchFiltered(
 async function fetchOwnerPending(min: number): Promise<OwnerPending[]> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase
+    // 마이그레이션 032(top_region) 적용 전이면 컬럼이 없어 에러 → 기본 셀렉트로 폴백.
+    const withRegion = await supabase
+      .from("v_auction_owner_pending")
+      .select("owner_name, pending_count, creditor_types, top_region")
+      .gte("pending_count", min)
+      .order("pending_count", { ascending: false })
+      .limit(2000);
+    if (!withRegion.error) return (withRegion.data ?? []) as OwnerPending[];
+
+    const basic = await supabase
       .from("v_auction_owner_pending")
       .select("owner_name, pending_count, creditor_types")
       .gte("pending_count", min)
       .order("pending_count", { ascending: false })
-      .limit(500);
-    return (data ?? []) as OwnerPending[];
+      .limit(2000);
+    return (basic.data ?? []) as OwnerPending[];
   } catch {
     return [];
   }
@@ -101,12 +112,17 @@ async function fetchOwnerPending(min: number): Promise<OwnerPending[]> {
 export default async function AuctionCollectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ region?: string; owner?: string; page?: string; view?: string; min?: string }>;
+  searchParams: Promise<{ region?: string; regions?: string; owner?: string; page?: string; view?: string; min?: string }>;
 }) {
   const sp = await searchParams;
-  const filter = { region: sp.region, owner: sp.owner };
+  const regions = sp.regions
+    ? sp.regions.split(",").map((s) => s.trim()).filter(Boolean)
+    : sp.region
+      ? [sp.region]
+      : [];
+  const filter = { regions, owner: sp.owner };
   const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
-  const hasFilter = !!(filter.region || filter.owner);
+  const hasFilter = !!(regions.length || filter.owner);
   const ownerView = sp.view === "owner";
   const min = Math.max(1, parseInt(sp.min ?? "2", 10) || 2);
 
@@ -192,58 +208,33 @@ async function OwnerGate({ min }: { min: number }) {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
-        {owners.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-10 text-center">
-            {min}건 이상 보유한 임대인이 없습니다. 기준을 낮춰보세요.
-          </p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-xs text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2">임대인</th>
-                <th className="px-4 py-2 text-right">보유 미답사</th>
-                <th className="px-4 py-2">채권유형</th>
-              </tr>
-            </thead>
-            <tbody>
-              {owners.map((o) => (
-                <tr key={o.owner_name} className="border-b hover:bg-muted/40">
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`/admin/auction/collection?owner=${encodeURIComponent(o.owner_name)}`}
-                      className="inline-flex items-center gap-1.5 font-bold text-blue-700 hover:underline"
-                    >
-                      <User className="w-3.5 h-3.5" /> {o.owner_name || "(소유자 미상)"}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black tabular-nums">
-                      {o.pending_count.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">{o.creditor_types ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {owners.length === 0 ? (
+        <div className="rounded-xl border bg-card p-10 text-center text-sm text-muted-foreground">
+          {min}건 이상 보유한 임대인이 없습니다. 기준을 낮춰보세요.
+        </div>
+      ) : (
+        <OwnerGrid owners={owners} />
+      )}
     </div>
   );
 }
 
-async function FilteredPool({ filter, page }: { filter: { region?: string; owner?: string }; page: number }) {
+async function FilteredPool({ filter, page }: { filter: { regions: string[]; owner?: string }; page: number }) {
   const { items, hasNext, total } = await fetchFiltered(filter, page);
   const ownerCount = new Set(items.map((p) => p.owner_name || "(미상)")).size;
-  const label = filter.owner ? `임대인 "${filter.owner}"` : filter.region;
+  const label = filter.owner
+    ? `임대인 "${filter.owner}"`
+    : filter.regions.length > 1
+      ? `${filter.regions.length}개 지역`
+      : filter.regions[0];
   const from = page * PAGE_SIZE;
   const shown = items.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function buildHref(p: number) {
     const params = new URLSearchParams();
-    if (filter.region) params.set("region", filter.region);
+    if (filter.regions.length > 1) params.set("regions", filter.regions.join(","));
+    else if (filter.regions.length === 1) params.set("region", filter.regions[0]);
     if (filter.owner) params.set("owner", filter.owner);
     if (p > 0) params.set("page", String(p));
     return `/admin/auction/collection?${params.toString()}`;
