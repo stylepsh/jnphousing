@@ -4,7 +4,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { groupByRegion } from "@/lib/pdf/auction-survey-pdf";
+import { groupByRegion } from "@/lib/auction/survey-group";
 import { normalizeOwnerName, ownerNameAnchor } from "@/lib/auction/court-auction";
 
 export interface SurveyRow {

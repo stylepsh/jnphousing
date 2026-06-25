@@ -5,7 +5,7 @@ import "server-only";
 
 import ExcelJS from "exceljs";
 import { createServiceClient } from "@/lib/supabase/server";
-import { groupByRegion } from "@/lib/pdf/auction-survey-pdf";
+import { groupByRegion } from "@/lib/auction/survey-group";
 import type { SurveyRow } from "@/lib/auction/survey-rows";
 
 interface PoolRow {

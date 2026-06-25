@@ -77,37 +77,9 @@ const styles = StyleSheet.create({
   signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
 });
 
-function regionKey(address: string): string {
-  const parts = (address || "").trim().split(/\s+/);
-  return parts.slice(0, 3).join(" ") || "(지역 미상)";
-}
-
-// 지역별 그룹 + 정렬. PDF 레이아웃과 번호 부여(route)가 동일 순서를 쓰도록 공유.
-// 엑셀 출력(지역▸임대인)과 일관되게: 지역 내에서 임대인명 → 주소순으로 정렬해
-// 같은 임대인의 물건이 인접하도록 한다.
-export function groupByRegion<T extends { address: string; owner_name?: string | null }>(
-  items: T[],
-): [string, T[]][] {
-  const m = new Map<string, T[]>();
-  for (const it of items) {
-    const k = regionKey(it.address);
-    if (!m.has(k)) m.set(k, []);
-    m.get(k)!.push(it);
-  }
-  // 지역 내 임대인순 → 주소순, 지역은 건수 많은 순
-  for (const [, list] of m)
-    list.sort(
-      (a, b) =>
-        (a.owner_name ?? "").localeCompare(b.owner_name ?? "") || a.address.localeCompare(b.address),
-    );
-  return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-}
-
-// 답사지에 인쇄되는 순서대로 평탄화 (지역별 그룹·동선 정렬). 번호는 물건 고유번호라
-// 정렬과 무관하게 고정 — 여기선 인쇄 레이아웃 순서만 정한다.
-export function flattenInPrintOrder<T extends { address: string }>(items: T[]): T[] {
-  return groupByRegion(items).flatMap(([, list]) => list);
-}
+// 지역 그룹/정렬은 순수 로직이라 .ts 로 분리(테스트·엑셀 공유). 하위호환 위해 재노출.
+import { regionKey, groupByRegion, flattenInPrintOrder } from "@/lib/auction/survey-group";
+export { regionKey, groupByRegion, flattenInPrintOrder };
 
 // 직접 그린 체크박스 + 라벨 (폰트에 ☐ 글자가 없어 사각형을 그린다). checked면 채워서 V.
 function Check({ label, checked }: { label: string; checked?: boolean }) {

@@ -10,6 +10,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // 서버 전용 라이브러리(예: survey-export)를 node 테스트에서 import 가능하게
+      "server-only": path.resolve(__dirname, "./src/test/server-only-shim.ts"),
     },
   },
 });
