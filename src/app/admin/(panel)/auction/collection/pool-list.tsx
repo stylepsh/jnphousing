@@ -12,6 +12,7 @@ import {
   Shuffle,
   ShieldCheck,
   Printer,
+  FileSpreadsheet,
   Workflow,
   CheckSquare,
   Square,
@@ -349,6 +350,40 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     }
   }
 
+  // ===== 답사지 엑셀 (PDF와 동일 번호·순서, 답사자 입력→그대로 업로드) =====
+  async function downloadXlsx() {
+    if (selected.size === 0) {
+      toast.error("선택된 물건이 없습니다.");
+      return;
+    }
+    try {
+      const res = await fetch("/admin/auction/pipeline/survey-xlsx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j.error ?? "엑셀 생성 실패");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `답사용지_${dateStr}_${selected.size}건.xlsx`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast.success(`답사지 엑셀 ${selected.size}건 생성 — 답사자에게 전달해 입력받으세요`);
+    } catch {
+      toast.error("엑셀 발급 실패");
+    }
+  }
+
   if (items.length === 0) {
     return (
       <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
@@ -495,6 +530,17 @@ export function PoolList({ items }: { items: PoolItem[] }) {
           <Button size="sm" variant="outline" disabled={pending || selected.size === 0} onClick={printPdf} className="gap-1.5">
             <Printer className="w-4 h-4" />
             {selected.size > 0 ? `답사지 인쇄 (${selected.size})` : "답사지 인쇄"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending || selected.size === 0}
+            onClick={downloadXlsx}
+            className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
+            title="PDF와 동일한 답사지를 엑셀로 — 답사자가 채워서 돌려주면 '답사결과 입력'에 그대로 업로드"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {selected.size > 0 ? `답사지 엑셀 (${selected.size})` : "답사지 엑셀"}
           </Button>
           <Button
             size="sm"
