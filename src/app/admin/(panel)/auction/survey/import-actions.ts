@@ -63,6 +63,16 @@ async function extractSheets(file: File): Promise<SheetData[]> {
   return sheets;
 }
 
+// 답사표 첫 줄 배너가 통째로 지역명으로 잡히면 배치 이름이 장황해진다.
+// 괄호 안 지역만 뽑고(없으면 앞부분), 군더더기(· 이후)를 잘라 간결화한다.
+function cleanRegionLabel(raw: string | null): string | null {
+  if (!raw) return null;
+  const paren = raw.match(/\(([^)]+)\)/);
+  let s = (paren ? paren[1] : raw).replace(/·.*$/, "").trim();
+  if (s.length > 60) s = s.slice(0, 60).trim();
+  return s || null;
+}
+
 export async function importSurveySheet(formData: FormData): Promise<SurveyImportResult> {
   try {
     const ctx = await requireAdmin();
@@ -85,7 +95,7 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
     const today = nowIso.slice(0, 10);
 
     for (const sheet of sheets) {
-      const region = sheet.region;
+      const region = cleanRegionLabel(sheet.region);
       if (region) result.regions!.push(region);
 
       const { data: batch } = await supabase
@@ -113,15 +123,20 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
         if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
         // 사건번호 있을 때만 기존 풀과 매칭(최초 수집건). 없으면 신규.
+        // 같은 사건번호에 거부행+활성행이 함께 있으면 활성행을 우선 갱신(거부행이 덮이지 않게).
         let existing: { id: string; pipeline_state: string | null } | null = null;
         if (n.caseNumber) {
           const { data: matchRows } = await supabase
             .from("auction_property")
-            .select("id, pipeline_state")
+            .select("id, pipeline_state, survey_status")
             .eq("case_number", n.caseNumber)
-            .order("created_at", { ascending: true })
-            .limit(1);
-          existing = (matchRows ?? [])[0] ?? null;
+            .order("created_at", { ascending: true });
+          const list = (matchRows ?? []) as {
+            id: string;
+            pipeline_state: string | null;
+            survey_status: string | null;
+          }[];
+          existing = list.find((r) => r.survey_status !== "rejected") ?? list[0] ?? null;
         }
 
         let propertyId: string;

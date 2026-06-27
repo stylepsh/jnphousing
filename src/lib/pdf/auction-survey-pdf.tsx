@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   cAddr: { width: 180 },
   cOwner: { width: 50 },
   cOcc: { width: 84 },
-  cMeter: { width: 46 },
+  cMeter: { width: 60 },
   cMail: { width: 84 },
   cCode: { width: 52, textAlign: "center" },
   cMgmt: { width: 78 },
@@ -117,6 +117,8 @@ function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
         <Check label="거주" checked={done && wasOccupied} />
       </View>
       <View style={[styles.td, styles.cMeter, styles.checkCell]}>
+        <Check label="유" />
+        <Check label="무" />
         <Check label="정지" />
       </View>
       <View style={[styles.td, styles.cMail, styles.checkCell]}>
@@ -146,7 +148,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
-            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 우편함 쌓임/깨끗에 V · 계량기 정지·우편 쌓임은 공실 근거</Text>
+            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 우편함 쌓임/깨끗에 V · 계량기 유/무 표시(있으면 정지 여부도) · 계량기 정지·우편 쌓임은 공실 근거</Text>
             <Text style={styles.legend}>※ 회색 줄 = 기존 답사완료(공실/거주 자동 표시) — 방문하지 마세요</Text>
           </View>
           <View style={styles.infoBox}>
@@ -169,7 +171,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
               <Text style={[styles.th, styles.cAddr]}>상세 주소 / 사건</Text>
               <Text style={[styles.th, styles.cOwner]}>임대인</Text>
               <Text style={[styles.th, styles.cOcc]}>점유상태</Text>
-              <Text style={[styles.th, styles.cMeter]}>계량기</Text>
+              <Text style={[styles.th, styles.cMeter]}>계량기(유/무)</Text>
               <Text style={[styles.th, styles.cMail]}>우편함</Text>
               <Text style={[styles.th, styles.cCode]}>현관비번</Text>
               <Text style={[styles.th, styles.cMgmt]}>관리실 번호</Text>

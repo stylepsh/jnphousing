@@ -67,14 +67,14 @@ export async function buildSurveyTemplate(opts: {
     { header: "개방(가능/불가/확인)", key: "open", width: 16 },
     { header: "상품화(가능/보류/불가)", key: "merch", width: 16 },
     { header: "우편(쌓임/깨끗)", key: "mail", width: 12 },
-    { header: "계량기(정지/정상)", key: "meter", width: 12 },
+    { header: "계량기(유/무/정지)", key: "meter", width: 14 },
     { header: "현관비번", key: "door", width: 11 },
     { header: "관리실(번호)", key: "office", width: 15 },
     { header: "비고", key: "memo", width: 30 },
   ];
   ws.columns = COLS.map((c) => ({ key: c.key, width: c.width }));
   const NCOL = COLS.length;
-  const OCC_COL = 7, OPEN_COL = 8, MERCH_COL = 9; // 드롭다운 칼럼 번호
+  const OCC_COL = 7, OPEN_COL = 8, MERCH_COL = 9, METER_COL = 11; // 드롭다운 칼럼 번호
 
   // 1행 안내
   ws.mergeCells(1, 1, 1, NCOL);
@@ -140,6 +140,7 @@ export async function buildSurveyTemplate(opts: {
       ws.getCell(rowIdx, OCC_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"O,X,△"'] };
       ws.getCell(rowIdx, OPEN_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,불가,확인"'] };
       ws.getCell(rowIdx, MERCH_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,보류,불가"'] };
+      ws.getCell(rowIdx, METER_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"유,무,정지"'] };
     }
   }
 
@@ -172,14 +173,14 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
     { header: "개방(가능/불가/확인)", key: "open", width: 16 },
     { header: "상품화(가능/보류/불가)", key: "merch", width: 16 },
     { header: "우편(쌓임/깨끗)", key: "mail", width: 12 },
-    { header: "계량기(정지/정상)", key: "meter", width: 12 },
+    { header: "계량기(유/무/정지)", key: "meter", width: 14 },
     { header: "현관비번", key: "door", width: 11 },
     { header: "관리실(번호)", key: "office", width: 15 },
     { header: "비고", key: "memo", width: 30 },
   ];
   ws.columns = COLS.map((c) => ({ key: c.key, width: c.width }));
   const NCOL = COLS.length;
-  const OCC_COL = 7, OPEN_COL = 8, MERCH_COL = 9;
+  const OCC_COL = 7, OPEN_COL = 8, MERCH_COL = 9, METER_COL = 11;
 
   const total = rows.length;
   ws.mergeCells(1, 1, 1, NCOL);
@@ -232,6 +233,7 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
       ws.getCell(rowIdx, OCC_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"O,X,△"'] };
       ws.getCell(rowIdx, OPEN_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,불가,확인"'] };
       ws.getCell(rowIdx, MERCH_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,보류,불가"'] };
+      ws.getCell(rowIdx, METER_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"유,무,정지"'] };
     }
   }
 
