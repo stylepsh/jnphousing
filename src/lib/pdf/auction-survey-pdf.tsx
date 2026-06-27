@@ -119,7 +119,6 @@ function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
       <View style={[styles.td, styles.cMeter, styles.checkCell]}>
         <Check label="유" />
         <Check label="무" />
-        <Check label="정지" />
       </View>
       <View style={[styles.td, styles.cMail, styles.checkCell]}>
         <Check label="쌓임" />
@@ -148,7 +147,7 @@ export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
         <View style={styles.header} fixed>
           <View>
             <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
-            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 우편함 쌓임/깨끗에 V · 계량기 유/무 표시(있으면 정지 여부도) · 계량기 정지·우편 쌓임은 공실 근거</Text>
+            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 계량기 유/무에 V · 우편함 쌓임/깨끗에 V · 우편 쌓임은 공실 근거</Text>
             <Text style={styles.legend}>※ 회색 줄 = 기존 답사완료(공실/거주 자동 표시) — 방문하지 마세요</Text>
           </View>
           <View style={styles.infoBox}>
