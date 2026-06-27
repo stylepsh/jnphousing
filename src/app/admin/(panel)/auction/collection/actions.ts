@@ -102,10 +102,10 @@ export async function importAuctionText(input: {
 
     const supabase = createServiceClient();
 
-    // 중복 차단: 같은 상세주소/사건번호가 이미 DB에 존재하면 skip.
-    //   - 이전에 답사해 공실/거주중 등으로 확정된 현장 → 답사자 재방문 방지
-    //   - 거부(rejected)한 건도 차단 → "답사 돌린 뒤 풀에서 치운 것"이 재파싱으로 부활해
-    //     답사팀에 또 나가는 사고 방지(수원 사례). rejected는 status로 별도 카운트만.
+    // 중복 차단: 같은 상세주소/사건번호가 "이미 답사 완료(공실/거주/재방문)"인 현장이면 skip
+    // (힘들게 답사 돈 곳을 답사자에게 다시 안 보냄).
+    //   - 거부(rejected)는 차단하지 않는다 → "관심 없어 풀에서 치운 것"이라 재수집 허용.
+    //     (지지옥션 재파싱이 옛 거부건 때문에 통째로 막히던 문제 해결 — 실제 답사한 것만 막는다.)
     const addressesToCheck = Array.from(
       new Set(toImport.map((p) => (p.address || "(주소 미상)").trim())),
     );
@@ -116,12 +116,14 @@ export async function importAuctionText(input: {
       supabase
         .from("auction_property")
         .select("address, survey_status")
-        .in("address", addressesToCheck),
+        .in("address", addressesToCheck)
+        .neq("survey_status", "rejected"),
       caseNumsToCheck.length
         ? supabase
             .from("auction_property")
             .select("case_number, survey_status")
             .in("case_number", caseNumsToCheck)
+            .neq("survey_status", "rejected")
         : Promise.resolve({ data: [] as { case_number: string; survey_status: string }[] }),
     ]);
     const existingRows = addrRes.data;
