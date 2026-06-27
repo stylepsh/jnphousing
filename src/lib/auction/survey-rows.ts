@@ -4,7 +4,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { groupByRegion } from "@/lib/auction/survey-group";
+import { groupByRegion, regionKey } from "@/lib/auction/survey-group";
 import { normalizeOwnerName, ownerNameAnchor } from "@/lib/auction/court-auction";
 
 export interface SurveyRow {
@@ -53,7 +53,10 @@ export async function computeSurveySheetRows(ids: string[]): Promise<{
 
   // 선택분 임대인의 "이미 답사한" 물건(공실/거주/제외)을 회색 패스 줄로 자동 합쳐 재방문을 막는다.
   // 임대인은 정규화 키로 묶고("대성하우징(주)"="(주)대성하우징"), ilike 앵커로 후보를 넓게 가져온다.
+  // ★ 단, 회색 줄은 "선택한 지역" 안에 있는 것만 남긴다. 같은 임대인이 안 누른 다른 지역
+  //   (예: 안산·시흥)에 답사완료 물건을 가졌다고 그 지역 블록이 통째로 딸려 나오면 안 됨.
   const selectedIds = new Set(selRows.map((r) => r.id));
+  const selectedRegions = new Set(selRows.map((r) => regionKey(r.address)));
   const ownerKeys = new Set(selRows.map((r) => normalizeOwnerName(r.owner_name)).filter(Boolean));
   const anchors = Array.from(
     new Set(selRows.map((r) => ownerNameAnchor(r.owner_name)).filter((a) => a.length >= 2)),
@@ -67,7 +70,10 @@ export async function computeSurveySheetRows(ids: string[]): Promise<{
       .in("survey_status", DONE_STATUSES)
       .or(orFilter);
     surveyedExtra = ((extra ?? []) as SurveyRow[]).filter(
-      (r) => !selectedIds.has(r.id) && ownerKeys.has(normalizeOwnerName(r.owner_name)),
+      (r) =>
+        !selectedIds.has(r.id) &&
+        ownerKeys.has(normalizeOwnerName(r.owner_name)) &&
+        selectedRegions.has(regionKey(r.address)),
     );
   }
 

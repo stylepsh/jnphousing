@@ -32,13 +32,7 @@ export interface SurveyPdfData {
 }
 
 const styles = StyleSheet.create({
-  page: { paddingTop: 24, paddingBottom: 30, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 8 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 },
-  title: { fontSize: 13, fontWeight: "bold" },
-  legend: { fontSize: 7.5, color: "#64748b", marginTop: 2 },
-  sub: { fontSize: 8, color: "#64748b", marginTop: 2 },
-  infoBox: { flexDirection: "row", gap: 10 },
-  infoItem: { fontSize: 8, color: "#334155" },
+  page: { paddingTop: 18, paddingBottom: 28, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 8 },
   groupHeader: { backgroundColor: "#e2e8f0", paddingVertical: 3, paddingHorizontal: 6, marginTop: 10, flexDirection: "row", justifyContent: "space-between" },
   groupName: { fontSize: 9, fontWeight: "bold" },
   groupCount: { fontSize: 8, color: "#475569" },
@@ -61,9 +55,9 @@ const styles = StyleSheet.create({
   ownerFirst: { fontSize: 8, fontWeight: "bold", color: "#0f172a" }, // 임대인 블록 첫 행 = 굵게
   ownerRepeat: { fontSize: 8, color: "#cbd5e1" }, // 같은 임대인 반복 행 = 점선 표기(시각적 그룹핑)
   // 체크칸 — ☐ 글자는 폰트에 없어 안 보이므로 사각형을 직접 그린다.
-  checkCell: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center" },
-  checkItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 3, marginVertical: 1 },
-  box: { width: 9, height: 9, borderWidth: 1, borderColor: "#334155", marginRight: 2.5, alignItems: "center", justifyContent: "center" },
+  checkCell: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  checkItem: { flexDirection: "row", alignItems: "center" },
+  box: { width: 10, height: 10, borderWidth: 1, borderColor: "#334155", marginRight: 3, alignItems: "center", justifyContent: "center" },
   boxChecked: { backgroundColor: "#0f172a" },     // 채워진 박스 = 체크됨
   boxCheck: { fontSize: 7, fontWeight: "bold", color: "#ffffff", lineHeight: 1 }, // 박스 안 V
   boxLabel: { fontSize: 8, color: "#0f172a", fontWeight: "bold" },
@@ -136,32 +130,15 @@ function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
 
 export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
   const groups = groupByRegion(data.items);
-  const regionCount = groups.length;
-  const ownerCount = new Set(data.items.map((i) => i.owner_name || "(미상)")).size;
   const doneCount = data.items.filter((i) => !!i.survey_status && i.survey_status !== "pending").length;
   const todoCount = data.items.length - doneCount;
 
   return (
     <Document title={`답사지_${data.printedAt}_${todoCount}건`}>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        <View style={styles.header} fixed>
-          <View>
-            <Text style={styles.title}>경매 물건 답사지{data.sheetLabel ? ` · ${data.sheetLabel}` : ""}</Text>
-            <Text style={styles.legend}>각 줄 앞 물건번호로 입력(전국 고유·발급마다 안 바뀜) · 점유는 공실/거주 중 하나에 V · 계량기 유/무에 V · 우편함 쌓임/깨끗에 V · 우편 쌓임은 공실 근거</Text>
-            <Text style={styles.legend}>※ 회색 줄 = 기존 답사완료(공실/거주 자동 표시) — 방문하지 마세요</Text>
-          </View>
-          <View style={styles.infoBox}>
-            <Text style={styles.infoItem}>출력일 {data.printedAt}</Text>
-            <Text style={styles.infoItem}>답사 {todoCount}건</Text>
-            {doneCount > 0 ? <Text style={styles.infoItem}>기존완료 {doneCount}건</Text> : null}
-            <Text style={styles.infoItem}>지역 {regionCount}</Text>
-            <Text style={styles.infoItem}>소유자 {ownerCount}</Text>
-          </View>
-        </View>
-
         {groups.map(([region, list]) => (
           <View key={region}>
-            <View style={styles.groupHeader} wrap={false}>
+            <View style={styles.groupHeader} wrap={false} minPresenceAhead={90}>
               <Text style={styles.groupName}>{region}</Text>
               <Text style={styles.groupCount}>{list.length}건</Text>
             </View>
