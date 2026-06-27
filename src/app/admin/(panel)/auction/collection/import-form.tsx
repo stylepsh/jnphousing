@@ -39,12 +39,15 @@ export function AuctionImportForm() {
         return;
       }
       const alreadySurveyed = data.alreadyVacant + data.alreadyOccupied + data.alreadyOtherSurveyed;
+      const rejectedNote = data.alreadyRejected > 0 ? ` · 거부/처리됨 ${data.alreadyRejected}건 제외` : "";
       const dupNote =
         alreadySurveyed > 0
-          ? ` (이미 답사 ${alreadySurveyed}건 제외 — 공실 ${data.alreadyVacant}·거주중 ${data.alreadyOccupied})`
-          : data.duplicates > 0
-            ? ` (중복 ${data.duplicates}건 제외)`
-            : "";
+          ? ` (이미 답사 ${alreadySurveyed}건 제외 — 공실 ${data.alreadyVacant}·거주중 ${data.alreadyOccupied}${rejectedNote})`
+          : data.alreadyRejected > 0
+            ? ` (거부/처리됨 ${data.alreadyRejected}건 제외)`
+            : data.duplicates > 0
+              ? ` (중복 ${data.duplicates}건 제외)`
+              : "";
       toast.success(
         `보증채권 ${data.imported}건 임포트 (HUG ${data.importedHug} · SGI ${data.importedSgi})${dupNote}`,
       );
@@ -140,16 +143,17 @@ export function AuctionImportForm() {
             <Stat label="중복 (제외)" value={lastResult.duplicates} color="amber" />
           </div>
 
-          {/* 이미 답사한 현장 — 답사자 재방문 방지를 위해 자동 제외된 내역 */}
+          {/* 이미 답사했거나 거부/처리된 현장 — 답사자 재방문·재배포 방지를 위해 자동 제외 */}
           {lastResult.alreadyVacant +
             lastResult.alreadyOccupied +
-            lastResult.alreadyOtherSurveyed >
+            lastResult.alreadyOtherSurveyed +
+            lastResult.alreadyRejected >
             0 && (
             <div className="rounded-lg border border-rose-200 bg-rose-50/60 p-3">
               <div className="text-xs font-bold text-rose-700 mb-2">
-                이미 답사한 현장 (재방문 불필요 — 자동 제외)
+                이미 답사했거나 거부·처리된 현장 (재배포 방지 — 자동 제외)
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <Stat label="이미 공실" value={lastResult.alreadyVacant} color="emerald" />
                 <Stat label="이미 거주중" value={lastResult.alreadyOccupied} color="rose" />
                 <Stat
@@ -157,6 +161,7 @@ export function AuctionImportForm() {
                   value={lastResult.alreadyOtherSurveyed}
                   color="amber"
                 />
+                <Stat label="거부·처리됨" value={lastResult.alreadyRejected} color="rose" />
                 <Stat label="미답사 중복" value={lastResult.alreadyPending} color="slate" />
               </div>
             </div>

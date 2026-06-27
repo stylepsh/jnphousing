@@ -26,6 +26,7 @@ export interface ImportResult {
   alreadyOccupied: number; // 이미 거주중 (제외)
   alreadyOtherSurveyed: number; // 재방문/제외 등 기타 답사완료 (제외)
   alreadyPending: number; // 미답사 중복 (이미 풀에 있음)
+  alreadyRejected: number; // 이미 거부/처리된 건 (답사 돌린 뒤 풀에서 치운 것 — 재수집 차단)
   imported: number;
   importedHug: number;
   importedSgi: number;
@@ -60,6 +61,7 @@ export async function importAuctionText(input: {
     alreadyOccupied: 0,
     alreadyOtherSurveyed: 0,
     alreadyPending: 0,
+    alreadyRejected: 0,
     imported: 0,
     importedHug: 0,
     importedSgi: 0,
@@ -100,9 +102,10 @@ export async function importAuctionText(input: {
 
     const supabase = createServiceClient();
 
-    // 중복 차단: 같은 상세주소가 이미 풀에 존재하면(거부 제외) skip.
-    //   - 이전에 답사해 공실/거주중 등으로 확정된 현장은 답사자 재방문 방지를 위해 제외
-    //   - 거부(rejected)한 건은 제외 대상에서 빼서 재수집 허용
+    // 중복 차단: 같은 상세주소/사건번호가 이미 DB에 존재하면 skip.
+    //   - 이전에 답사해 공실/거주중 등으로 확정된 현장 → 답사자 재방문 방지
+    //   - 거부(rejected)한 건도 차단 → "답사 돌린 뒤 풀에서 치운 것"이 재파싱으로 부활해
+    //     답사팀에 또 나가는 사고 방지(수원 사례). rejected는 status로 별도 카운트만.
     const addressesToCheck = Array.from(
       new Set(toImport.map((p) => (p.address || "(주소 미상)").trim())),
     );
@@ -113,14 +116,12 @@ export async function importAuctionText(input: {
       supabase
         .from("auction_property")
         .select("address, survey_status")
-        .in("address", addressesToCheck)
-        .neq("survey_status", "rejected"),
+        .in("address", addressesToCheck),
       caseNumsToCheck.length
         ? supabase
             .from("auction_property")
             .select("case_number, survey_status")
             .in("case_number", caseNumsToCheck)
-            .neq("survey_status", "rejected")
         : Promise.resolve({ data: [] as { case_number: string; survey_status: string }[] }),
     ]);
     const existingRows = addrRes.data;
@@ -132,6 +133,7 @@ export async function importAuctionText(input: {
       revisit: 3,
       skip: 2,
       pending: 1,
+      rejected: 1, // 확정 답사상태가 함께 있으면 그쪽 우선, 거부만 있으면 거부로 분류
     };
     const existingStatusByAddr = new Map<string, string>();
     for (const r of (existingRows ?? []) as { address: string; survey_status: string }[]) {
@@ -159,6 +161,7 @@ export async function importAuctionText(input: {
     let alreadyOccupied = 0;
     let alreadyOtherSurveyed = 0;
     let alreadyPending = 0;
+    let alreadyRejected = 0;
     const dedupedImport = toImport.filter((p) => {
       const addr = (p.address || "(주소 미상)").trim();
       const cnum = (p.caseNumber || "").replace(/\s/g, "");
@@ -174,18 +177,19 @@ export async function importAuctionText(input: {
       if (ex === "vacant") alreadyVacant += 1;
       else if (ex === "occupied") alreadyOccupied += 1;
       else if (ex === "pending") alreadyPending += 1;
+      else if (ex === "rejected") alreadyRejected += 1; // 거부/처리된 건 — 재수집 차단
       else alreadyOtherSurveyed += 1; // revisit / skip
       return false;
     });
     const skippedDuplicates = toImport.length - dedupedImport.length;
-    const dupDetail = { alreadyVacant, alreadyOccupied, alreadyOtherSurveyed, alreadyPending };
+    const dupDetail = { alreadyVacant, alreadyOccupied, alreadyOtherSurveyed, alreadyPending, alreadyRejected };
 
     if (dedupedImport.length === 0) {
       return {
         ...empty,
         error:
           `대상 후보가 모두 기존에 있음(신규 답사 대상 0). HUG/SGI ${toImport.length}건 중 ` +
-          `이미 공실 ${alreadyVacant} · 거주중 ${alreadyOccupied} · 기타 답사완료 ${alreadyOtherSurveyed} · 미답사 중복 ${alreadyPending}.`,
+          `이미 공실 ${alreadyVacant} · 거주중 ${alreadyOccupied} · 기타 답사완료 ${alreadyOtherSurveyed} · 미답사 중복 ${alreadyPending} · 거부/처리됨 ${alreadyRejected}.`,
         parsedTotal: valid.length,
         hug: stats.HUG,
         sgi: stats.SGI,
