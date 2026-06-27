@@ -79,13 +79,16 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  // 모든 임대인이 정확히 한 버킷에 들어가도록 — 6칸 합 = 전체 명수
   const summary = useMemo(() => {
-    const s = { pursue: 0, full_survey: 0, review: 0, passExcluded: 0 };
+    const s = { pursue: 0, full_survey: 0, review: 0, sample_thin: 0, revisit: 0, passExcluded: 0 };
     for (const o of owners) {
       if (o.verdict === "pursue") s.pursue++;
       else if (o.verdict === "full_survey") s.full_survey++;
       else if (o.verdict === "review") s.review++;
-      else if (o.verdict === "pass" || o.verdict === "excluded") s.passExcluded++;
+      else if (o.verdict === "sample_thin") s.sample_thin++;
+      else if (o.verdict === "revisit") s.revisit++;
+      else s.passExcluded++; // pass · excluded · none
     }
     return s;
   }, [owners]);
@@ -151,19 +154,21 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
 
   return (
     <div className="space-y-6">
-      {/* 요약 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* 요약 — 6칸 합 = 전체 명수 (빠지는 임대인 없음) */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {([
-          ["pursue", "추진가능(2차)", summary.pursue],
-          ["full_survey", "전수조사필수", summary.full_survey],
-          ["review", "검토 대기", summary.review],
-          ["excluded", "패스·제외", summary.passExcluded],
-        ] as const).map(([k, label, n]) => (
-          <div key={k} className="rounded-2xl border bg-card p-3.5 shadow-sm">
-            <div className={cn("inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border", VERDICT_META[k as Verdict].chip)}>
+          ["추진가능(2차)", summary.pursue, "bg-blue-100 text-blue-800 border-blue-300"],
+          ["전수조사필수", summary.full_survey, "bg-emerald-100 text-emerald-800 border-emerald-300"],
+          ["검토 대기", summary.review, "bg-amber-100 text-amber-800 border-amber-300"],
+          ["표본부족", summary.sample_thin, "bg-orange-100 text-orange-800 border-orange-300"],
+          ["재방문", summary.revisit, "bg-sky-100 text-sky-800 border-sky-300"],
+          ["패스·제외", summary.passExcluded, "bg-slate-100 text-slate-600 border-slate-300"],
+        ] as const).map(([label, n, chip]) => (
+          <div key={label} className="rounded-xl border bg-card p-2.5 shadow-sm">
+            <div className={cn("inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border", chip)}>
               {label}
             </div>
-            <div className="text-2xl font-black mt-1 tabular-nums">{n}</div>
+            <div className="text-xl font-black mt-1 tabular-nums">{n}</div>
           </div>
         ))}
       </div>
@@ -233,20 +238,23 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
               const isOpen = expanded.has(o.owner_name);
               const alreadyTarget = o.targetStatus !== null;
               return (
-                <div key={o.owner_name} className="px-4 py-3">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button onClick={() => toggle(o.owner_name)} className="inline-flex items-center gap-1.5 min-w-0">
-                      <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                <div key={o.owner_name} className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => toggle(o.owner_name)} className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
+                      <ChevronDown className={cn("w-4 h-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                       <span className="font-bold text-sm truncate">{o.owner_name}</span>
+                      <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0", meta.chip)} title={meta.desc}>
+                        {meta.label}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline tabular-nums">
+                        공실 {o.vacant}/{o.surveyed}
+                        {o.occupied > 0 && ` · 거주 ${o.occupied}`}
+                        {o.revisit > 0 && ` · 재방 ${o.revisit}`}
+                        {o.pending > 0 && ` · 미답사 ${o.pending}`}
+                      </span>
                     </button>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[11px] font-bold border", meta.chip)}>{meta.label}</span>
-                    <span className="text-xs text-muted-foreground">
-                      답사 {o.surveyed}/{o.total} · 공실 {o.vacant} · 거주 {o.occupied}
-                      {o.revisit > 0 && ` · 재방 ${o.revisit}`}
-                      {o.pending > 0 && ` · 미답사 ${o.pending}`}
-                    </span>
 
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       {alreadyTarget ? (
                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold", STATUS_META[o.targetStatus as TargetRow["status"]]?.chip ?? "bg-slate-100 text-slate-500")}>
                           명단등록 · {STATUS_META[o.targetStatus as TargetRow["status"]]?.label ?? o.targetStatus}
@@ -258,9 +266,6 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
                       ) : null}
                     </div>
                   </div>
-                  {meta.desc && !isOpen && (
-                    <p className="text-[11px] text-muted-foreground mt-1 ml-6">{meta.desc}</p>
-                  )}
 
                   {isOpen && (
                     <div className="mt-2 ml-6 rounded-lg border bg-muted/20 divide-y">
