@@ -23,6 +23,7 @@ import { formatWon } from "@/lib/money";
 import { rejectAuctionProperties } from "./actions";
 import { selectForSurvey } from "../pipeline/actions";
 import { cn } from "@/lib/utils";
+import { textMatches } from "@/lib/auction/search";
 
 export interface PoolItem {
   id: string;
@@ -79,14 +80,12 @@ export function PoolList({ items }: { items: PoolItem[] }) {
 
   // 1) 검색 (소유주명 AND 지역)
   const searchedItems = useMemo(() => {
-    const oq = ownerSearch.trim().toLowerCase();
-    const rq = regionSearch.trim().toLowerCase();
-    if (!oq && !rq) return items;
-    return items.filter((p) => {
-      if (oq && !(p.owner_name ?? "").toLowerCase().includes(oq)) return false;
-      if (rq && !(p.address ?? "").toLowerCase().includes(rq)) return false;
-      return true;
-    });
+    if (!ownerSearch.trim() && !regionSearch.trim()) return items;
+    return items.filter(
+      (p) =>
+        textMatches(ownerSearch, p.owner_name) &&
+        textMatches(regionSearch, p.address),
+    );
   }, [items, ownerSearch, regionSearch]);
 
   // 2) 소유자별 그룹화
@@ -100,10 +99,12 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     return Array.from(m.entries()).sort((a, b) => b[1].length - a[1].length);
   }, [searchedItems]);
 
-  // 3) 최소 N건 필터
+  // 3) 최소 N건 필터 — 검색 중에는 적용 안 함(주소·아파트명으로 콕 집어 찾는 상황이라
+  //    보유 1~2건 임대인이 잘려나가면 "쳐도 안 나온다"가 됨)
+  const searching = Boolean(ownerSearch.trim() || regionSearch.trim());
   const filteredGroups = useMemo(
-    () => allGroups.filter(([, list]) => list.length >= minPerOwner),
-    [allGroups, minPerOwner],
+    () => (searching ? allGroups : allGroups.filter(([, list]) => list.length >= minPerOwner)),
+    [allGroups, minPerOwner, searching],
   );
   const filteredItems = useMemo(() => filteredGroups.flatMap(([, l]) => l), [filteredGroups]);
 
@@ -416,7 +417,7 @@ export function PoolList({ items }: { items: PoolItem[] }) {
             <input
               value={regionSearch}
               onChange={(e) => setRegionSearch(e.target.value)}
-              placeholder="지역(주소) 검색 (예: 인천, 부평구, 갈현동)"
+              placeholder="주소·아파트명·번지 검색 (예: 부평동, 삼성캐슬아파트, 521-22)"
               className="w-full pl-9 pr-8 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {regionSearch && (

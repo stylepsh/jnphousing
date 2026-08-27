@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { STATE_LABELS, type PipelineState } from "@/lib/auction/pipeline/state-machine";
 import { VacantCard, type VacantItem } from "./vacant-card";
+import { textMatches } from "@/lib/auction/search";
 
 export const metadata: Metadata = { title: "공실 · 상품화" };
 export const dynamic = "force-dynamic";
@@ -33,14 +34,7 @@ export default async function VacantPage({
   const q = (rawQ ?? "").trim();
   const all = await fetchVacant();
   const items = q
-    ? all.filter((i) => {
-        const needle = q.toLowerCase();
-        return (
-          (i.case_number ?? "").toLowerCase().includes(needle) ||
-          (i.address ?? "").toLowerCase().includes(needle) ||
-          (i.owner_name ?? "").toLowerCase().includes(needle)
-        );
-      })
+    ? all.filter((i) => textMatches(q, i.case_number, i.address, i.owner_name))
     : all;
 
   return (

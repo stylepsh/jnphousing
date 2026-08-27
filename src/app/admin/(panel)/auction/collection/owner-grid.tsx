@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Search, ArrowUpDown } from "lucide-react";
+import { textMatches } from "@/lib/auction/search";
 
 export interface OwnerPending {
   owner_name: string;
@@ -35,13 +36,8 @@ export function OwnerGrid({ owners }: { owners: OwnerPending[] }) {
   }
 
   const list = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    let l = s
-      ? owners.filter(
-          (o) =>
-            (o.owner_name ?? "").toLowerCase().includes(s) ||
-            (o.top_region ?? "").toLowerCase().includes(s),
-        )
+    let l = q.trim()
+      ? owners.filter((o) => textMatches(q, o.owner_name, o.top_region))
       : owners;
     l = [...l];
     if (sort === "name") {

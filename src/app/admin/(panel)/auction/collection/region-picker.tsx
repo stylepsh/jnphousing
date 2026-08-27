@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Search, User, ArrowRight, Check, X } from "lucide-react";
+import { textMatches } from "@/lib/auction/search";
 
 export interface RegionCount {
   region: string;
@@ -22,8 +23,7 @@ export function RegionPicker({ regions, total }: { regions: RegionCount[]; total
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    const list = s ? regions.filter((r) => r.region.toLowerCase().includes(s)) : regions;
+    const list = q.trim() ? regions.filter((r) => textMatches(q, r.region)) : regions;
     return list.slice(0, 200);
   }, [regions, q]);
 
