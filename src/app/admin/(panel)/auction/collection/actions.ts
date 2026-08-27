@@ -10,6 +10,7 @@ import {
   isTargetCreditor,
   classifyCreditor,
   countByCreditorType,
+  normalizeOwnerName,
 } from "@/lib/auction/court-auction";
 
 export interface ImportResult {
@@ -27,6 +28,7 @@ export interface ImportResult {
   alreadyOtherSurveyed: number; // 재방문/제외 등 기타 답사완료 (제외)
   alreadyPending: number; // 미답사 중복 (이미 풀에 있음)
   alreadyRejected: number; // 이미 거부/처리된 건 (답사 돌린 뒤 풀에서 치운 것 — 재수집 차단)
+  blockedOwner: number; // 차단 임대인이라 걸러진 건수
   imported: number;
   importedHug: number;
   importedSgi: number;
@@ -62,6 +64,7 @@ export async function importAuctionText(input: {
     alreadyOtherSurveyed: 0,
     alreadyPending: 0,
     alreadyRejected: 0,
+    blockedOwner: 0,
     imported: 0,
     importedHug: 0,
     importedSgi: 0,
@@ -87,7 +90,7 @@ export async function importAuctionText(input: {
     }
 
     const stats = countByCreditorType(valid);
-    const toImport = targetOnly ? valid.filter((p) => isTargetCreditor(p.creditor)) : valid;
+    let toImport = targetOnly ? valid.filter((p) => isTargetCreditor(p.creditor)) : valid;
 
     if (toImport.length === 0) {
       return {
@@ -101,6 +104,25 @@ export async function importAuctionText(input: {
     }
 
     const supabase = createServiceClient();
+
+    // 차단 임대인 제외 — "이 사람 물건은 아예 안 본다" (재파싱마다 자동 필터)
+    const blockedKeys = await fetchBlockedOwnerKeys(supabase);
+    const beforeBlock = toImport.length;
+    if (blockedKeys.size) {
+      toImport = toImport.filter((p) => !blockedKeys.has(normalizeOwnerName(p.ownerName)));
+    }
+    const blockedOwner = beforeBlock - toImport.length;
+    if (toImport.length === 0) {
+      return {
+        ...empty,
+        error: `대상 ${beforeBlock}건이 모두 차단 임대인입니다. (차단 목록에서 해제하면 다시 수집됩니다)`,
+        parsedTotal: valid.length,
+        hug: stats.HUG,
+        sgi: stats.SGI,
+        other: stats.OTHER,
+        blockedOwner,
+      };
+    }
 
     // 중복 차단: 같은 상세주소/사건번호가 "이미 답사 완료(공실/거주/재방문)"인 현장이면 skip
     // (힘들게 답사 돈 곳을 답사자에게 다시 안 보냄).
@@ -198,6 +220,7 @@ export async function importAuctionText(input: {
         other: stats.OTHER,
         duplicates: skippedDuplicates,
         ...dupDetail,
+        blockedOwner,
       };
     }
 
@@ -269,6 +292,7 @@ export async function importAuctionText(input: {
       other: stats.OTHER,
       duplicates: skippedDuplicates,
       ...dupDetail,
+      blockedOwner,
       imported: dedupedImport.length,
       importedHug: importedStats.HUG,
       importedSgi: importedStats.SGI,
@@ -306,5 +330,122 @@ export async function rejectAuctionProperties(
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
     return { ok: false, error: "처리 중 오류가 발생했습니다." };
+  }
+}
+
+// ============================================================
+// 임대인 차단 (수집 영구 제외)
+// ============================================================
+
+type ServiceClient = ReturnType<typeof createServiceClient>;
+
+/** 차단 임대인 비교키 집합. 테이블 미생성(마이그 034 미적용)이면 빈 집합 → 기능 무시. */
+async function fetchBlockedOwnerKeys(supabase: ServiceClient): Promise<Set<string>> {
+  const { data, error } = await supabase.from("auction_owner_blocklist").select("owner_key");
+  if (error) return new Set();
+  return new Set(((data ?? []) as { owner_key: string }[]).map((r) => r.owner_key));
+}
+
+export interface BlockedOwner {
+  owner_key: string;
+  owner_name: string;
+  reason: string | null;
+  created_at: string;
+}
+
+/** 차단 임대인 목록 (수집 화면 하단 패널). */
+export async function listBlockedOwners(): Promise<BlockedOwner[]> {
+  try {
+    await requireAdmin();
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("auction_owner_blocklist")
+      .select("owner_key, owner_name, reason, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) return [];
+    return (data ?? []) as BlockedOwner[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 임대인 차단 — 차단목록 등록 + 현재 미답사 물건을 풀에서 즉시 제외.
+ * 이후 임포트에서는 이름 표기가 흔들려도(회사표기·공백) 정규화 키로 자동 필터.
+ */
+export async function blockOwner(
+  ownerName: string,
+  reason?: string,
+): Promise<{ ok: boolean; removed?: number; error?: string }> {
+  try {
+    await requireAdmin();
+    const parsed = z
+      .object({ ownerName: z.string().trim().min(1, "임대인명이 비어있습니다").max(200), reason: z.string().max(300).optional() })
+      .safeParse({ ownerName, reason });
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
+
+    const key = normalizeOwnerName(parsed.data.ownerName);
+    if (!key) return { ok: false, error: "차단할 수 없는 임대인명입니다" };
+
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from("auction_owner_blocklist")
+      .upsert(
+        { owner_key: key, owner_name: parsed.data.ownerName, reason: parsed.data.reason || null },
+        { onConflict: "owner_key" },
+      );
+    if (error) {
+      return {
+        ok: false,
+        error: /relation .* does not exist|schema cache/i.test(error.message)
+          ? "차단 목록 테이블이 없습니다. Supabase SQL Editor 에서 마이그레이션 034 를 실행해주세요."
+          : error.message,
+      };
+    }
+
+    // 현재 풀에 남아있는 그 임대인 미답사 건 정리 (표기 흔들림 대비해 전수 비교)
+    const { data: pendingRows } = await supabase
+      .from("auction_property")
+      .select("id, owner_name")
+      .eq("survey_status", "pending")
+      .limit(50000);
+    const ids = ((pendingRows ?? []) as { id: string; owner_name: string | null }[])
+      .filter((r) => normalizeOwnerName(r.owner_name) === key)
+      .map((r) => r.id);
+    let removed = 0;
+    if (ids.length) {
+      const { data: upd } = await supabase
+        .from("auction_property")
+        .update({ survey_status: "rejected", updated_at: new Date().toISOString() })
+        .in("id", ids)
+        .select("id");
+      removed = (upd ?? []).length;
+    }
+
+    revalidatePath("/admin/auction/collection");
+    return { ok: true, removed };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "차단 처리 중 오류가 발생했습니다." };
+  }
+}
+
+/** 차단 해제 — 목록에서만 제거. 이미 제외된 물건은 되살리지 않는다(다음 임포트부터 다시 들어옴). */
+export async function unblockOwner(ownerKey: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireAdmin();
+    const key = z.string().trim().min(1).safeParse(ownerKey);
+    if (!key.success) return { ok: false, error: "잘못된 요청입니다" };
+
+    const supabase = createServiceClient();
+    const { error } = await supabase.from("auction_owner_blocklist").delete().eq("owner_key", key.data);
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath("/admin/auction/collection");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "해제 중 오류가 발생했습니다." };
   }
 }

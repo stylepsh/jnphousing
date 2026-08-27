@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Trash2,
+  Ban,
   MapPin,
   Filter,
   Search,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWon } from "@/lib/money";
-import { rejectAuctionProperties } from "./actions";
+import { rejectAuctionProperties, blockOwner } from "./actions";
 import { selectForSurvey } from "../pipeline/actions";
 import { cn } from "@/lib/utils";
 import { textMatches } from "@/lib/auction/search";
@@ -311,6 +312,33 @@ export function PoolList({ items }: { items: PoolItem[] }) {
         return;
       }
       toast.success(`${res.rejected}건 제외 완료`);
+      setSelected(new Set());
+      router.refresh();
+    });
+  }
+
+  // ===== 임대인 영구 차단 (다음 임포트부터 자동 제외) =====
+  function blockThisOwner(owner: string, count: number) {
+    if (
+      !confirm(
+        `[${owner}] 임대인을 영구 차단할까요?
+
+` +
+          `· 지금 풀에 있는 ${count}건이 후보에서 빠집니다 (데이터는 보존)
+` +
+          `· 앞으로 지지옥션 텍스트를 붙여넣어도 이 임대인 물건은 자동 제외됩니다
+` +
+          `· 아래 "차단 임대인" 목록에서 언제든 해제 가능`,
+      )
+    )
+      return;
+    startTransition(async () => {
+      const res = await blockOwner(owner);
+      if (!res.ok) {
+        toast.error(res.error ?? "차단 실패");
+        return;
+      }
+      toast.success(`[${owner}] 차단 완료 — 풀에서 ${res.removed ?? 0}건 제외`);
       setSelected(new Set());
       router.refresh();
     });
@@ -666,8 +694,11 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                     <button onClick={() => toggleGroup(list)} className="flex-1 text-[10px] font-bold text-blue-700 hover:bg-blue-100 px-1.5 py-1 rounded">
                       {list.every((i) => selected.has(i.id)) ? "전체 해제" : "전체 선택"}
                     </button>
-                    <button onClick={() => deleteIds(list.map((i) => i.id), `${owner}의`)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100 px-1.5 py-1 rounded" title="이 임대인 전체 제외">
+                    <button onClick={() => deleteIds(list.map((i) => i.id), `${owner}의`)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100 px-1.5 py-1 rounded" title="이번 풀에서만 제외 (다음 임포트에는 다시 들어옴)">
                       <Trash2 className="w-3 h-3" /> 전체제외
+                    </button>
+                    <button onClick={() => blockThisOwner(owner, list.length)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 hover:bg-slate-200 px-1.5 py-1 rounded" title="이 임대인 영구 차단 — 다음 임포트에도 안 들어옴">
+                      <Ban className="w-3 h-3" /> 차단
                     </button>
                   </div>
                 </div>

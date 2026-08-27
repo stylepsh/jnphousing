@@ -7,6 +7,8 @@ import { AuctionImportForm } from "./import-form";
 import { PoolList, type PoolItem } from "./pool-list";
 import { RegionPicker, type RegionCount } from "./region-picker";
 import { OwnerGrid, type OwnerPending } from "./owner-grid";
+import { BlockedOwners } from "./blocked-owners";
+import { listBlockedOwners } from "./actions";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -151,8 +153,15 @@ export default async function AuctionCollectionPage({
           {ownerView ? <OwnerGate min={min} /> : <RegionGate />}
         </>
       )}
+
+      <BlockedOwnersPanel />
     </div>
   );
+}
+
+async function BlockedOwnersPanel() {
+  const owners = await listBlockedOwners();
+  return <BlockedOwners owners={owners} />;
 }
 
 function GateTabs({ ownerView, min }: { ownerView: boolean; min: number }) {

@@ -48,8 +48,9 @@ export function AuctionImportForm() {
             : data.duplicates > 0
               ? ` (중복 ${data.duplicates}건 제외)`
               : "";
+      const blockNote = data.blockedOwner > 0 ? ` · 차단 임대인 ${data.blockedOwner}건 제외` : "";
       toast.success(
-        `보증채권 ${data.imported}건 임포트 (HUG ${data.importedHug} · SGI ${data.importedSgi})${dupNote}`,
+        `보증채권 ${data.imported}건 임포트 (HUG ${data.importedHug} · SGI ${data.importedSgi})${dupNote}${blockNote}`,
       );
       setText("");
       setBatchName("");
@@ -141,6 +142,9 @@ export function AuctionImportForm() {
             <Stat label="SGI 서울보증" value={lastResult.sgi} color="purple" />
             <Stat label="기타 (제외)" value={lastResult.other} color="amber" />
             <Stat label="중복 (제외)" value={lastResult.duplicates} color="amber" />
+            {lastResult.blockedOwner > 0 && (
+              <Stat label="차단 임대인 (제외)" value={lastResult.blockedOwner} color="slate" />
+            )}
           </div>
 
           {/* 이미 답사했거나 거부/처리된 현장 — 답사자 재방문·재배포 방지를 위해 자동 제외 */}
