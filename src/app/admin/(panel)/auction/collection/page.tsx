@@ -9,6 +9,7 @@ import { RegionPicker, type RegionCount } from "./region-picker";
 import { OwnerGrid, type OwnerPending } from "./owner-grid";
 import { BlockedOwners } from "./blocked-owners";
 import { listBlockedOwners } from "./actions";
+import { normalizeOwnerName } from "@/lib/auction/court-auction";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,18 @@ export const dynamic = "force-dynamic";
 // 선택한 지역/임대인 한 묶음은 보통 수백 건 → 한 번에 올려 '전체 선택'이 전부를 잡도록.
 // (전체 30k 보호는 앞단 게이트가 담당. 단일 묶음이 이 한도를 넘으면 페이지네이션 유지.)
 const PAGE_SIZE = 1000;
+
+/** 차단 임대인 비교키 — 화면에서도 한 번 더 걸러 "차단했는데 또 보인다"를 원천 차단. */
+async function fetchBlockedKeys(): Promise<Set<string>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("auction_owner_blocklist").select("owner_key");
+    if (error) return new Set();
+    return new Set(((data ?? []) as { owner_key: string }[]).map((r) => r.owner_key));
+  } catch {
+    return new Set();
+  }
+}
 
 async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }> {
   try {
@@ -65,11 +78,16 @@ async function fetchFiltered(
     else if (filter.regions.length === 1) countQuery = countQuery.ilike("address", `${filter.regions[0]}%`);
     else if (filter.regions.length > 1) countQuery = countQuery.or(regionOr);
 
-    const [{ data }, { count }] = await Promise.all([
+    const [{ data }, { count }, blockedKeys] = await Promise.all([
       query.order("created_at", { ascending: false }).range(from, to + 1),
       countQuery,
+      fetchBlockedKeys(),
     ]);
-    const rows = (data ?? []) as PoolItem[];
+    const allRows = (data ?? []) as PoolItem[];
+    const rows = blockedKeys.size
+      ? allRows.filter((p) => !blockedKeys.has(normalizeOwnerName(p.owner_name)))
+      : allRows;
+    const blockedHidden = allRows.length - rows.length;
     const hasNext = rows.length > PAGE_SIZE;
 
     // 상세주소 중복 제거 (정확히 같은 주소면 최근 1건만)
@@ -81,7 +99,7 @@ async function fetchFiltered(
       seen.add(key);
       return true;
     });
-    return { items, hasNext, total: count ?? 0 };
+    return { items, hasNext, total: Math.max(0, (count ?? 0) - blockedHidden) };
   } catch {
     return { items: [], hasNext: false, total: 0 };
   }
@@ -91,13 +109,17 @@ async function fetchOwnerPending(min: number): Promise<OwnerPending[]> {
   try {
     const supabase = await createClient();
     // 마이그레이션 032(top_region) 적용 전이면 컬럼이 없어 에러 → 기본 셀렉트로 폴백.
+    const blockedKeys = await fetchBlockedKeys();
+    const dropBlocked = (rows: OwnerPending[]) =>
+      blockedKeys.size ? rows.filter((o) => !blockedKeys.has(normalizeOwnerName(o.owner_name))) : rows;
+
     const withRegion = await supabase
       .from("v_auction_owner_pending")
       .select("owner_name, pending_count, creditor_types, top_region")
       .gte("pending_count", min)
       .order("pending_count", { ascending: false })
       .limit(2000);
-    if (!withRegion.error) return (withRegion.data ?? []) as OwnerPending[];
+    if (!withRegion.error) return dropBlocked((withRegion.data ?? []) as OwnerPending[]);
 
     const basic = await supabase
       .from("v_auction_owner_pending")
@@ -105,7 +127,7 @@ async function fetchOwnerPending(min: number): Promise<OwnerPending[]> {
       .gte("pending_count", min)
       .order("pending_count", { ascending: false })
       .limit(2000);
-    return (basic.data ?? []) as OwnerPending[];
+    return dropBlocked((basic.data ?? []) as OwnerPending[]);
   } catch {
     return [];
   }

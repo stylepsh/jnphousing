@@ -11,6 +11,7 @@ import {
   classifyCreditor,
   countByCreditorType,
   normalizeOwnerName,
+  ownerNameAnchor,
 } from "@/lib/auction/court-auction";
 
 export interface ImportResult {
@@ -404,23 +405,42 @@ export async function blockOwner(
       };
     }
 
-    // 현재 풀에 남아있는 그 임대인 미답사 건 정리 (표기 흔들림 대비해 전수 비교)
-    const { data: pendingRows } = await supabase
-      .from("auction_property")
-      .select("id, owner_name")
-      .eq("survey_status", "pending")
-      .limit(50000);
-    const ids = ((pendingRows ?? []) as { id: string; owner_name: string | null }[])
-      .filter((r) => normalizeOwnerName(r.owner_name) === key)
-      .map((r) => r.id);
+    // 현재 풀에 남아있는 그 임대인 미답사 건 정리.
+    //   전체 pending 을 긁어와 JS 로 비교하면 PostgREST 행 상한에 잘려 일부만 지워진다
+    //   (차단했는데 새로고침하면 그대로 보이는 원인) → 이름/앵커로 DB 에서 좁혀서 처리.
+    const anchor = ownerNameAnchor(parsed.data.ownerName);
+    const [exactRes, anchorRes] = await Promise.all([
+      supabase
+        .from("auction_property")
+        .select("id, owner_name")
+        .eq("survey_status", "pending")
+        .eq("owner_name", parsed.data.ownerName),
+      anchor
+        ? supabase
+            .from("auction_property")
+            .select("id, owner_name")
+            .eq("survey_status", "pending")
+            .ilike("owner_name", `%${anchor}%`)
+        : Promise.resolve({ data: [] as { id: string; owner_name: string | null }[] }),
+    ]);
+    const candidates = [...(exactRes.data ?? []), ...(anchorRes.data ?? [])] as {
+      id: string;
+      owner_name: string | null;
+    }[];
+    const ids = Array.from(
+      new Set(
+        candidates.filter((r) => normalizeOwnerName(r.owner_name) === key).map((r) => r.id),
+      ),
+    );
     let removed = 0;
-    if (ids.length) {
+    // 대량이면 청크로 나눠 update (URL 길이 제한 회피)
+    for (let i = 0; i < ids.length; i += 300) {
       const { data: upd } = await supabase
         .from("auction_property")
         .update({ survey_status: "rejected", updated_at: new Date().toISOString() })
-        .in("id", ids)
+        .in("id", ids.slice(i, i + 300))
         .select("id");
-      removed = (upd ?? []).length;
+      removed += (upd ?? []).length;
     }
 
     revalidatePath("/admin/auction/collection");
