@@ -50,7 +50,13 @@ async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }
 async function fetchFiltered(
   filter: { regions: string[]; owner?: string; batch?: string },
   page: number,
-): Promise<{ items: PoolItem[]; hasNext: boolean; total: number }> {
+): Promise<{
+  items: PoolItem[];
+  hasNext: boolean;
+  total: number;
+  pageRows: number;
+  dedupHidden: number;
+}> {
   try {
     const supabase = await createClient();
     const from = page * PAGE_SIZE;
@@ -102,9 +108,16 @@ async function fetchFiltered(
       seen.add(key);
       return true;
     });
-    return { items, hasNext, total: Math.max(0, (count ?? 0) - blockedHidden) };
+    const pageRows = Math.min(rows.length, PAGE_SIZE);
+    return {
+      items,
+      hasNext,
+      total: Math.max(0, (count ?? 0) - blockedHidden),
+      pageRows,
+      dedupHidden: pageRows - items.length,
+    };
   } catch {
-    return { items: [], hasNext: false, total: 0 };
+    return { items: [], hasNext: false, total: 0, pageRows: 0, dedupHidden: 0 };
   }
 }
 
@@ -355,7 +368,7 @@ async function FilteredPool({
   filter: { regions: string[]; owner?: string; batch?: string };
   page: number;
 }) {
-  const [{ items, hasNext, total }, recentTeams, batches] = await Promise.all([
+  const [{ items, hasNext, total, pageRows, dedupHidden }, recentTeams, batches] = await Promise.all([
     fetchFiltered(filter, page),
     recentTeamNames(),
     fetchBatches(),
@@ -394,9 +407,10 @@ async function FilteredPool({
           <span className="font-black">{label}</span>
           <span className="text-muted-foreground">
             총 <strong className="text-foreground">{total.toLocaleString()}</strong>건 · 페이지{" "}
-            <strong className="text-foreground">{page + 1}</strong>/{totalPages} · 이 페이지 소유자{" "}
-            <strong className="text-foreground">{ownerCount}</strong>명 ({(from + 1).toLocaleString()}–
-            {(from + shown).toLocaleString()})
+            <strong className="text-foreground">{page + 1}</strong>/{totalPages} · 이 페이지{" "}
+            <strong className="text-foreground">{pageRows.toLocaleString()}</strong>건 (
+            {(from + 1).toLocaleString()}–{(from + pageRows).toLocaleString()}) · 소유자{" "}
+            <strong className="text-foreground">{ownerCount}</strong>명
           </span>
           <Link
             href="/admin/auction/collection"
@@ -406,6 +420,26 @@ async function FilteredPool({
           </Link>
         </div>
       </div>
+      {(total > pageRows || dedupHidden > 0) && (
+        <p className="text-xs text-muted-foreground rounded-lg border bg-muted/40 px-3 py-2">
+          숫자가 다르게 보이는 이유:{" "}
+          {total > pageRows && (
+            <>
+              한 번에 <strong>{PAGE_SIZE.toLocaleString()}건</strong>까지만 불러옵니다 (총{" "}
+              {total.toLocaleString()}건 → 이 페이지 {pageRows.toLocaleString()}건, 아래 페이지 이동으로
+              나머지 확인)
+            </>
+          )}
+          {total > pageRows && dedupHidden > 0 && " · "}
+          {dedupHidden > 0 && (
+            <>
+              주소가 완전히 같은 <strong>{dedupHidden.toLocaleString()}건</strong>은 한 줄로 합쳤습니다
+            </>
+          )}
+          {" · 아래 바의 "}
+          <strong>최소 N건 이상</strong> 필터도 표시 건수를 줄입니다(1건으로 낮추면 전부 보임)
+        </p>
+      )}
       <ScrollMemory scopeKey={scopeKey} />
       <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
       <PoolList items={items} recentTeams={recentTeams} scopeKey={scopeKey} />

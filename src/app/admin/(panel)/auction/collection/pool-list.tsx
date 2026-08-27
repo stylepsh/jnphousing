@@ -557,7 +557,18 @@ export function PoolList({
               ) : (
                 <span className="text-blue-700">
                   표시 {filteredItems.length}건 · 임대인 {filteredGroups.length}명
-                  <span className="text-xs font-normal ml-2">(최소 {minPerOwner}건 이상 / 전체 {items.length}건 중)</span>
+                  <span className="text-xs font-normal ml-2">
+                    (최소 {minPerOwner}건 이상 / 이 페이지 {items.length}건 중)
+                  </span>
+                  {minPerOwner > 1 && filteredItems.length < items.length && (
+                    <button
+                      onClick={() => setMinPerOwner(1)}
+                      className="ml-2 text-xs font-bold underline text-blue-800 hover:text-blue-950"
+                      title={`${items.length - filteredItems.length}건이 '최소 ${minPerOwner}건 이상' 필터로 가려져 있습니다`}
+                    >
+                      가려진 {items.length - filteredItems.length}건 전부 보기
+                    </button>
+                  )}
                 </span>
               )}
             </p>
