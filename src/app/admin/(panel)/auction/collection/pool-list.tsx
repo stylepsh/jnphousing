@@ -18,6 +18,7 @@ import {
   CheckSquare,
   Square,
   User,
+  Users2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWon } from "@/lib/money";
@@ -39,6 +40,8 @@ export interface PoolItem {
   minimum_bid: number | null;
   auction_date: string | null;
   dividend_deadline: string | null;
+  last_issued_at?: string | null;
+  last_issued_team?: string | null;
 }
 
 const CREDITOR_BADGE: Record<string, string> = {
@@ -49,7 +52,13 @@ const CREDITOR_BADGE: Record<string, string> = {
 
 const OWNER_FALLBACK = "(소유자 미상)";
 
-export function PoolList({ items }: { items: PoolItem[] }) {
+export function PoolList({
+  items,
+  recentTeams = [],
+}: {
+  items: PoolItem[];
+  recentTeams?: string[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -60,6 +69,8 @@ export function PoolList({ items }: { items: PoolItem[] }) {
   // 검색
   const [ownerSearch, setOwnerSearch] = useState("");
   const [regionSearch, setRegionSearch] = useState("");
+  // 답사지를 받는 팀 (발급 이력에 기록 — 같은 지역 중복 배포 방지)
+  const [team, setTeam] = useState("");
   // 최소 N건 이상 임대인만 (잡건 배제, 기본 3)
   const [minPerOwner, setMinPerOwner] = useState(3);
   // 샘플 기준: 임대인별 / 지역별
@@ -346,17 +357,36 @@ export function PoolList({ items }: { items: PoolItem[] }) {
     });
   }
 
-  // ===== 답사지 PDF (부작용 없음) =====
-  async function printPdf() {
+  /** 발급 전 확인 — 팀 미입력·이미 배포된 건 포함 여부. */
+  function confirmIssue(): boolean {
     if (selected.size === 0) {
       toast.error("선택된 물건이 없습니다.");
-      return;
+      return false;
     }
+    const already = items.filter((i) => selected.has(i.id) && i.last_issued_at);
+    if (already.length > 0) {
+      const teams = Array.from(new Set(already.map((i) => i.last_issued_team || "팀 미기재")));
+      if (
+        !confirm(
+          `선택분 중 ${already.length}건은 이미 답사지로 배포된 물건입니다.\n` +
+            `(최근 배포: ${teams.join(", ")})\n\n그래도 발급할까요?`,
+        )
+      )
+        return false;
+    }
+    if (!team.trim() && !confirm("받는 답사팀을 입력하지 않았습니다.\n기록 없이 그냥 발급할까요?"))
+      return false;
+    return true;
+  }
+
+  // ===== 답사지 PDF (발급 이력 기록) =====
+  async function printPdf() {
+    if (!confirmIssue()) return;
     try {
       const res = await fetch("/admin/auction/pipeline/survey-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected) }),
+        body: JSON.stringify({ ids: Array.from(selected), team }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -383,15 +413,12 @@ export function PoolList({ items }: { items: PoolItem[] }) {
 
   // ===== 답사지 엑셀 (PDF와 동일 번호·순서, 답사자 입력→그대로 업로드) =====
   async function downloadXlsx() {
-    if (selected.size === 0) {
-      toast.error("선택된 물건이 없습니다.");
-      return;
-    }
+    if (!confirmIssue()) return;
     try {
       const res = await fetch("/admin/auction/pipeline/survey-xlsx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected) }),
+        body: JSON.stringify({ ids: Array.from(selected), team }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -549,6 +576,24 @@ export function PoolList({ items }: { items: PoolItem[] }) {
           </div>
 
           {selected.size > 0 && (
+            <div className="inline-flex items-center gap-1.5 bg-white border border-blue-300 rounded-lg px-2 py-1">
+              <Users2 className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+              <input
+                value={team}
+                onChange={(e) => setTeam(e.target.value)}
+                list="recent-survey-teams"
+                placeholder="받는 답사팀 (예: A팀)"
+                className="w-40 text-xs font-bold bg-transparent focus:outline-none"
+                title="답사지 발급 이력에 기록됩니다 — 같은 지역 중복 배포 방지"
+              />
+              <datalist id="recent-survey-teams">
+                {recentTeams.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </div>
+          )}
+          {selected.size > 0 && (
             <Button size="sm" disabled={pending} onClick={() => handleSelectForPipeline(Array.from(selected))} className="gap-1">
               <Workflow className="w-3.5 h-3.5" /> 답사 선정 ({selected.size})
             </Button>
@@ -691,6 +736,18 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                       )}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1 truncate">감정가 {formatWon(totalAppraisal)}</p>
+                    {list.some((i) => i.last_issued_at) && (
+                      <p className="text-[10px] font-bold text-amber-800 bg-amber-100 rounded px-1 py-0.5 mt-1 truncate">
+                        배포 {list.filter((i) => i.last_issued_at).length}건 ·{" "}
+                        {Array.from(
+                          new Set(
+                            list
+                              .filter((i) => i.last_issued_at)
+                              .map((i) => i.last_issued_team || "팀미기재"),
+                          ),
+                        ).join(", ")}
+                      </p>
+                    )}
                   </button>
                   <div className="flex items-center gap-1 mt-2 pt-2 border-t">
                     <button onClick={() => toggleGroup(list)} className="flex-1 text-[10px] font-bold text-blue-700 hover:bg-blue-100 px-1.5 py-1 rounded">
@@ -782,7 +839,18 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                         {p.court && <div className="text-[10px] text-muted-foreground">{p.court}</div>}
                         {p.case_number}
                       </td>
-                      <td className="px-3 py-2 text-sm">{p.address}</td>
+                      <td className="px-3 py-2 text-sm">
+                        {p.address}
+                        {p.last_issued_at && (
+                          <span
+                            className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full align-middle"
+                            title="이미 답사지로 배포된 물건입니다"
+                          >
+                            {p.last_issued_at.slice(5, 10).replace("-", "/")}{" "}
+                            {p.last_issued_team || "배포됨"}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-xs">
                         <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold", CREDITOR_BADGE[p.creditor_type ?? "OTHER"])}>
                           {p.creditor_type ?? "OTHER"}{p.creditor ? ` · ${p.creditor}` : ""}

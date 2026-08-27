@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gavel, X, ChevronLeft, ChevronRight, MapPin, Users } from "lucide-react";
+import { Gavel, X, ChevronLeft, ChevronRight, MapPin, Users, CalendarDays } from "lucide-react";
 import { PageHeader } from "../../../_components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionImportForm } from "./import-form";
@@ -8,6 +8,7 @@ import { PoolList, type PoolItem } from "./pool-list";
 import { RegionPicker, type RegionCount } from "./region-picker";
 import { OwnerGrid, type OwnerPending } from "./owner-grid";
 import { normalizeOwnerName } from "@/lib/auction/court-auction";
+import { recentTeamNames } from "@/lib/auction/issue-sheet";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }
 }
 
 async function fetchFiltered(
-  filter: { regions: string[]; owner?: string },
+  filter: { regions: string[]; owner?: string; batch?: string },
   page: number,
 ): Promise<{ items: PoolItem[]; hasNext: boolean; total: number }> {
   try {
@@ -59,10 +60,11 @@ async function fetchFiltered(
     let query = supabase
       .from("auction_property")
       .select(
-        "id, case_number, court, address, owner_name, creditor, creditor_type, category, appraisal_value, minimum_bid, auction_date, dividend_deadline",
+        "id, case_number, court, address, owner_name, creditor, creditor_type, category, appraisal_value, minimum_bid, auction_date, dividend_deadline, last_issued_at, last_issued_team",
       )
       .eq("survey_status", "pending");
 
+    if (filter.batch) query = query.eq("batch_id", filter.batch);
     if (filter.owner) query = query.eq("owner_name", filter.owner);
     else if (filter.regions.length === 1) query = query.ilike("address", `${filter.regions[0]}%`);
     else if (filter.regions.length > 1) query = query.or(regionOr);
@@ -72,6 +74,7 @@ async function fetchFiltered(
       .from("auction_property")
       .select("id", { count: "exact", head: true })
       .eq("survey_status", "pending");
+    if (filter.batch) countQuery = countQuery.eq("batch_id", filter.batch);
     if (filter.owner) countQuery = countQuery.eq("owner_name", filter.owner);
     else if (filter.regions.length === 1) countQuery = countQuery.ilike("address", `${filter.regions[0]}%`);
     else if (filter.regions.length > 1) countQuery = countQuery.or(regionOr);
@@ -100,6 +103,29 @@ async function fetchFiltered(
     return { items, hasNext, total: Math.max(0, (count ?? 0) - blockedHidden) };
   } catch {
     return { items: [], hasNext: false, total: 0 };
+  }
+}
+
+interface BatchRow {
+  id: string;
+  name: string;
+  created_at: string;
+  total_count: number | null;
+}
+
+/** 수집 배치(=업로드 회차) 목록 — "7월 올린 것만" 식으로 회차 구분용. */
+async function fetchBatches(): Promise<BatchRow[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("auction_survey_batch")
+      .select("id, name, created_at, total_count")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (error) return [];
+    return (data ?? []) as BatchRow[];
+  } catch {
+    return [];
   }
 }
 
@@ -134,7 +160,15 @@ async function fetchOwnerPending(min: number): Promise<OwnerPending[]> {
 export default async function AuctionCollectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ region?: string; regions?: string; owner?: string; page?: string; view?: string; min?: string }>;
+  searchParams: Promise<{
+    region?: string;
+    regions?: string;
+    owner?: string;
+    page?: string;
+    view?: string;
+    min?: string;
+    batch?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const regions = sp.regions
@@ -142,9 +176,9 @@ export default async function AuctionCollectionPage({
     : sp.region
       ? [sp.region]
       : [];
-  const filter = { regions, owner: sp.owner };
+  const filter = { regions, owner: sp.owner, batch: sp.batch };
   const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
-  const hasFilter = !!(regions.length || filter.owner);
+  const hasFilter = !!(regions.length || filter.owner || filter.batch);
   const ownerView = sp.view === "owner";
   const min = Math.max(1, parseInt(sp.min ?? "2", 10) || 2);
 
@@ -173,6 +207,70 @@ export default async function AuctionCollectionPage({
           {ownerView ? <OwnerGate min={min} /> : <RegionGate />}
         </>
       )}
+    </div>
+  );
+}
+
+function BatchFilterBar({
+  batches,
+  filter,
+  activeBatch,
+}: {
+  batches: BatchRow[];
+  filter: { regions: string[]; owner?: string; batch?: string };
+  activeBatch?: BatchRow;
+}) {
+  if (batches.length === 0) return null;
+  const base = new URLSearchParams();
+  if (filter.regions.length > 1) base.set("regions", filter.regions.join(","));
+  else if (filter.regions.length === 1) base.set("region", filter.regions[0]);
+  if (filter.owner) base.set("owner", filter.owner);
+  const hrefFor = (batchId?: string) => {
+    const p = new URLSearchParams(base);
+    if (batchId) p.set("batch", batchId);
+    return `/admin/auction/collection?${p.toString()}`;
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-3">
+      <p className="text-xs font-bold flex items-center gap-1.5 mb-2">
+        <CalendarDays className="w-3.5 h-3.5 text-blue-600" /> 수집 회차(업로드한 날)
+        <span className="font-normal text-muted-foreground">
+          — 7월분·9월분을 나눠 뽑으면 같은 물건을 다른 팀에 또 주는 일을 줄일 수 있습니다
+        </span>
+      </p>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <Link
+          href={hrefFor()}
+          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border ${
+            !filter.batch
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-background text-blue-700 border-blue-200 hover:bg-blue-50"
+          }`}
+        >
+          전체 회차
+        </Link>
+        {batches.slice(0, 12).map((b) => (
+          <Link
+            key={b.id}
+            href={hrefFor(b.id)}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${
+              filter.batch === b.id
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-background text-blue-700 border-blue-200 hover:bg-blue-50"
+            }`}
+            title={b.name}
+          >
+            {b.created_at?.slice(0, 10)}
+            <span className="font-normal opacity-80">{b.total_count ?? 0}건</span>
+          </Link>
+        ))}
+        {activeBatch && (
+          <span className="text-xs text-muted-foreground ml-1">
+            선택: {activeBatch.name}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -241,8 +339,19 @@ async function OwnerGate({ min }: { min: number }) {
   );
 }
 
-async function FilteredPool({ filter, page }: { filter: { regions: string[]; owner?: string }; page: number }) {
-  const { items, hasNext, total } = await fetchFiltered(filter, page);
+async function FilteredPool({
+  filter,
+  page,
+}: {
+  filter: { regions: string[]; owner?: string; batch?: string };
+  page: number;
+}) {
+  const [{ items, hasNext, total }, recentTeams, batches] = await Promise.all([
+    fetchFiltered(filter, page),
+    recentTeamNames(),
+    fetchBatches(),
+  ]);
+  const activeBatch = batches.find((b) => b.id === filter.batch);
   const ownerCount = new Set(items.map((p) => p.owner_name || "(미상)")).size;
   const label = filter.owner
     ? `임대인 "${filter.owner}"`
@@ -258,6 +367,7 @@ async function FilteredPool({ filter, page }: { filter: { regions: string[]; own
     if (filter.regions.length > 1) params.set("regions", filter.regions.join(","));
     else if (filter.regions.length === 1) params.set("region", filter.regions[0]);
     if (filter.owner) params.set("owner", filter.owner);
+    if (filter.batch) params.set("batch", filter.batch);
     if (p > 0) params.set("page", String(p));
     return `/admin/auction/collection?${params.toString()}`;
   }
@@ -281,7 +391,8 @@ async function FilteredPool({ filter, page }: { filter: { regions: string[]; own
           </Link>
         </div>
       </div>
-      <PoolList items={items} />
+      <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
+      <PoolList items={items} recentTeams={recentTeams} />
       {/* 페이지 내비게이션 */}
       <div className="flex items-center justify-center gap-3 py-2">
         {page > 0 ? (

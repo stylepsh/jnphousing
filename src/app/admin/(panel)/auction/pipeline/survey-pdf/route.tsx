@@ -9,15 +9,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { requireAdmin } from "@/lib/auth-guard";
-import { createServiceClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { AuctionSurveyPdf } from "@/lib/pdf/auction-survey-pdf";
 import { computeSurveySheetRows } from "@/lib/auction/survey-rows";
+import { recordSheetIssue } from "@/lib/auction/issue-sheet";
 
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
-    const body = (await req.json().catch(() => ({}))) as { ids?: string[] };
+    const body = (await req.json().catch(() => ({}))) as { ids?: string[]; team?: string };
     const ids = Array.isArray(body.ids) ? body.ids.filter((x) => typeof x === "string") : [];
     if (ids.length === 0) {
       return NextResponse.json({ error: "선택된 물건이 없습니다." }, { status: 400 });
@@ -29,32 +29,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "물건을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const supabase = createServiceClient();
     const printedAtIso = new Date().toISOString();
-
-    // 1) 발급(sheet) 레코드 생성 — total_count 는 실제 답사 대상 수
-    const { data: sheetRow, error: sheetErr } = await supabase
-      .from("auction_survey_sheet")
-      .insert({ region_label: regionLabel, printed_at: printedAtIso, total_count: todoRows.length })
-      .select("id")
-      .single();
-    if (sheetErr || !sheetRow) {
-      return NextResponse.json({ error: "발급 생성 실패. 마이그레이션 020 적용 여부를 확인하세요." }, { status: 500 });
-    }
-    const sheetId = (sheetRow as { id: string }).id;
-
-    // 2) 답사 대상 물건만 이 발급에 연결 (대량 대비 청크). 번호는 property_no 고정이라
-    //    덮어쓰지 않는다 — 발급은 "이번에 어느 물건을 들고 나갔나"의 묶음일 뿐.
-    const CHUNK = 40;
-    for (let i = 0; i < todoRows.length; i += CHUNK) {
-      const slice = todoRows.slice(i, i + CHUNK);
-      await Promise.all(
-        slice.map((it) =>
-          supabase
-            .from("auction_property")
-            .update({ sheet_id: sheetId })
-            .eq("id", it.id),
-        ),
+    const { sheetId } = await recordSheetIssue({
+      propertyIds: todoRows.map((it) => it.id),
+      regionLabel,
+      teamName: typeof body.team === "string" ? body.team : undefined,
+      kind: "pdf",
+      printedAtIso,
+    });
+    if (!sheetId) {
+      return NextResponse.json(
+        { error: "발급 기록 실패. 마이그레이션 020·036 적용 여부를 확인하세요." },
+        { status: 500 },
       );
     }
 
