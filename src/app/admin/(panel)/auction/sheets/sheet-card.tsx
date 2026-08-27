@@ -3,10 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, FileSpreadsheet, Trash2, Users2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  FileSpreadsheet,
+  Trash2,
+  Users2,
+  PackageCheck,
+  Undo2,
+} from "lucide-react";
 import {
   listSheetItems,
   deleteSheetLog,
+  setSheetReturned,
   type SheetLog,
   type SheetItemRow,
 } from "./actions";
@@ -27,6 +36,10 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<SheetItemRow[] | null>(null);
+  const daysAgo = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(sheet.printed_at).getTime()) / 86_400_000),
+  );
 
   function toggle() {
     const next = !open;
@@ -71,6 +84,18 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
     }
   }
 
+  function toggleReturned() {
+    startTransition(async () => {
+      const res = await setSheetReturned(sheet.id, !sheet.returned_at);
+      if (!res.ok) {
+        toast.error(res.error ?? "처리 실패");
+        return;
+      }
+      toast.success(sheet.returned_at ? "회수 취소" : "회수 완료로 표시");
+      router.refresh();
+    });
+  }
+
   function remove() {
     if (!confirm("이 발급 이력을 삭제할까요? 물건 데이터는 그대로입니다.")) return;
     startTransition(async () => {
@@ -85,7 +110,11 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card">
+    <div
+      className={`rounded-xl border bg-card ${
+        !sheet.returned_at && daysAgo >= 14 ? "border-rose-300" : ""
+      }`}
+    >
       <div className="flex items-center gap-2 px-4 py-3">
         <button onClick={toggle} className="inline-flex items-center gap-2 text-left flex-1 min-w-0">
           {open ? (
@@ -105,6 +134,29 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
           <span className="text-[11px] text-muted-foreground shrink-0">
             {sheet.kind === "xlsx" ? "엑셀" : "인쇄"}
           </span>
+          {sheet.returned_at ? (
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
+              회수 {sheet.returned_at.slice(5, 10).replace("-", "/")}
+            </span>
+          ) : (
+            <span
+              className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                daysAgo >= 14 ? "text-rose-700 bg-rose-100" : "text-amber-800 bg-amber-100"
+              }`}
+              title={daysAgo >= 14 ? "2주 넘게 미회수 — 확인이 필요합니다" : "아직 회수 안 됨"}
+            >
+              미회수 {daysAgo}일
+            </span>
+          )}
+        </button>
+        <button
+          onClick={toggleReturned}
+          disabled={pending}
+          className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:bg-emerald-50 px-2 py-1 rounded shrink-0"
+          title={sheet.returned_at ? "회수 표시 취소" : "답사지를 돌려받았음"}
+        >
+          {sheet.returned_at ? <Undo2 className="w-3.5 h-3.5" /> : <PackageCheck className="w-3.5 h-3.5" />}
+          {sheet.returned_at ? "회수취소" : "회수완료"}
         </button>
         <button
           onClick={redownload}

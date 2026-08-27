@@ -21,6 +21,10 @@ export default async function AuctionSheetsPage() {
     byTeam.set(k, cur);
   }
   const teams = Array.from(byTeam.entries()).sort((a, b) => (a[1].last < b[1].last ? 1 : -1));
+  const open = sheets.filter((s) => !s.returned_at);
+  const overdue = open.filter(
+    (s) => Date.now() - new Date(s.printed_at).getTime() >= 14 * 86_400_000,
+  );
 
   return (
     <div className="space-y-6">
@@ -38,6 +42,25 @@ export default async function AuctionSheetsPage() {
         }
       />
 
+      {open.length > 0 && (
+        <div
+          className={`rounded-xl border p-4 ${
+            overdue.length > 0 ? "border-rose-300 bg-rose-50" : "bg-card"
+          }`}
+        >
+          <p className="text-sm font-bold">
+            미회수 {open.length}건
+            {overdue.length > 0 && (
+              <span className="text-rose-700"> · 2주 초과 {overdue.length}건</span>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            답사지를 돌려받으면 각 발급 줄의 <strong>회수완료</strong> 를 눌러주세요. 미회수 목록이
+            줄어들고, 어느 팀이 뭘 들고 있는지 한눈에 남습니다.
+          </p>
+        </div>
+      )}
+
       {teams.length > 0 && (
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm font-bold mb-2">팀별 배포 요약</p>
@@ -50,6 +73,10 @@ export default async function AuctionSheetsPage() {
                 <strong className="text-sm">{name}</strong>
                 <span className="text-muted-foreground">
                   발급 {v.sheets}회 · {v.count}건 · 최근 {v.last.slice(0, 10)}
+                  {(() => {
+                    const o = open.filter((s) => (s.team_name || "팀 미기재") === name).length;
+                    return o > 0 ? ` · 미회수 ${o}건` : "";
+                  })()}
                 </span>
               </span>
             ))}

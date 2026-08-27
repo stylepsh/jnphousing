@@ -15,7 +15,16 @@ export interface RegionCount {
  * 답사팀이 요청한 지역을 여러 개 골라 함께 불러오거나(→그 지역들만 로드),
  * 임대인명을 검색하면(→전 지역에 흩어진 그 임대인 물건만 로드) 해당 분량만 풀로 띄운다.
  */
-export function RegionPicker({ regions, total }: { regions: RegionCount[]; total: number }) {
+export function RegionPicker({
+  regions,
+  total,
+  issued = {},
+}: {
+  regions: RegionCount[];
+  total: number;
+  /** 지역 라벨 -> 최근 발급 (배포 중 배지) */
+  issued?: Record<string, { team: string; at: string; returned: boolean }>;
+}) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("");
@@ -178,6 +187,14 @@ export function RegionPicker({ regions, total }: { regions: RegionCount[]; total
                       {active && <Check className="w-3 h-3" />}
                     </span>
                     <span className="text-[13px] font-medium truncate">{shortLabel(r.region)}</span>
+                    {issued[r.region] && !issued[r.region].returned && (
+                      <span
+                        className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full shrink-0"
+                        title={`${issued[r.region].at} ${issued[r.region].team} 배포 — 아직 회수 안 됨`}
+                      >
+                        {issued[r.region].team} 배포중
+                      </span>
+                    )}
                   </span>
                   <span className="text-[13px] font-black text-teal-700 shrink-0 tabular-nums">
                     {r.pending_count.toLocaleString()}

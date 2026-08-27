@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -55,9 +55,12 @@ const OWNER_FALLBACK = "(소유자 미상)";
 export function PoolList({
   items,
   recentTeams = [],
+  scopeKey = "all",
 }: {
   items: PoolItem[];
   recentTeams?: string[];
+  /** 지역/임대인/회차 조합 — 이 범위별로 선택 상태를 기억한다. */
+  scopeKey?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -71,6 +74,10 @@ export function PoolList({
   const [regionSearch, setRegionSearch] = useState("");
   // 답사지를 받는 팀 (발급 이력에 기록 — 같은 지역 중복 배포 방지)
   const [team, setTeam] = useState("");
+  // 방금 발급한 내역 배너 (또 누르는 실수 방지)
+  const [lastIssue, setLastIssue] = useState<{ team: string; count: number; kind: string } | null>(
+    null,
+  );
   // 최소 N건 이상 임대인만 (잡건 배제, 기본 3)
   const [minPerOwner, setMinPerOwner] = useState(3);
   // 샘플 기준: 임대인별 / 지역별
@@ -312,6 +319,36 @@ export function PoolList({
     });
   }
 
+  // ── 선택 상태 기억 (뒤로 갔다 와도 체크가 살아 있게) ──
+  const storeKey = `auction-pool-sel:${scopeKey}`;
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    try {
+      const raw = sessionStorage.getItem(storeKey);
+      if (!raw) return;
+      const ids: string[] = JSON.parse(raw);
+      const alive = ids.filter((id) => items.some((i) => i.id === id));
+      if (alive.length > 0) {
+        setSelected(new Set(alive));
+        toast.success(`이전에 고른 ${alive.length}건을 되살렸습니다`, { duration: 2500 });
+      }
+    } catch {
+      /* 저장소 접근 실패는 무시 */
+    }
+  }, [storeKey, items]);
+
+  useEffect(() => {
+    if (!restored.current) return;
+    try {
+      if (selected.size === 0) sessionStorage.removeItem(storeKey);
+      else sessionStorage.setItem(storeKey, JSON.stringify(Array.from(selected)));
+    } catch {
+      /* 무시 */
+    }
+  }, [selected, storeKey]);
+
   // ===== 삭제(후보 풀 제외) =====
   function deleteIds(ids: string[], label: string) {
     if (ids.length === 0) return;
@@ -405,7 +442,10 @@ export function PoolList({
       document.body.removeChild(a);
       window.open(url, "_blank");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      toast.success(`답사지 PDF ${selected.size}건 생성`);
+      setLastIssue({ team: team.trim() || "팀 미기재", count: selected.size, kind: "인쇄" });
+      setSelected(new Set());
+      toast.success(`답사지 PDF ${selected.size}건 발급 — 발급 이력에 기록됨`);
+      router.refresh();
     } catch {
       toast.error("PDF 발급 실패");
     }
@@ -436,7 +476,10 @@ export function PoolList({
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      toast.success(`답사지 엑셀 ${selected.size}건 생성 — 답사자에게 전달해 입력받으세요`);
+      setLastIssue({ team: team.trim() || "팀 미기재", count: selected.size, kind: "엑셀" });
+      setSelected(new Set());
+      toast.success(`답사지 엑셀 ${selected.size}건 발급 — 답사자에게 전달해 입력받으세요`);
+      router.refresh();
     } catch {
       toast.error("엑셀 발급 실패");
     }
@@ -642,6 +685,27 @@ export function PoolList({
       </div>
 
       {/* ── 지역 빠른 필터 칩 ── */}
+      {lastIssue && (
+        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-bold text-emerald-900">
+            방금 {lastIssue.team}에 {lastIssue.count}건 {lastIssue.kind} 발급했습니다 — 선택은 해제했습니다.
+          </span>
+          <a
+            href="/admin/auction/sheets"
+            className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
+          >
+            발급 이력 보기
+          </a>
+          <button
+            onClick={() => setLastIssue(null)}
+            className="ml-auto text-emerald-700 hover:text-emerald-900"
+            title="닫기"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {regionGroups.length > 1 && (
         <div className="rounded-xl border bg-card p-2.5">
           <div className="flex items-center gap-1.5 mb-1.5">

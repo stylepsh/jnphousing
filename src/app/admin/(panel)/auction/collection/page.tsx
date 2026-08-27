@@ -9,6 +9,8 @@ import { RegionPicker, type RegionCount } from "./region-picker";
 import { OwnerGrid, type OwnerPending } from "./owner-grid";
 import { normalizeOwnerName } from "@/lib/auction/court-auction";
 import { recentTeamNames } from "@/lib/auction/issue-sheet";
+import { recentIssuesByRegion } from "../sheets/actions";
+import { ScrollMemory } from "./scroll-memory";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -203,12 +205,19 @@ export default async function AuctionCollectionPage({
         <FilteredPool filter={filter} page={page} />
       ) : (
         <>
+          <ScrollMemory scopeKey={ownerView ? "gate-owner" : "gate-region"} />
+          <GateBatches />
           <GateTabs ownerView={ownerView} min={min} />
           {ownerView ? <OwnerGate min={min} /> : <RegionGate />}
         </>
       )}
     </div>
   );
+}
+
+async function GateBatches() {
+  const batches = await fetchBatches();
+  return <BatchFilterBar batches={batches} filter={{ regions: [] }} />;
 }
 
 function BatchFilterBar({
@@ -295,8 +304,8 @@ function GateTabs({ ownerView, min }: { ownerView: boolean; min: number }) {
 }
 
 async function RegionGate() {
-  const { regions, total } = await fetchRegions();
-  return <RegionPicker regions={regions} total={total} />;
+  const [{ regions, total }, issued] = await Promise.all([fetchRegions(), recentIssuesByRegion()]);
+  return <RegionPicker regions={regions} total={total} issued={issued} />;
 }
 
 async function OwnerGate({ min }: { min: number }) {
@@ -352,6 +361,12 @@ async function FilteredPool({
     fetchBatches(),
   ]);
   const activeBatch = batches.find((b) => b.id === filter.batch);
+  const scopeKey = [
+    filter.regions.join("|") || "-",
+    filter.owner ?? "-",
+    filter.batch ?? "-",
+    page,
+  ].join("::");
   const ownerCount = new Set(items.map((p) => p.owner_name || "(미상)")).size;
   const label = filter.owner
     ? `임대인 "${filter.owner}"`
@@ -391,8 +406,9 @@ async function FilteredPool({
           </Link>
         </div>
       </div>
+      <ScrollMemory scopeKey={scopeKey} />
       <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
-      <PoolList items={items} recentTeams={recentTeams} />
+      <PoolList items={items} recentTeams={recentTeams} scopeKey={scopeKey} />
       {/* 페이지 내비게이션 */}
       <div className="flex items-center justify-center gap-3 py-2">
         {page > 0 ? (

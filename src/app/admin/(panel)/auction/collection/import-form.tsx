@@ -77,12 +77,12 @@ export function AuctionImportForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="mb-1.5 block text-xs font-bold text-muted-foreground">
-            배치 이름 (선택)
+            수집 회차 이름 — 적어두면 나중에 회차별로 뽑기 편합니다
           </Label>
           <Input
             value={batchName}
             onChange={(e) => setBatchName(e.target.value)}
-            placeholder="자동: 날짜 보증채권 임포트"
+            placeholder="예: 9월 예정물건 1차 (비우면 날짜로 자동)"
           />
         </div>
         <div>
