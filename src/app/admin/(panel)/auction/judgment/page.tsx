@@ -57,7 +57,7 @@ async function fetchData(): Promise<{ owners: OwnerVerdict[]; targets: TargetRow
     const { data: propData } = await supabase
       .from("auction_property")
       .select("id, owner_name, address, case_number, survey_status, property_no")
-      .neq("survey_status", "rejected")
+      .not("survey_status", "in", "(rejected,blocked)")
       .order("owner_name", { ascending: true });
 
     const { data: targetData } = await supabase

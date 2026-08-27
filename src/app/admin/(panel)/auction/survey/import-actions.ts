@@ -136,7 +136,10 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
             pipeline_state: string | null;
             survey_status: string | null;
           }[];
-          existing = list.find((r) => r.survey_status !== "rejected") ?? list[0] ?? null;
+          existing =
+            list.find((r) => r.survey_status !== "rejected" && r.survey_status !== "blocked") ??
+            list[0] ??
+            null;
         }
 
         let propertyId: string;

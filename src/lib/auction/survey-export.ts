@@ -26,7 +26,7 @@ export async function buildSurveyTemplate(opts: {
   let q = sb
     .from("auction_property")
     .select("case_number, address, address_short, category, owner_name, creditor, batch_id, pipeline_state")
-    .neq("survey_status", "rejected");
+    .not("survey_status", "in", "(rejected,blocked)");
   if (opts.states?.length) q = q.in("pipeline_state", opts.states);
   const { data } = await q;
   const rows = (data ?? []) as PoolRow[];

@@ -35,7 +35,7 @@ async function fetchSurvey(): Promise<Row[]> {
       .select(
         "id, case_number, court, address, owner_name, category, appraisal_value, minimum_bid, survey_status, survey_date, survey_by, door_code, survey_memo, batch_id",
       )
-      .neq("survey_status", "rejected")
+      .not("survey_status", "in", "(rejected,blocked)")
       .order("created_at", { ascending: false });
 
     const props = (data ?? []) as (SurveyItem & { batch_id: string | null })[];
