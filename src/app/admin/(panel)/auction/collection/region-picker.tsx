@@ -31,10 +31,17 @@ export function RegionPicker({
   // 다중 지역 선택 (체크 누적 → 함께 불러오기)
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const filtered = useMemo(() => {
-    const list = q.trim() ? regions.filter((r) => textMatches(q, r.region)) : regions;
-    return list.slice(0, 200);
-  }, [regions, q]);
+  // 한 번에 그리는 지역 카드 수 (전부 그리면 느려서 잘라 놓고 "더 보기"로 늘린다)
+  const [limit, setLimit] = useState(200);
+  const matched = useMemo(
+    () => (q.trim() ? regions.filter((r) => textMatches(q, r.region)) : regions),
+    [regions, q],
+  );
+  const filtered = useMemo(() => matched.slice(0, limit), [matched, limit]);
+  const shownSum = useMemo(
+    () => filtered.reduce((s, r) => s + (r.pending_count ?? 0), 0),
+    [filtered],
+  );
 
   const selectedSum = useMemo(
     () => regions.filter((r) => selected.has(r.region)).reduce((s, r) => s + (r.pending_count ?? 0), 0),
@@ -85,7 +92,10 @@ export function RegionPicker({
       <div className="rounded-xl border bg-card p-4">
         <p className="text-sm font-bold mb-1">답사지 발급 — 먼저 범위를 고르세요</p>
         <p className="text-xs text-muted-foreground">
-          미답사 후보 총 <strong className="text-foreground">{total.toLocaleString()}</strong>건. 전부 올리면 느려서,
+          미답사 후보 총 <strong className="text-foreground">{total.toLocaleString()}</strong>건 · 지역{" "}
+          <strong className="text-foreground">{regions.length.toLocaleString()}</strong>곳. 아래에는{" "}
+          <strong className="text-foreground">{filtered.length.toLocaleString()}</strong>곳(
+          {shownSum.toLocaleString()}건)만 그려집니다 — 나머지는 검색하거나 &quot;더 보기&quot;로 펼치세요. 전부 올리면 느려서,
           답사팀이 요청한 <strong>지역을 여러 개 체크</strong>해 함께 불러오거나 <strong>임대인명</strong>으로 검색해 그 분량만 가져옵니다.
         </p>
 
@@ -204,10 +214,26 @@ export function RegionPicker({
             })}
           </div>
         )}
-        {regions.length > filtered.length && (
-          <p className="text-[11px] text-muted-foreground mt-2">
-            {regions.length.toLocaleString()}개 지역 중 {filtered.length}개 표시 — 위 검색으로 좁히세요.
-          </p>
+        {matched.length > filtered.length && (
+          <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-[11px] text-muted-foreground">
+              {matched.length.toLocaleString()}곳 중 {filtered.length.toLocaleString()}곳 표시 ·
+              나머지 {(matched.length - filtered.length).toLocaleString()}곳{" "}
+              {(total - shownSum).toLocaleString()}건은 아직 안 그렸습니다
+            </p>
+            <button
+              onClick={() => setLimit((n) => n + 300)}
+              className="inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-bold text-teal-700 border-teal-200 hover:bg-teal-50"
+            >
+              300곳 더 보기
+            </button>
+            <button
+              onClick={() => setLimit(matched.length)}
+              className="inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-bold text-teal-700 border-teal-200 hover:bg-teal-50"
+            >
+              전부 펼치기
+            </button>
+          </div>
         )}
       </div>
     </div>
