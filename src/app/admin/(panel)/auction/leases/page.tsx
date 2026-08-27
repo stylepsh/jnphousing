@@ -101,7 +101,7 @@ export default async function AuctionLeasesPage({
         </div>
       ) : (
         <>
-          <div className="rounded-xl border overflow-x-auto">
+          <div className="rounded-xl border overflow-x-auto hidden md:block">
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50 text-xs text-muted-foreground">
                 <tr>
@@ -134,6 +134,29 @@ export default async function AuctionLeasesPage({
               </tbody>
             </table>
           </div>
+
+          {/* 모바일: 카드 목록 */}
+          <ul className="md:hidden rounded-xl border divide-y bg-card">
+            {rows.map((r) => (
+              <li key={r.id} className="px-3 py-3">
+                <div className="font-mono text-[11px] text-blue-700">{r.case_number}</div>
+                <p className="text-sm font-medium break-words">{r.address}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  임차인 {r.tenant_name ?? "-"} · 임대인 {r.owner_name ?? "-"}
+                </p>
+                <p className="text-xs mt-1">
+                  <strong>월세 {formatWon(r.monthly_rent ?? 0)}</strong> · 보증금{" "}
+                  {formatWon(r.deposit ?? 0)}
+                  {r.management_fee_rate != null && ` · 수수료 ${r.management_fee_rate}%`}
+                </p>
+                {r.rent_collection_memo && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    수금일 {r.rent_collection_memo}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
           {/* 페이지 내비게이션 */}
           <div className="flex items-center justify-center gap-3 py-2">
             {page > 0 ? (

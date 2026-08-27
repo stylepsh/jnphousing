@@ -115,8 +115,8 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
         !sheet.returned_at && daysAgo >= 14 ? "border-rose-300" : ""
       }`}
     >
-      <div className="flex items-center gap-2 px-4 py-3">
-        <button onClick={toggle} className="inline-flex items-center gap-2 text-left flex-1 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-3 sm:px-4 py-3">
+        <button onClick={toggle} className="flex items-center gap-2 flex-wrap text-left flex-1 min-w-0">
           {open ? (
             <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
           ) : (
@@ -127,7 +127,7 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
             <Users2 className="w-3 h-3" />
             {sheet.team_name || "팀 미기재"}
           </span>
-          <span className="text-sm truncate">{sheet.region_label}</span>
+          <span className="text-sm truncate max-w-full">{sheet.region_label}</span>
           <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
             {sheet.total_count}건
           </span>
@@ -149,6 +149,7 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
             </span>
           )}
         </button>
+        <div className="flex items-center gap-1 sm:contents">
         <button
           onClick={toggleReturned}
           disabled={pending}
@@ -174,6 +175,7 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
+        </div>
       </div>
 
       {open && (

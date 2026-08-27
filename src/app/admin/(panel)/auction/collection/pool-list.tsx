@@ -537,8 +537,8 @@ export function PoolList({
       </div>
 
       {/* ── 컨트롤 바 ── */}
-      <div className="sticky top-0 z-20 rounded-xl border border-blue-200 bg-blue-50 p-3 shadow-sm">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="sticky top-0 z-20 rounded-xl border border-blue-200 bg-blue-50 p-2.5 sm:p-3 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={allSelected ? clearAll : selectAll}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border-2 border-blue-500 hover:bg-blue-50 text-sm font-bold text-blue-700"
@@ -626,7 +626,7 @@ export function PoolList({
                 onChange={(e) => setTeam(e.target.value)}
                 list="recent-survey-teams"
                 placeholder="받는 답사팀 (예: A팀)"
-                className="w-40 text-xs font-bold bg-transparent focus:outline-none"
+                className="w-32 sm:w-40 text-xs font-bold bg-transparent focus:outline-none"
                 title="답사지 발급 이력에 기록됩니다 — 같은 지역 중복 배포 방지"
               />
               <datalist id="recent-survey-teams">
@@ -855,7 +855,7 @@ export function PoolList({
         const groupSome = list.some((i) => selected.has(i.id));
         return (
           <div key={owner} className="rounded-xl border bg-card overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-b border-blue-200">
+            <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-blue-50 border-b border-blue-200 flex-wrap">
               <button onClick={() => toggleGroup(list)} className="inline-flex items-center justify-center w-6 h-6 rounded border-2 border-blue-600 bg-white shrink-0">
                 {groupAll ? <CheckSquare className="w-4 h-4 text-blue-700" /> : groupSome ? <div className="w-3 h-3 bg-blue-600 rounded-sm" /> : <Square className="w-4 h-4 text-blue-300" />}
               </button>
@@ -874,7 +874,7 @@ export function PoolList({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-xs text-muted-foreground">
                   <tr>
@@ -939,6 +939,66 @@ export function PoolList({
                 </tbody>
               </table>
             </div>
+
+            {/* 모바일: 표 대신 카드 (가로 스크롤 없이 한 손으로) */}
+            <ul className="md:hidden divide-y">
+              {list.map((p) => {
+                const on = selected.has(p.id);
+                return (
+                  <li
+                    key={p.id}
+                    onClick={() => toggle(p.id)}
+                    className={cn("px-3 py-3 flex gap-2.5", on ? "bg-blue-50" : "")}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() => toggle(p.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-5 h-5 mt-0.5 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium break-words">{p.address}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        <span className="font-mono text-[11px] text-blue-700">{p.case_number}</span>
+                        <span
+                          className={cn(
+                            "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                            CREDITOR_BADGE[p.creditor_type ?? "OTHER"],
+                          )}
+                        >
+                          {p.creditor_type ?? "OTHER"}
+                        </span>
+                        {p.last_issued_at && (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full">
+                            {p.last_issued_at.slice(5, 10).replace("-", "/")}{" "}
+                            {p.last_issued_team || "배포됨"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        감정 {p.appraisal_value != null ? formatWon(p.appraisal_value) : "-"} · 최저{" "}
+                        {p.minimum_bid != null ? formatWon(p.minimum_bid) : "-"}
+                        {p.dividend_deadline && (
+                          <span className="text-rose-600 font-medium"> · 배당 {p.dividend_deadline}</span>
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteIds([p.id], `${p.case_number}`);
+                      }}
+                      disabled={pending}
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:bg-rose-50 hover:text-rose-600 shrink-0"
+                      title="개별 제외"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         );
       })}
