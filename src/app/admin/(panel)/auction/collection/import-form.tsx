@@ -48,7 +48,7 @@ export function AuctionImportForm() {
             : data.duplicates > 0
               ? ` (중복 ${data.duplicates}건 제외)`
               : "";
-      const blockNote = data.blockedOwner > 0 ? ` · 차단 임대인 ${data.blockedOwner}건 제외` : "";
+      const blockNote = data.blockedOwner > 0 ? ` · 차단 임대인 ${data.blockedOwner}건은 보관함으로` : "";
       toast.success(
         `보증채권 ${data.imported}건 임포트 (HUG ${data.importedHug} · SGI ${data.importedSgi})${dupNote}${blockNote}`,
       );
@@ -143,7 +143,7 @@ export function AuctionImportForm() {
             <Stat label="기타 (제외)" value={lastResult.other} color="amber" />
             <Stat label="중복 (제외)" value={lastResult.duplicates} color="amber" />
             {lastResult.blockedOwner > 0 && (
-              <Stat label="차단 임대인 (제외)" value={lastResult.blockedOwner} color="slate" />
+              <Stat label="차단 보관함 이동" value={lastResult.blockedOwner} color="slate" />
             )}
           </div>
 
@@ -167,6 +167,7 @@ export function AuctionImportForm() {
                 />
                 <Stat label="거부·처리됨" value={lastResult.alreadyRejected} color="rose" />
                 <Stat label="미답사 중복" value={lastResult.alreadyPending} color="slate" />
+                <Stat label="차단 보관함 기존" value={lastResult.alreadyBlocked} color="slate" />
               </div>
             </div>
           )}

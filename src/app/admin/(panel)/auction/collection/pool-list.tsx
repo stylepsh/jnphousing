@@ -324,11 +324,13 @@ export function PoolList({ items }: { items: PoolItem[] }) {
         `[${owner}] 임대인을 영구 차단할까요?
 
 ` +
-          `· 지금 풀에 있는 ${count}건이 후보에서 빠집니다 (데이터는 보존)
+          `· 전 지역에 흩어진 이 임대인 물건이 전부 답사 후보에서 빠집니다 (여기 ${count}건 포함)
 ` +
-          `· 앞으로 지지옥션 텍스트를 붙여넣어도 이 임대인 물건은 자동 제외됩니다
+          `· 빠진 물건은 사이드바 "차단 임대인" 카테고리에 보관됩니다 (삭제 아님)
 ` +
-          `· 아래 "차단 임대인" 목록에서 언제든 해제 가능`,
+          `· 앞으로 새로 수집돼도 후보가 아니라 그 보관함으로 들어갑니다
+` +
+          `· 차단 해제하면 보관 물건이 다시 후보로 복귀`,
       )
     )
       return;
@@ -338,7 +340,7 @@ export function PoolList({ items }: { items: PoolItem[] }) {
         toast.error(res.error ?? "차단 실패");
         return;
       }
-      toast.success(`[${owner}] 차단 완료 — 풀에서 ${res.removed ?? 0}건 제외`);
+      toast.success(`[${owner}] 차단 완료 — ${res.removed ?? 0}건 보관함으로 이동`);
       setSelected(new Set());
       router.refresh();
     });
@@ -697,7 +699,7 @@ export function PoolList({ items }: { items: PoolItem[] }) {
                     <button onClick={() => deleteIds(list.map((i) => i.id), `${owner}의`)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100 px-1.5 py-1 rounded" title="이번 풀에서만 제외 (다음 임포트에는 다시 들어옴)">
                       <Trash2 className="w-3 h-3" /> 전체제외
                     </button>
-                    <button onClick={() => blockThisOwner(owner, list.length)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 hover:bg-slate-200 px-1.5 py-1 rounded" title="이 임대인 영구 차단 — 다음 임포트에도 안 들어옴">
+                    <button onClick={() => blockThisOwner(owner, list.length)} disabled={pending} className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 hover:bg-slate-200 px-1.5 py-1 rounded" title="이 임대인 전 지역 영구 차단 — 차단 임대인 카테고리로 보관">
                       <Ban className="w-3 h-3" /> 차단
                     </button>
                   </div>

@@ -29,7 +29,8 @@ export interface ImportResult {
   alreadyOtherSurveyed: number; // 재방문/제외 등 기타 답사완료 (제외)
   alreadyPending: number; // 미답사 중복 (이미 풀에 있음)
   alreadyRejected: number; // 이미 거부/처리된 건 (답사 돌린 뒤 풀에서 치운 것 — 재수집 차단)
-  blockedOwner: number; // 차단 임대인이라 걸러진 건수
+  alreadyBlocked: number; // 이미 차단 보관함에 있는 건
+  blockedOwner: number; // 이번에 차단 보관함으로 들어간 건수
   imported: number;
   importedHug: number;
   importedSgi: number;
@@ -65,6 +66,7 @@ export async function importAuctionText(input: {
     alreadyOtherSurveyed: 0,
     alreadyPending: 0,
     alreadyRejected: 0,
+    alreadyBlocked: 0,
     blockedOwner: 0,
     imported: 0,
     importedHug: 0,
@@ -91,7 +93,7 @@ export async function importAuctionText(input: {
     }
 
     const stats = countByCreditorType(valid);
-    let toImport = targetOnly ? valid.filter((p) => isTargetCreditor(p.creditor)) : valid;
+    const toImport = targetOnly ? valid.filter((p) => isTargetCreditor(p.creditor)) : valid;
 
     if (toImport.length === 0) {
       return {
@@ -108,22 +110,8 @@ export async function importAuctionText(input: {
 
     // 차단 임대인 제외 — "이 사람 물건은 아예 안 본다" (재파싱마다 자동 필터)
     const blockedKeys = await fetchBlockedOwnerKeys(supabase);
-    const beforeBlock = toImport.length;
-    if (blockedKeys.size) {
-      toImport = toImport.filter((p) => !blockedKeys.has(normalizeOwnerName(p.ownerName)));
-    }
-    const blockedOwner = beforeBlock - toImport.length;
-    if (toImport.length === 0) {
-      return {
-        ...empty,
-        error: `대상 ${beforeBlock}건이 모두 차단 임대인입니다. (차단 목록에서 해제하면 다시 수집됩니다)`,
-        parsedTotal: valid.length,
-        hug: stats.HUG,
-        sgi: stats.SGI,
-        other: stats.OTHER,
-        blockedOwner,
-      };
-    }
+    const isBlockedCase = (ownerName: string | undefined) =>
+      blockedKeys.size > 0 && blockedKeys.has(normalizeOwnerName(ownerName));
 
     // 중복 차단: 같은 상세주소/사건번호가 "이미 답사 완료(공실/거주/재방문)"인 현장이면 skip
     // (힘들게 답사 돈 곳을 답사자에게 다시 안 보냄).
@@ -157,6 +145,7 @@ export async function importAuctionText(input: {
       occupied: 4,
       revisit: 3,
       skip: 2,
+      blocked: 2,
       pending: 1,
       rejected: 1, // 확정 답사상태가 함께 있으면 그쪽 우선, 거부만 있으면 거부로 분류
     };
@@ -187,6 +176,7 @@ export async function importAuctionText(input: {
     let alreadyOtherSurveyed = 0;
     let alreadyPending = 0;
     let alreadyRejected = 0;
+    let alreadyBlocked = 0;
     const dedupedImport = toImport.filter((p) => {
       const addr = (p.address || "(주소 미상)").trim();
       const cnum = (p.caseNumber || "").replace(/\s/g, "");
@@ -203,11 +193,12 @@ export async function importAuctionText(input: {
       else if (ex === "occupied") alreadyOccupied += 1;
       else if (ex === "pending") alreadyPending += 1;
       else if (ex === "rejected") alreadyRejected += 1; // 거부/처리된 건 — 재수집 차단
+      else if (ex === "blocked") alreadyBlocked += 1; // 차단 임대인 보관함에 이미 있음
       else alreadyOtherSurveyed += 1; // revisit / skip
       return false;
     });
     const skippedDuplicates = toImport.length - dedupedImport.length;
-    const dupDetail = { alreadyVacant, alreadyOccupied, alreadyOtherSurveyed, alreadyPending, alreadyRejected };
+    const dupDetail = { alreadyVacant, alreadyOccupied, alreadyOtherSurveyed, alreadyPending, alreadyRejected, alreadyBlocked };
 
     if (dedupedImport.length === 0) {
       return {
@@ -221,7 +212,7 @@ export async function importAuctionText(input: {
         other: stats.OTHER,
         duplicates: skippedDuplicates,
         ...dupDetail,
-        blockedOwner,
+        blockedOwner: 0,
       };
     }
 
@@ -264,8 +255,10 @@ export async function importAuctionText(input: {
       auction_date: p.auctionDate ?? null,
       dividend_deadline: p.dividendDeadline ?? null,
       raw_text: p.rawText ?? null,
-      survey_status: "pending",
+      // 차단 임대인 물건도 접수는 하되 보관함(blocked)으로 — /admin/auction/blocked
+      survey_status: isBlockedCase(p.ownerName) ? "blocked" : "pending",
     }));
+    const blockedOwner = toInsert.filter((r) => r.survey_status === "blocked").length;
 
     const { error: insErr } = await supabase.from("auction_property").insert(toInsert);
     if (insErr) {
@@ -437,13 +430,14 @@ export async function blockOwner(
     for (let i = 0; i < ids.length; i += 300) {
       const { data: upd } = await supabase
         .from("auction_property")
-        .update({ survey_status: "rejected", updated_at: new Date().toISOString() })
+        .update({ survey_status: "blocked", updated_at: new Date().toISOString() })
         .in("id", ids.slice(i, i + 300))
         .select("id");
       removed += (upd ?? []).length;
     }
 
     revalidatePath("/admin/auction/collection");
+    revalidatePath("/admin/auction/blocked");
     return { ok: true, removed };
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
@@ -452,20 +446,79 @@ export async function blockOwner(
 }
 
 /** 차단 해제 — 목록에서만 제거. 이미 제외된 물건은 되살리지 않는다(다음 임포트부터 다시 들어옴). */
-export async function unblockOwner(ownerKey: string): Promise<{ ok: boolean; error?: string }> {
+export async function unblockOwner(
+  ownerKey: string,
+): Promise<{ ok: boolean; restored?: number; error?: string }> {
   try {
     await requireAdmin();
     const key = z.string().trim().min(1).safeParse(ownerKey);
     if (!key.success) return { ok: false, error: "잘못된 요청입니다" };
 
     const supabase = createServiceClient();
+    const { data: row } = await supabase
+      .from("auction_owner_blocklist")
+      .select("owner_name")
+      .eq("owner_key", key.data)
+      .maybeSingle();
     const { error } = await supabase.from("auction_owner_blocklist").delete().eq("owner_key", key.data);
     if (error) return { ok: false, error: error.message };
 
+    // 보관함(blocked)에 있던 물건을 다시 답사 후보(pending)로 복귀
+    let restored = 0;
+    const anchor = ownerNameAnchor((row as { owner_name?: string } | null)?.owner_name);
+    const { data: blockedRows } = anchor
+      ? await supabase
+          .from("auction_property")
+          .select("id, owner_name")
+          .eq("survey_status", "blocked")
+          .ilike("owner_name", `%${anchor}%`)
+      : { data: [] as { id: string; owner_name: string | null }[] };
+    const ids = ((blockedRows ?? []) as { id: string; owner_name: string | null }[])
+      .filter((r) => normalizeOwnerName(r.owner_name) === key.data)
+      .map((r) => r.id);
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data: upd } = await supabase
+        .from("auction_property")
+        .update({ survey_status: "pending", updated_at: new Date().toISOString() })
+        .in("id", ids.slice(i, i + 300))
+        .select("id");
+      restored += (upd ?? []).length;
+    }
+
     revalidatePath("/admin/auction/collection");
-    return { ok: true };
+    revalidatePath("/admin/auction/blocked");
+    return { ok: true, restored };
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
     return { ok: false, error: "해제 중 오류가 발생했습니다." };
   }
 }
+
+export interface BlockedProperty {
+  id: string;
+  case_number: string;
+  address: string;
+  owner_name: string;
+  creditor_type: string | null;
+  appraisal_value: number | null;
+  created_at: string;
+}
+
+/** 차단 보관함 물건 — 차단 임대인 명의로 접수된 건(답사 후보에서는 빠져 있음). */
+export async function listBlockedProperties(): Promise<BlockedProperty[]> {
+  try {
+    await requireAdmin();
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("auction_property")
+      .select("id, case_number, address, owner_name, creditor_type, appraisal_value, created_at")
+      .eq("survey_status", "blocked")
+      .order("owner_name", { ascending: true })
+      .limit(5000);
+    if (error) return [];
+    return (data ?? []) as BlockedProperty[];
+  } catch {
+    return [];
+  }
+}
+

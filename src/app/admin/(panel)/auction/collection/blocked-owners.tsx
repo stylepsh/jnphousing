@@ -10,10 +10,16 @@ import { blockOwner, unblockOwner, type BlockedOwner } from "./actions";
  * 차단 임대인 패널 — "이 사람 물건은 아예 안 본다".
  * 등록하면 지금 풀에서 빠지고, 이후 임포트에서도 자동 제외된다.
  */
-export function BlockedOwners({ owners }: { owners: BlockedOwner[] }) {
+export function BlockedOwners({
+  owners,
+  defaultOpen = false,
+}: {
+  owners: BlockedOwner[];
+  defaultOpen?: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
 
@@ -29,7 +35,7 @@ export function BlockedOwners({ owners }: { owners: BlockedOwner[] }) {
         toast.error(res.error ?? "차단 실패");
         return;
       }
-      toast.success(`[${n}] 차단 — 풀에서 ${res.removed ?? 0}건 제외`);
+      toast.success(`[${n}] 차단 — ${res.removed ?? 0}건 보관함으로 이동`);
       setName("");
       setReason("");
       router.refresh();
@@ -44,7 +50,7 @@ export function BlockedOwners({ owners }: { owners: BlockedOwner[] }) {
         toast.error(res.error ?? "해제 실패");
         return;
       }
-      toast.success(`[${o.owner_name}] 차단 해제`);
+      toast.success(`[${o.owner_name}] 차단 해제 — 보관 ${res.restored ?? 0}건 답사 후보로 복귀`);
       router.refresh();
     });
   }

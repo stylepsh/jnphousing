@@ -10,6 +10,7 @@ import {
   Home,
   Handshake,
   Building2,
+  Ban,
   Megaphone,
   FileText,
   QrCode,
@@ -123,6 +124,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/auction/judgment", label: "임대인 판정·전수", icon: UserCheck },
       { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
       { href: "/admin/auction/leases", label: "임차 현황판", icon: Building2 },
+      { href: "/admin/auction/blocked", label: "차단 임대인", icon: Ban },
     ],
   },
 ];
