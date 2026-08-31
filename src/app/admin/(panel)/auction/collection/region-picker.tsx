@@ -191,7 +191,7 @@ export function RegionPicker({
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && goOwner()}
-              placeholder="임대인명으로 전 지역 불러오기 (예: 김민영) — 전수조사용"
+              placeholder="임대인명 일부만 쳐도 됩니다 (예: 홍 → 홍길동·홍서범 전부) — 전수조사용"
               className="w-full pl-9 pr-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

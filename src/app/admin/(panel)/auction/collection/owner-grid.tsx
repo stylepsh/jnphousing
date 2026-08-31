@@ -56,7 +56,7 @@ export function OwnerGrid({ owners }: { owners: OwnerPending[] }) {
   }, [owners, q, sort]);
 
   function go(owner: string) {
-    router.push(`/admin/auction/collection?owner=${encodeURIComponent(owner)}`);
+    router.push(`/admin/auction/collection?owner=${encodeURIComponent(owner)}&ownerExact=1`);
   }
 
   return (

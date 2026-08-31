@@ -48,7 +48,7 @@ async function fetchRegions(): Promise<{ regions: RegionCount[]; total: number }
 }
 
 async function fetchFiltered(
-  filter: { regions: string[]; owner?: string; batch?: string },
+  filter: { regions: string[]; owner?: string; ownerExact?: boolean; batch?: string },
   page: number,
 ): Promise<{
   items: PoolItem[];
@@ -73,7 +73,12 @@ async function fetchFiltered(
       .eq("survey_status", "pending");
 
     if (filter.batch) query = query.eq("batch_id", filter.batch);
-    if (filter.owner) query = query.eq("owner_name", filter.owner);
+    // 이름 일부만 쳐도 나와야 한다("홍" → 홍길동·홍서범·홍석천…).
+    // 임대인 카드를 눌러 들어온 경우(ownerExact)만 정확히 그 사람으로 좁힌다.
+    if (filter.owner)
+      query = filter.ownerExact
+        ? query.eq("owner_name", filter.owner)
+        : query.ilike("owner_name", `%${filter.owner}%`);
     else if (filter.regions.length === 1) query = query.ilike("address", `${filter.regions[0]}%`);
     else if (filter.regions.length > 1) query = query.or(regionOr);
 
@@ -83,7 +88,10 @@ async function fetchFiltered(
       .select("id", { count: "exact", head: true })
       .eq("survey_status", "pending");
     if (filter.batch) countQuery = countQuery.eq("batch_id", filter.batch);
-    if (filter.owner) countQuery = countQuery.eq("owner_name", filter.owner);
+    if (filter.owner)
+      countQuery = filter.ownerExact
+        ? countQuery.eq("owner_name", filter.owner)
+        : countQuery.ilike("owner_name", `%${filter.owner}%`);
     else if (filter.regions.length === 1) countQuery = countQuery.ilike("address", `${filter.regions[0]}%`);
     else if (filter.regions.length > 1) countQuery = countQuery.or(regionOr);
 
@@ -179,6 +187,7 @@ export default async function AuctionCollectionPage({
     region?: string;
     regions?: string;
     owner?: string;
+    ownerExact?: string;
     page?: string;
     view?: string;
     min?: string;
@@ -191,7 +200,12 @@ export default async function AuctionCollectionPage({
     : sp.region
       ? [sp.region]
       : [];
-  const filter = { regions, owner: sp.owner, batch: sp.batch };
+  const filter = {
+    regions,
+    owner: sp.owner,
+    ownerExact: sp.ownerExact === "1",
+    batch: sp.batch,
+  };
   const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
   const hasFilter = !!(regions.length || filter.owner || filter.batch);
   const ownerView = sp.view === "owner";
@@ -378,7 +392,7 @@ async function FilteredPool({
   filter,
   page,
 }: {
-  filter: { regions: string[]; owner?: string; batch?: string };
+  filter: { regions: string[]; owner?: string; ownerExact?: boolean; batch?: string };
   page: number;
 }) {
   const [{ items, hasNext, total, pageRows, dedupHidden }, recentTeams, batches] = await Promise.all([
@@ -389,13 +403,15 @@ async function FilteredPool({
   const activeBatch = batches.find((b) => b.id === filter.batch);
   const scopeKey = [
     filter.regions.join("|") || "-",
-    filter.owner ?? "-",
+    `${filter.owner ?? "-"}${filter.ownerExact ? ":exact" : ""}`,
     filter.batch ?? "-",
     page,
   ].join("::");
   const ownerCount = new Set(items.map((p) => p.owner_name || "(미상)")).size;
   const label = filter.owner
-    ? `임대인 "${filter.owner}"`
+    ? filter.ownerExact
+      ? `임대인 "${filter.owner}"`
+      : `임대인 "${filter.owner}" 포함`
     : filter.regions.length > 1
       ? `${filter.regions.length}개 지역`
       : filter.regions[0];
@@ -407,6 +423,7 @@ async function FilteredPool({
     if (filter.regions.length > 1) params.set("regions", filter.regions.join(","));
     else if (filter.regions.length === 1) params.set("region", filter.regions[0]);
     if (filter.owner) params.set("owner", filter.owner);
+    if (filter.ownerExact) params.set("ownerExact", "1");
     if (filter.batch) params.set("batch", filter.batch);
     if (p > 0) params.set("page", String(p));
     return `/admin/auction/collection?${params.toString()}`;
