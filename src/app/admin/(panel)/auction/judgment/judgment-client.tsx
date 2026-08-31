@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Target, ChevronDown, Copy, Trash2, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { displayOwnerName } from "@/lib/auction/court-auction";
 import {
   designateFullSurveyTarget,
   updateFullSurveyTarget,
@@ -191,7 +192,7 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
           <div className="divide-y">
             {activeTargets.map((t) => (
               <div key={t.id} className="px-4 py-3 flex items-center gap-3 flex-wrap">
-                <span className="font-bold text-sm">{t.owner_name}</span>
+                <span className="font-bold text-sm">{displayOwnerName(t.owner_name)}</span>
                 <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold", STATUS_META[t.status].chip)}>
                   {STATUS_META[t.status].label}
                 </span>
@@ -242,7 +243,7 @@ export function JudgmentClient({ owners, targets }: { owners: OwnerVerdict[]; ta
                   <div className="flex items-center gap-2">
                     <button onClick={() => toggle(o.owner_name)} className="flex items-center gap-1.5 min-w-0 flex-1 text-left">
                       <ChevronDown className={cn("w-4 h-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
-                      <span className="font-bold text-sm truncate">{o.owner_name}</span>
+                      <span className="font-bold text-sm truncate">{displayOwnerName(o.owner_name)}</span>
                       <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0", meta.chip)} title={meta.desc}>
                         {meta.label}
                       </span>

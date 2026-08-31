@@ -228,6 +228,15 @@ export default async function AuctionCollectionPage({
   );
 }
 
+/** 회차 칩 라벨 — 이름을 적었으면 이름, 없으면 날짜+시각(같은 날 여러 회차 구분). */
+function batchChipLabel(b: BatchRow): string {
+  const name = (b.name ?? "").trim();
+  const auto = /^\d{4}-\d{2}-\d{2}\s+보증채권 임포트$/.test(name);
+  if (name && !auto) return name.length > 18 ? `${name.slice(0, 18)}…` : name;
+  const iso = b.created_at ?? "";
+  return `${iso.slice(5, 10)} ${iso.slice(11, 16)}`;
+}
+
 async function GateBatches() {
   const batches = await fetchBatches();
   return <BatchFilterBar batches={batches} filter={{ regions: [] }} />;
@@ -281,9 +290,9 @@ function BatchFilterBar({
                 ? "bg-blue-600 text-white border-blue-600"
                 : "bg-background text-blue-700 border-blue-200 hover:bg-blue-50"
             }`}
-            title={b.name}
+            title={`${b.name} · ${(b.created_at ?? "").slice(0, 16).replace("T", " ")}`}
           >
-            {b.created_at?.slice(0, 10)}
+            {batchChipLabel(b)}
             <span className="font-normal opacity-80">{b.total_count ?? 0}건</span>
           </Link>
         ))}

@@ -283,3 +283,16 @@ export function parseAuctionPasteText(text: string): ParsedAuctionCase[] {
   }
   return results;
 }
+
+/**
+ * 화면 표시용 임대인명 정리.
+ * 지지옥션 원문에 "김정홍 / 이수영"(공동소유) 처럼 구분자가 섞여 들어와
+ * "김정홍 /" 같은 꼬리가 남는 경우가 있다. 데이터는 건드리지 않고 표기만 정돈.
+ */
+export function displayOwnerName(name: string | null | undefined): string {
+  const raw = (name ?? "").trim();
+  if (!raw) return "(소유자 미상)";
+  // 끝에 남은 구분자(/ , · 외) 제거
+  const cleaned = raw.replace(/[\s/,·]+(외\s*\d*명?)?[\s/,·]*$/u, "").trim();
+  return cleaned || raw;
+}

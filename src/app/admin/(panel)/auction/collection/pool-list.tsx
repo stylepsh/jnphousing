@@ -26,6 +26,7 @@ import { rejectAuctionProperties, blockOwner } from "./actions";
 import { selectForSurvey } from "../pipeline/actions";
 import { cn } from "@/lib/utils";
 import { textMatches } from "@/lib/auction/search";
+import { displayOwnerName } from "@/lib/auction/court-auction";
 
 export interface PoolItem {
   id: string;
@@ -801,7 +802,7 @@ export function PoolList({
                   <button onClick={() => setFilterOwner(isFiltered ? null : owner)} className="w-full text-left pr-6" title={isFiltered ? "필터 해제" : "이 임대인 물건만 보기"}>
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-[10px] shrink-0">{(owner[0] ?? "?").toUpperCase()}</div>
-                      <span className="font-bold text-[11px] truncate flex-1">{owner}</span>
+                      <span className="font-bold text-[11px] truncate flex-1">{displayOwnerName(owner)}</span>
                       {isFiltered && <Filter className="w-3 h-3 text-blue-600 shrink-0" />}
                     </div>
                     <div className="flex items-baseline justify-between gap-1">
@@ -873,7 +874,7 @@ export function PoolList({
               <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 font-black text-xs">{(owner[0] ?? "?").toUpperCase()}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-sm font-black truncate">{owner}</span>
+                  <span className="text-sm font-black truncate">{displayOwnerName(owner)}</span>
                   <span className="text-sm font-bold text-blue-700 bg-white px-2.5 py-0.5 rounded-full">{list.length}건</span>
                   {list.filter((i) => selected.has(i.id)).length > 0 && (
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">{list.filter((i) => selected.has(i.id)).length}건 선택</span>

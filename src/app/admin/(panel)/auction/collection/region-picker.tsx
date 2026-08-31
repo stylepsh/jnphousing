@@ -49,9 +49,18 @@ export function RegionPicker({
   );
 
   // 표시용 짧은 라벨 — 시/도 접두어(첫 토큰) 제거. 링크는 전체 region 사용.
+  // 시/도를 떼면 "서구"가 인천·부산·대구 어디인지 알 수 없어 답사지를 엉뚱한 곳에 보낼 수 있다.
+  // 광역시/특별시/도 표기만 짧게 줄이고 접두어는 남긴다.
   function shortLabel(region: string): string {
-    const parts = region.trim().split(/\s+/);
-    return parts.length > 1 ? parts.slice(1).join(" ") : region || "(지역 미상)";
+    const r = (region || "").trim();
+    if (!r) return "(지역 미상)";
+    return r
+      .replace(/특별자치시|특별자치도|광역시|특별시/g, "")
+      .replace(/^(경기도|강원도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|제주도)/, (m) =>
+        ({ 경기도: "경기", 강원도: "강원", 충청북도: "충북", 충청남도: "충남", 전라북도: "전북", 전라남도: "전남", 경상북도: "경북", 경상남도: "경남", 제주도: "제주" })[m] ?? m,
+      )
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function toggleRegion(region: string) {

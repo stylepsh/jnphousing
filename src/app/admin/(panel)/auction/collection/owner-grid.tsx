@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Search, ArrowUpDown } from "lucide-react";
 import { textMatches } from "@/lib/auction/search";
+import { displayOwnerName } from "@/lib/auction/court-auction";
 
 export interface OwnerPending {
   owner_name: string;
@@ -120,8 +121,8 @@ export function OwnerGrid({ owners }: { owners: OwnerPending[] }) {
               className="flex items-center justify-between gap-1.5 rounded-lg border border-border bg-background pl-2.5 pr-2 py-2 text-left hover:border-blue-400 hover:bg-blue-50/50 transition"
             >
               <span className="min-w-0">
-                <span className="block text-[13px] font-bold truncate">{o.owner_name || "(소유자 미상)"}</span>
-                {sort === "region" && o.top_region && (
+                <span className="block text-[13px] font-bold truncate">{displayOwnerName(o.owner_name)}</span>
+                {o.top_region && (
                   <span className="block text-[10px] text-muted-foreground truncate">{shortRegion(o.top_region)}</span>
                 )}
               </span>
