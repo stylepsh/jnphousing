@@ -536,14 +536,25 @@ export async function idsForRegions(
     if (!parsed.success) return { ok: false, error: "지역이 선택되지 않았습니다" };
 
     const supabase = createServiceClient();
-    const orFilter = parsed.data.map((r) => `address.ilike.${r}*`).join(",");
-    const { data, error } = await supabase
+    // 인덱스가 걸린 region_key 동등비교 (마이그 039). 컬럼이 없으면 예전 ilike 로 폴백.
+    let res = await supabase
       .from("auction_property")
       .select("id, address, owner_name")
       .eq("survey_status", "pending")
-      .or(orFilter)
+      .in("region_key", parsed.data)
       .order("address", { ascending: true })
       .limit(limit + 1);
+    if (res.error && /region_key/i.test(res.error.message)) {
+      const orFilter = parsed.data.map((r) => `address.ilike.${r}*`).join(",");
+      res = await supabase
+        .from("auction_property")
+        .select("id, address, owner_name")
+        .eq("survey_status", "pending")
+        .or(orFilter)
+        .order("address", { ascending: true })
+        .limit(limit + 1);
+    }
+    const { data, error } = res;
     if (error) return { ok: false, error: error.message };
 
     const rows = (data ?? []) as { id: string; address: string; owner_name: string | null }[];

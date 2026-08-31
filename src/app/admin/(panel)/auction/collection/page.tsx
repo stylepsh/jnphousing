@@ -62,8 +62,13 @@ async function fetchFiltered(
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    // 여러 지역은 OR(ilike prefix)로 묶는다. PostgREST or-필터는 와일드카드가 '*'.
+    // 지역은 인덱스가 걸린 region_key 동등비교로 조회한다.
+    // (예전 방식인 address ILIKE OR 묶음은 인덱스를 못 타 3만 건을 전수 스캔했다.)
+    // region_key 컬럼이 아직 없는 환경(마이그 039 미적용)에서는 아래에서 ilike 로 폴백.
     const regionOr = filter.regions.map((r) => `address.ilike.${r}*`).join(",");
+    const applyRegion = <T extends { in: (c: string, v: string[]) => T; eq: (c: string, v: string) => T }>(
+      q: T,
+    ): T => (filter.regions.length === 1 ? q.eq("region_key", filter.regions[0]) : q.in("region_key", filter.regions));
 
     let query = supabase
       .from("auction_property")
@@ -79,8 +84,7 @@ async function fetchFiltered(
       query = filter.ownerExact
         ? query.eq("owner_name", filter.owner)
         : query.ilike("owner_name", `%${filter.owner}%`);
-    else if (filter.regions.length === 1) query = query.ilike("address", `${filter.regions[0]}%`);
-    else if (filter.regions.length > 1) query = query.or(regionOr);
+    else if (filter.regions.length > 0) query = applyRegion(query);
 
     // 현재 필터의 정확한 전체 건수 (페이지와 무관) — 헤더에 "총 N건" 표시용
     let countQuery = supabase
@@ -92,14 +96,37 @@ async function fetchFiltered(
       countQuery = filter.ownerExact
         ? countQuery.eq("owner_name", filter.owner)
         : countQuery.ilike("owner_name", `%${filter.owner}%`);
-    else if (filter.regions.length === 1) countQuery = countQuery.ilike("address", `${filter.regions[0]}%`);
-    else if (filter.regions.length > 1) countQuery = countQuery.or(regionOr);
+    else if (filter.regions.length > 0) countQuery = applyRegion(countQuery);
 
-    const [{ data }, { count }, blockedKeys] = await Promise.all([
-      query.order("created_at", { ascending: false }).range(from, to + 1),
-      countQuery,
-      fetchBlockedKeys(),
-    ]);
+    let dataRes = await query.order("created_at", { ascending: false }).range(from, to + 1);
+    let countRes = await countQuery;
+
+    // 마이그 039 미적용 환경 — region_key 가 없으면 예전 ilike 방식으로 한 번 더 시도
+    if (dataRes.error && /region_key/i.test(dataRes.error.message) && filter.regions.length > 0) {
+      let q2 = supabase
+        .from("auction_property")
+        .select(
+          "id, case_number, court, address, owner_name, creditor, creditor_type, category, appraisal_value, minimum_bid, auction_date, dividend_deadline, last_issued_at, last_issued_team",
+        )
+        .eq("survey_status", "pending");
+      let c2 = supabase
+        .from("auction_property")
+        .select("id", { count: "exact", head: true })
+        .eq("survey_status", "pending");
+      if (filter.regions.length === 1) {
+        q2 = q2.ilike("address", `${filter.regions[0]}%`);
+        c2 = c2.ilike("address", `${filter.regions[0]}%`);
+      } else {
+        q2 = q2.or(regionOr);
+        c2 = c2.or(regionOr);
+      }
+      dataRes = await q2.order("created_at", { ascending: false }).range(from, to + 1);
+      countRes = await c2;
+    }
+
+    const data = dataRes.data;
+    const count = countRes.count;
+    const blockedKeys = await fetchBlockedKeys();
     const allRows = (data ?? []) as PoolItem[];
     const rows = blockedKeys.size
       ? allRows.filter((p) => !blockedKeys.has(normalizeOwnerName(p.owner_name)))
