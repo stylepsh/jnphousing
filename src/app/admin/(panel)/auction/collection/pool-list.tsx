@@ -857,9 +857,27 @@ export function PoolList({
       {/* ── 소유자별 상세 그룹 ── */}
       {groups.length === 0 && (
         <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
-          {ownerSearch || regionSearch
-            ? "검색 조건에 맞는 임대인이 없습니다. 검색어 또는 최소건수 필터를 조정하세요."
-            : `최소 ${minPerOwner}건 이상의 임대인이 없습니다. 최소건수를 낮춰보세요.`}
+          {items.length > 0 && minPerOwner > 1 ? (
+            <>
+              <p className="font-bold text-foreground">
+                이 범위에 {items.length}건이 있지만 &quot;최소 {minPerOwner}건 이상 임대인&quot; 필터에 전부
+                가려졌습니다.
+              </p>
+              <p className="text-sm mt-1">
+                1~2건만 보유한 임대인이라 목록에서 빠진 것입니다. 물건이 사라진 게 아닙니다.
+              </p>
+              <button
+                onClick={() => setMinPerOwner(1)}
+                className="mt-3 inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
+              >
+                {items.length}건 전부 보기 (최소건수 해제)
+              </button>
+            </>
+          ) : ownerSearch || regionSearch ? (
+            "검색 조건에 맞는 임대인이 없습니다. 검색어 또는 최소건수 필터를 조정하세요."
+          ) : (
+            `최소 ${minPerOwner}건 이상의 임대인이 없습니다. 최소건수를 낮춰보세요.`
+          )}
         </div>
       )}
       {groups.map(([owner, list]) => {

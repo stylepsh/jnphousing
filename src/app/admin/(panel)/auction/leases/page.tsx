@@ -30,15 +30,18 @@ type Kpi = { vacant: number; leased: number; occupied: number; recheck: number }
 async function fetchData(page: number): Promise<{ kpi: Kpi; rows: LeaseRow[]; hasNext: boolean }> {
   try {
     const supabase = await createClient();
-    const { data: states } = await supabase.from("auction_property").select("pipeline_state");
-    const kpi: Kpi = { vacant: 0, leased: 0, occupied: 0, recheck: 0 };
-    for (const r of (states ?? []) as { pipeline_state: string }[]) {
-      const s = r.pipeline_state ?? "Collected";
-      if (VACANT_STATES.includes(s)) kpi.vacant++;
-      else if (s === "Leased") kpi.leased++;
-      else if (s === "OccupiedHold") kpi.occupied++;
-      else if (s === "Recheck") kpi.recheck++;
-    }
+    const [vacantRes, leasedRes, occupiedRes, recheckRes] = await Promise.all([
+      supabase.from("auction_property").select("id", { count: "exact", head: true }).in("pipeline_state", VACANT_STATES),
+      supabase.from("auction_property").select("id", { count: "exact", head: true }).eq("pipeline_state", "Leased"),
+      supabase.from("auction_property").select("id", { count: "exact", head: true }).eq("pipeline_state", "OccupiedHold"),
+      supabase.from("auction_property").select("id", { count: "exact", head: true }).eq("pipeline_state", "Recheck"),
+    ]);
+    const kpi: Kpi = {
+      vacant: vacantRes.count ?? 0,
+      leased: leasedRes.count ?? 0,
+      occupied: occupiedRes.count ?? 0,
+      recheck: recheckRes.count ?? 0,
+    };
 
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;

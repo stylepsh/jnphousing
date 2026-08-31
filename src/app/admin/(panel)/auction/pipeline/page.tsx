@@ -32,11 +32,18 @@ const STAGE_LINK: Partial<Record<PipelineState, string>> = {
 async function fetchCounts(): Promise<Record<string, number>> {
   try {
     const supabase = await createClient();
-    const { data } = await supabase.from("auction_property").select("pipeline_state");
+    const states: PipelineState[] = [...PIPELINE_ORDER, ...BRANCH_STATES];
+    const results = await Promise.all(
+      states.map((state) =>
+        supabase
+          .from("auction_property")
+          .select("id", { count: "exact", head: true })
+          .eq("pipeline_state", state),
+      ),
+    );
     const counts: Record<string, number> = {};
-    for (const r of (data ?? []) as { pipeline_state: string }[]) {
-      const s = r.pipeline_state ?? "Collected";
-      counts[s] = (counts[s] ?? 0) + 1;
+    for (let i = 0; i < states.length; i += 1) {
+      counts[states[i]] = results[i].count ?? 0;
     }
     return counts;
   } catch {

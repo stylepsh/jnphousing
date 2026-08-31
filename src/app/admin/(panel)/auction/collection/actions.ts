@@ -7,8 +7,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   parseAuctionPasteText,
-  isTargetCreditor,
-  classifyCreditor,
+  isTargetAuctionCase,
+  classifyAuctionCase,
   countByCreditorType,
   normalizeOwnerName,
   ownerNameAnchor,
@@ -93,7 +93,7 @@ export async function importAuctionText(input: {
     }
 
     const stats = countByCreditorType(valid);
-    const toImport = targetOnly ? valid.filter((p) => isTargetCreditor(p.creditor)) : valid;
+    const toImport = targetOnly ? valid.filter(isTargetAuctionCase) : valid;
 
     if (toImport.length === 0) {
       return {
@@ -248,7 +248,7 @@ export async function importAuctionText(input: {
       address_short: p.addressShort ?? null,
       owner_name: p.ownerName ?? "(소유자 미상)",
       creditor: p.creditor ?? null,
-      creditor_type: classifyCreditor(p.creditor),
+      creditor_type: classifyAuctionCase(p),
       category: p.category ?? null,
       appraisal_value: p.appraisalValue != null ? Math.round(p.appraisalValue) : null,
       minimum_bid: p.minimumBid != null ? Math.round(p.minimumBid) : null,
@@ -521,4 +521,3 @@ export async function listBlockedProperties(): Promise<BlockedProperty[]> {
     return [];
   }
 }
-

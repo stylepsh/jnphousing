@@ -5,7 +5,7 @@
  * 순수 로직(외부 의존 없음) — 지지옥션/대법원 검색 결과 텍스트를 구조화.
  *
  * 핵심 요구:
- *   - 채권자가 주택도시보증공사(HUG) 또는 서울보증보험(SGI)인 건만 수집
+ *   - 채권자 또는 신청자가 주택도시보증공사(HUG) 또는 서울보증보험(SGI)인 건만 수집
  *   - 개인채권/은행/기타는 배제
  */
 
@@ -17,6 +17,7 @@ export interface ParsedAuctionCase {
   category?: string; // 아파트, 다세대 등
   ownerName?: string;
   creditor?: string;
+  applicant?: string; // 신청자 / 신청채권자 / 경매신청자
   appraisalValue?: number; // 감정가 (원)
   minimumBid?: number; // 최저가 (원)
   auctionDate?: string; // 매각기일 YYYY-MM-DD
@@ -56,6 +57,28 @@ export function isTargetCreditor(creditor: string | null | undefined): boolean {
   return classifyCreditor(creditor) !== "OTHER";
 }
 
+/**
+ * 경매 사건의 채권자와 신청자를 함께 분류한다.
+ * 어느 한쪽에라도 HUG가 있으면 HUG, 그다음 SGI, 나머지는 OTHER다.
+ */
+export function classifyAuctionCase(
+  auctionCase: Pick<ParsedAuctionCase, "creditor" | "applicant">,
+): CreditorType {
+  const creditorType = classifyCreditor(auctionCase.creditor);
+  const applicantType = classifyCreditor(auctionCase.applicant);
+
+  if (creditorType === "HUG" || applicantType === "HUG") return "HUG";
+  if (creditorType === "SGI" || applicantType === "SGI") return "SGI";
+  return "OTHER";
+}
+
+/** 채권자 또는 신청자가 HUG/SGI인지 여부 */
+export function isTargetAuctionCase(
+  auctionCase: Pick<ParsedAuctionCase, "creditor" | "applicant">,
+): boolean {
+  return classifyAuctionCase(auctionCase) !== "OTHER";
+}
+
 // ============================================================
 // 임대인(소유자) 이름 정규화 — "대성하우징(주)" / "(주)대성하우징" / "대성 하우징"
 // 을 같은 임대인으로 묶기 위한 비교 키. 답사지 자동합치기 매칭에 사용.
@@ -74,6 +97,15 @@ export function normalizeOwnerName(name: string | null | undefined): string {
     .trim();
 }
 
+/** 사건 내 복수 물건을 구분할 때 사용하는 주소 비교 키. */
+export function normalizeAuctionAddress(address: string | null | undefined): string {
+  if (!address) return "";
+  return address
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^0-9a-z가-힣]/g, "");
+}
+
 /** ilike 후보 수집용 앵커 — 회사표기 제거 후 첫 토큰의 한글/영숫자만. */
 export function ownerNameAnchor(name: string | null | undefined): string {
   if (!name) return "";
@@ -87,13 +119,13 @@ export function countByCreditorType(
   parsed: ParsedAuctionCase[],
 ): Record<CreditorType, number> {
   const stats: Record<CreditorType, number> = { HUG: 0, SGI: 0, OTHER: 0 };
-  for (const p of parsed) stats[classifyCreditor(p.creditor)]++;
+  for (const p of parsed) stats[classifyAuctionCase(p)]++;
   return stats;
 }
 
 /** 수집 대상(HUG + SGI)만 필터 */
 export function filterTargetOnly(parsed: ParsedAuctionCase[]): ParsedAuctionCase[] {
-  return parsed.filter((p) => isTargetCreditor(p.creditor));
+  return parsed.filter(isTargetAuctionCase);
 }
 
 // ============================================================
@@ -123,12 +155,79 @@ const COURT_BRANCH_PATTERN = /([가-힣]{2,8}\d{1,3}계)/;
 const REGION_PREFIX =
   /^(서울|경기|부산|대구|인천|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\s/;
 
+const PARTY_LABEL_PATTERN =
+  /(?:^|[|｜¦]|\s)(경매신청자|신청채권자|신청자|채권자|채무자|소유자)\s*(?:[:：﹕]\s*)?/gu;
+const PARTY_SEPARATOR_PATTERN = /[|｜¦]/u;
+
+interface ParsedPartyFields {
+  creditor?: string;
+  applicant?: string;
+  ownerName?: string;
+  hasPartyLabel: boolean;
+}
+
+/**
+ * 한 줄 안의 당사자 필드를 순서와 구분자 종류에 관계없이 추출한다.
+ * 라벨은 긴 표기부터 매칭해 "경매신청자"가 "신청자"로 잘리는 것을 막는다.
+ */
+function parsePartyFields(line: string): ParsedPartyFields {
+  const matches = Array.from(line.matchAll(PARTY_LABEL_PATTERN));
+  const parsed: ParsedPartyFields = { hasPartyLabel: matches.length > 0 };
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const label = match[1];
+    const valueStart = (match.index ?? 0) + match[0].length;
+    const nextLabelStart = matches[i + 1]?.index ?? line.length;
+    const remaining = line.slice(valueStart, nextLabelStart);
+    const separatorIndex = remaining.search(PARTY_SEPARATOR_PATTERN);
+    const value = (separatorIndex >= 0 ? remaining.slice(0, separatorIndex) : remaining).trim();
+    if (!value) continue;
+
+    if (label === "채권자") parsed.creditor = value;
+    else if (label === "소유자") parsed.ownerName = value;
+    else if (
+      label === "신청자" ||
+      label === "신청채권자" ||
+      label === "경매신청자"
+    ) {
+      parsed.applicant = value;
+    }
+  }
+
+  return parsed;
+}
+
 function findCaseNumberInLine(line: string): string | null {
   for (const p of CASE_NUMBER_PATTERNS) {
     const m = line.match(p);
     if (m) return m[1].replace(/\s/g, "");
   }
   return null;
+}
+
+function parseWon(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const amount = Number.parseInt(value.replace(/[^\d]/g, ""), 10);
+  return Number.isSafeInteger(amount) && amount >= 0 ? amount : undefined;
+}
+
+function normalizeDate(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const match = value.match(/^(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})$/);
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+  return `${match[1]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 /** 한 블록(여러 줄)에서 한 물건의 모든 필드 추출 */
@@ -180,23 +279,20 @@ function parseOneBlock(lines: string[]): ParsedAuctionCase | null {
   }
   block.address = bestAddress;
 
-  // 채권자 / 소유자
+  // 채권자 / 신청자 / 소유자
   for (const line of lines) {
-    const creditorMatch = line.match(
-      /채권자\s*[:：]?\s*([^|｜\s\t][^|｜\t]*?)(?=\s*[|｜]|$|채무자|소유자)/,
-    );
-    if (creditorMatch) block.creditor = creditorMatch[1].trim();
-
-    const ownerMatch = line.match(
-      /소유자\s*[:：]?\s*([^|｜\s\t][^|｜\t]*?)(?=\s*[|｜]|$|채권자|채무자)/,
-    );
-    if (ownerMatch) block.ownerName = ownerMatch[1].trim();
+    const parties = parsePartyFields(line);
+    if (parties.creditor) block.creditor = parties.creditor;
+    if (parties.applicant) block.applicant = parties.applicant;
+    if (parties.ownerName) block.ownerName = parties.ownerName;
   }
 
   // 라벨 없이 HUG/SGI 키워드만 있어도 채권자로 인식
   if (!block.creditor) {
     const allPatterns = [...HUG_CREDITOR_PATTERNS, ...SGI_CREDITOR_PATTERNS];
     for (const line of lines) {
+      // 신청자/소유자/채무자를 채권자로 잘못 복제하지 않는다.
+      if (parsePartyFields(line).hasPartyLabel) continue;
       for (const p of allPatterns) {
         const m = line.match(p);
         if (m) {
@@ -208,24 +304,36 @@ function parseOneBlock(lines: string[]): ParsedAuctionCase | null {
     }
   }
 
-  // 금액: 큰 두 개를 감정가/최저가로 추정
+  // 금액: 라벨이 있으면 라벨을 우선하고, 구형 무라벨 형식만 큰 두 금액으로 보정한다.
+  const appraisalLabeled = rawText.match(
+    /(?:감정가|감정평가액)\s*[:：﹕]?\s*(\d{1,3}(?:,\d{3})+)/u,
+  );
+  const minimumLabeled = rawText.match(
+    /(?:최저가|최저매각가격|최저입찰가)\s*[:：﹕]?\s*(\d{1,3}(?:,\d{3})+)/u,
+  );
   const priceMatches = Array.from(rawText.matchAll(/(\d{1,3}(?:,\d{3}){2,})/g))
     .map((m) => parseInt(m[1].replace(/[^\d]/g, ""), 10))
     .filter((n) => !isNaN(n) && n >= 1_000_000)
     .sort((a, b) => b - a);
-  block.appraisalValue = priceMatches[0];
-  block.minimumBid = priceMatches[1];
+  block.appraisalValue = parseWon(appraisalLabeled?.[1]) ?? priceMatches[0];
+  block.minimumBid = parseWon(minimumLabeled?.[1]) ?? priceMatches[1];
 
-  // 날짜 2개: 매각기일 = 빠른 날짜, 배당종기일 = 늦은 날짜
+  // 날짜: 라벨을 우선한다. 지지옥션 구형 무라벨 형식은 화면 출력 순서
+  // (매각기일, 배당종기일)를 보존하며 문자열 정렬로 날짜를 추측하지 않는다.
+  const dateToken = "(20\\d{2}[.\\-/]\\d{1,2}[.\\-/]\\d{1,2})";
+  const auctionLabeled = rawText.match(
+    new RegExp(`(?:매각기일|입찰일|경매일)\\s*[:：﹕]?\\s*${dateToken}`, "u"),
+  );
+  const dividendLabeled = rawText.match(
+    new RegExp(`(?:배당요구종기일?|배당종기일?)\\s*[:：﹕]?\\s*${dateToken}`, "u"),
+  );
   const dateMatches = Array.from(
     rawText.matchAll(/20\d{2}[.\-/]\d{1,2}[.\-/]\d{1,2}/g),
   )
-    .map((m) => m[0].replace(/[./]/g, "-"))
-    .sort();
-  if (dateMatches.length >= 1) block.auctionDate = dateMatches[0];
-  if (dateMatches.length >= 2) {
-    block.dividendDeadline = dateMatches[dateMatches.length - 1];
-  }
+    .map((m) => normalizeDate(m[0]))
+    .filter((value): value is string => Boolean(value));
+  block.auctionDate = normalizeDate(auctionLabeled?.[1]) ?? dateMatches[0];
+  block.dividendDeadline = normalizeDate(dividendLabeled?.[1]) ?? dateMatches[1];
 
   block.rawText = rawText;
   return block as ParsedAuctionCase;

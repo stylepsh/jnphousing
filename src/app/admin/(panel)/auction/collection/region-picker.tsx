@@ -43,6 +43,35 @@ export function RegionPicker({
     [filtered],
   );
 
+  // 시/도 묶음 — region 첫 토큰(부산/인천/경기…) 기준. "부산 전체" 한 번에 체크용
+  const provinces = useMemo(() => {
+    const m = new Map<string, { name: string; regions: string[]; count: number }>();
+    for (const r of regions) {
+      const head = (r.region || "").trim().split(/\s+/)[0];
+      if (!head) continue;
+      const key = head
+        .replace(/특별자치시|특별자치도|광역시|특별시/g, "")
+        .replace(/^(경기도|강원도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|제주도)$/, (mm) =>
+          ({ 경기도: "경기", 강원도: "강원", 충청북도: "충북", 충청남도: "충남", 전라북도: "전북", 전라남도: "전남", 경상북도: "경북", 경상남도: "경남", 제주도: "제주" })[mm] ?? mm,
+        );
+      if (!m.has(key)) m.set(key, { name: key, regions: [], count: 0 });
+      const g = m.get(key)!;
+      g.regions.push(r.region);
+      g.count += r.pending_count ?? 0;
+    }
+    return Array.from(m.values())
+      .filter((g) => g.regions.length > 1)
+      .sort((a, b) => b.count - a.count);
+  }, [regions]);
+
+  function toggleProvince(list: string[], allOn: boolean) {
+    setSelected((s) => {
+      const n = new Set(s);
+      list.forEach((r) => (allOn ? n.delete(r) : n.add(r)));
+      return n;
+    });
+  }
+
   const selectedSum = useMemo(
     () => regions.filter((r) => selected.has(r.region)).reduce((s, r) => s + (r.pending_count ?? 0), 0),
     [regions, selected],
@@ -148,6 +177,41 @@ export function RegionPicker({
           >
             <X className="w-3.5 h-3.5" /> 선택 해제
           </button>
+        </div>
+      )}
+
+      {/* 시/도 한 번에 — "부산 전체" 처럼 광역 단위로 묶어 체크 */}
+      {provinces.length > 0 && (
+        <div className="rounded-xl border bg-card p-3">
+          <p className="text-xs font-bold mb-2">
+            시/도 한 번에 체크
+            <span className="font-normal text-muted-foreground ml-1.5">
+              — 부산처럼 여러 구로 흩어진 지역을 한 번에 고를 때
+            </span>
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {provinces.map((p) => {
+              const on = p.regions.every((r) => selected.has(r));
+              return (
+                <button
+                  key={p.name}
+                  onClick={() => toggleProvince(p.regions, on)}
+                  className={
+                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border " +
+                    (on
+                      ? "bg-teal-600 text-white border-teal-600"
+                      : "bg-background text-teal-700 border-teal-200 hover:bg-teal-50")
+                  }
+                  title={`${p.name} ${p.regions.length}곳 · ${p.count.toLocaleString()}건 ${on ? "해제" : "전체 체크"}`}
+                >
+                  {p.name} 전체
+                  <span className="font-normal opacity-80">
+                    {p.regions.length}곳 · {p.count.toLocaleString()}건
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

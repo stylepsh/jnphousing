@@ -94,6 +94,10 @@ export interface SurveySheetRow {
 }
 
 export interface NormalizedSurvey {
+  /** 답사지에 인쇄된 원문 번호. 숫자가 아닌 값도 오류 보고를 위해 보존한다. */
+  visitNo: string | null;
+  /** auction_property.property_no 로 사용할 수 있는 양의 정수일 때만 설정된다. */
+  propertyNo: number | null;
   caseNumber: string | null;
   address: string;
   addressShort: string | null;
@@ -110,6 +114,13 @@ export interface NormalizedSurvey {
   memo: string | null;
 }
 
+function parsePropertyNo(raw: string | null): number | null {
+  const value = t(raw);
+  if (!value || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 export function normalizeRow(row: SurveySheetRow): NormalizedSurvey {
   const { ownerName, creditor } = splitOwnerCreditor(row.ownerCreditor);
   const { address, addressShort } = cleanAddress(row.dong, row.addressDetail);
@@ -119,6 +130,8 @@ export function normalizeRow(row: SurveySheetRow): NormalizedSurvey {
   const memoParts = [t(row.mgmtOffice), t(row.memo)].filter(Boolean);
   const door = t(row.doorCode);
   return {
+    visitNo: t(row.visitNo),
+    propertyNo: parsePropertyNo(row.visitNo),
     caseNumber: t(row.caseNumber)?.replace(/\s/g, "") ?? null,
     address,
     addressShort,
@@ -134,6 +147,147 @@ export function normalizeRow(row: SurveySheetRow): NormalizedSurvey {
     doorCode: door && !/^[xX]$/.test(door) ? door : null,
     memo: memoParts.length ? memoParts.join(" / ") : null,
   };
+}
+
+// ============================================================
+// 회수 답사지 → 기존 물건 매칭 (DB와 무관한 순수 무결성 규칙)
+// ============================================================
+
+export interface SurveyMatchCandidate {
+  id: string;
+  propertyNo: number;
+  caseNumber: string;
+  address: string;
+  addressShort: string | null;
+  surveyStatus: string;
+  pipelineState: string;
+}
+
+export type SurveyMatchErrorCode =
+  | "INVALID_PROPERTY_NO"
+  | "MISSING_IDENTIFIER"
+  | "PROPERTY_NOT_FOUND"
+  | "AMBIGUOUS_MATCH"
+  | "CASE_MISMATCH"
+  | "ADDRESS_MISMATCH"
+  | "PROTECTED_SURVEY_STATUS"
+  | "PIPELINE_REGRESSION";
+
+export type SurveyMatchResolution =
+  | { ok: true; candidate: SurveyMatchCandidate; matchedBy: "property_no" | "case_address" }
+  | { ok: false; code: SurveyMatchErrorCode; message: string };
+
+const normalizeCaseIdentity = (value: string | null | undefined): string =>
+  String(value ?? "").normalize("NFKC").replace(/\s/g, "");
+
+/** 주소 비교 전 표기 차이(공백·쉼표·대괄호 도로명)를 제거한다. */
+export const normalizeSurveyAddress = (value: string | null | undefined): string =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/\s*\[[^\]]*\]\s*/g, " ")
+    .replace(/[\s,]+/g, "")
+    .toLocaleLowerCase("ko-KR");
+
+function addressMatches(row: NormalizedSurvey, candidate: SurveyMatchCandidate): boolean {
+  if (!row.address || normalizeSurveyAddress(row.address) !== normalizeSurveyAddress(candidate.address)) {
+    return false;
+  }
+  if (row.addressShort && candidate.addressShort) {
+    return normalizeSurveyAddress(row.addressShort) === normalizeSurveyAddress(candidate.addressShort);
+  }
+  return true;
+}
+
+const PIPELINE_RANK: Record<string, number> = {
+  Collected: 0,
+  Selected: 1,
+  Inspecting: 2,
+  Reviewing: 3,
+  Approved: 4,
+  WorkPrep: 5,
+  Merchandising: 6,
+  Available: 7,
+  Leased: 8,
+};
+
+function wouldRegressPipeline(current: string, next: string): boolean {
+  if (current === "Rejected" || current === "Leased") return true;
+  const currentRank = PIPELINE_RANK[current];
+  const nextRank = PIPELINE_RANK[next];
+  return currentRank != null && nextRank != null && nextRank < currentRank;
+}
+
+/**
+ * property_no가 있으면 그것만 식별자로 사용하고 사건번호·주소는 위변조/오입력 검증에 쓴다.
+ * 번호가 없는 구형 답사지만 사건번호+정규화 주소가 정확히 한 건일 때만 허용한다.
+ */
+export function resolveSurveyMatch(
+  row: NormalizedSurvey,
+  candidates: SurveyMatchCandidate[],
+  nextPipelineState: string,
+): SurveyMatchResolution {
+  let candidate: SurveyMatchCandidate;
+  let matchedBy: "property_no" | "case_address";
+
+  if (row.visitNo) {
+    if (row.propertyNo == null) {
+      return { ok: false, code: "INVALID_PROPERTY_NO", message: `물건번호 '${row.visitNo}'가 올바른 양의 정수가 아닙니다.` };
+    }
+    const exact = candidates.filter((item) => item.propertyNo === row.propertyNo);
+    if (exact.length === 0) {
+      return { ok: false, code: "PROPERTY_NOT_FOUND", message: `물건번호 ${row.propertyNo}를 찾을 수 없습니다.` };
+    }
+    if (exact.length !== 1) {
+      return { ok: false, code: "AMBIGUOUS_MATCH", message: `물건번호 ${row.propertyNo}가 ${exact.length}건과 일치합니다.` };
+    }
+    candidate = exact[0];
+    matchedBy = "property_no";
+
+    if (row.caseNumber && normalizeCaseIdentity(row.caseNumber) !== normalizeCaseIdentity(candidate.caseNumber)) {
+      return { ok: false, code: "CASE_MISMATCH", message: `물건번호 ${row.propertyNo}의 사건번호가 답사지와 다릅니다.` };
+    }
+    if (!addressMatches(row, candidate)) {
+      return { ok: false, code: "ADDRESS_MISMATCH", message: `물건번호 ${row.propertyNo}의 주소가 답사지와 다릅니다.` };
+    }
+  } else {
+    if (!row.caseNumber || !row.address) {
+      return { ok: false, code: "MISSING_IDENTIFIER", message: "물건번호가 없는 행은 사건번호와 주소가 모두 필요합니다." };
+    }
+    const exact = candidates.filter(
+      (item) =>
+        normalizeCaseIdentity(item.caseNumber) === normalizeCaseIdentity(row.caseNumber) &&
+        addressMatches(row, item),
+    );
+    if (exact.length === 0) {
+      const code = candidates.length > 0 ? "ADDRESS_MISMATCH" : "PROPERTY_NOT_FOUND";
+      const message = candidates.length > 0
+        ? `사건번호 ${row.caseNumber}와 주소가 함께 일치하는 물건이 없습니다.`
+        : `사건번호 ${row.caseNumber}에 해당하는 물건이 없습니다.`;
+      return { ok: false, code, message };
+    }
+    if (exact.length !== 1) {
+      return { ok: false, code: "AMBIGUOUS_MATCH", message: `사건번호와 주소가 같은 후보가 ${exact.length}건입니다. 물건번호가 필요합니다.` };
+    }
+    candidate = exact[0];
+    matchedBy = "case_address";
+  }
+
+  if (["blocked", "rejected", "skip"].includes(candidate.surveyStatus)) {
+    return {
+      ok: false,
+      code: "PROTECTED_SURVEY_STATUS",
+      message: `물건번호 ${candidate.propertyNo}는 보호 상태(${candidate.surveyStatus})여서 변경하지 않았습니다.`,
+    };
+  }
+  if (wouldRegressPipeline(candidate.pipelineState, nextPipelineState)) {
+    return {
+      ok: false,
+      code: "PIPELINE_REGRESSION",
+      message: `물건번호 ${candidate.propertyNo}의 진행상태(${candidate.pipelineState})가 후퇴할 수 있어 변경하지 않았습니다.`,
+    };
+  }
+
+  return { ok: true, candidate, matchedBy };
 }
 
 // ============================================================
