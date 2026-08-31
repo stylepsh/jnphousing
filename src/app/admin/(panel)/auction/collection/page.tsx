@@ -326,8 +326,12 @@ function GateTabs({ ownerView, min }: { ownerView: boolean; min: number }) {
 }
 
 async function RegionGate() {
-  const [{ regions, total }, issued] = await Promise.all([fetchRegions(), recentIssuesByRegion()]);
-  return <RegionPicker regions={regions} total={total} issued={issued} />;
+  const [{ regions, total }, issued, recentTeams] = await Promise.all([
+    fetchRegions(),
+    recentIssuesByRegion(),
+    recentTeamNames(),
+  ]);
+  return <RegionPicker regions={regions} total={total} issued={issued} recentTeams={recentTeams} />;
 }
 
 async function OwnerGate({ min }: { min: number }) {
@@ -396,7 +400,6 @@ async function FilteredPool({
       ? `${filter.regions.length}개 지역`
       : filter.regions[0];
   const from = page * PAGE_SIZE;
-  const shown = items.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function buildHref(p: number) {
@@ -451,7 +454,12 @@ async function FilteredPool({
       )}
       <ScrollMemory scopeKey={scopeKey} />
       <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
-      <PoolList items={items} recentTeams={recentTeams} scopeKey={scopeKey} />
+      <PoolList
+        items={items}
+        recentTeams={recentTeams}
+        scopeKey={scopeKey}
+        initialMin={filter.owner ? 3 : 1}
+      />
       {/* 페이지 내비게이션 */}
       <div className="flex items-center justify-center gap-3 py-2">
         {page > 0 ? (

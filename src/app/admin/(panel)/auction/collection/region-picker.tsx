@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Search, User, ArrowRight, Check, X } from "lucide-react";
+import { MapPin, Search, User, ArrowRight, Check, X, Users2, FileSpreadsheet, Printer } from "lucide-react";
+import { toast } from "sonner";
 import { textMatches } from "@/lib/auction/search";
+import { idsForRegions } from "./actions";
+import { useIssueSheet } from "./use-issue-sheet";
 
 export interface RegionCount {
   region: string;
@@ -19,9 +22,12 @@ export function RegionPicker({
   regions,
   total,
   issued = {},
+  recentTeams = [],
 }: {
   regions: RegionCount[];
   total: number;
+  /** 최근 사용한 답사팀 — 원클릭 선택용 */
+  recentTeams?: string[];
   /** 지역 라벨 -> 최근 발급 (배포 중 배지) */
   issued?: Record<string, { team: string; at: string; returned: boolean }>;
 }) {
@@ -63,6 +69,46 @@ export function RegionPicker({
       .filter((g) => g.regions.length > 1)
       .sort((a, b) => b.count - a.count);
   }, [regions]);
+
+  // 지역 선택 → 목록을 거치지 않고 곧장 발급
+  const [team, setTeam] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { issue, issuing } = useIssueSheet();
+
+  async function quickIssue(kind: "pdf" | "xlsx") {
+    const list = Array.from(selected);
+    if (list.length === 0) return;
+    if (!team.trim()) {
+      toast.error("받는 답사팀을 먼저 입력하세요.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await idsForRegions(list);
+      if (!res.ok || !res.ids) {
+        toast.error(res.error ?? "대상 조회 실패");
+        return;
+      }
+      if (res.ids.length === 0) {
+        toast.error("선택한 지역에 미답사 물건이 없습니다.");
+        return;
+      }
+      const label = list.length === 1 ? shortLabel(list[0]) : `${shortLabel(list[0])} 외 ${list.length - 1}곳`;
+      if (
+        !confirm(
+          `${label}\n미답사 ${res.ids.length}건을 [${team.trim()}]에 ${kind === "pdf" ? "PDF" : "엑셀"}로 발급합니다.\n\n발급 이력에 기록되어 다음에 같은 지역을 다른 팀에 줄 때 경고가 뜹니다.`,
+        )
+      )
+        return;
+      const ok = await issue({ ids: res.ids, team, kind, label });
+      if (ok) {
+        setSelected(new Set());
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function toggleProvince(list: string[], allOn: boolean) {
     setSelected((s) => {
@@ -165,11 +211,63 @@ export function RegionPicker({
             지역 {selected.size}곳 선택 · 합계{" "}
             <strong className="text-teal-700">{selectedSum.toLocaleString()}</strong>건
           </span>
+          {/* 1차 액션 — 목록을 거치지 않고 바로 발급 */}
+          <div className="inline-flex items-center gap-1.5 bg-white border-2 border-teal-400 rounded-lg px-2 py-1">
+            <Users2 className="w-4 h-4 text-teal-700 shrink-0" />
+            <input
+              value={team}
+              onChange={(e) => setTeam(e.target.value)}
+              list="region-recent-teams"
+              placeholder="받는 답사팀"
+              className="w-28 text-sm font-bold bg-transparent focus:outline-none"
+            />
+            <datalist id="region-recent-teams">
+              {recentTeams.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
+          {recentTeams.slice(0, 3).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTeam(t)}
+              className={
+                "px-2 py-1 rounded-md text-xs font-bold border " +
+                (team === t
+                  ? "bg-teal-600 text-white border-teal-600"
+                  : "bg-white text-teal-700 border-teal-200 hover:bg-teal-100")
+              }
+            >
+              {t}
+            </button>
+          ))}
+          <button
+            onClick={() => quickIssue("xlsx")}
+            disabled={issuing || busy}
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-black hover:bg-teal-700 disabled:opacity-50"
+            title="선택한 지역의 미답사 물건 전부로 답사지 엑셀 발급"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {busy ? "준비 중…" : `답사지 엑셀 발급 (${selectedSum.toLocaleString()}건)`}
+          </button>
+          <button
+            onClick={() => quickIssue("pdf")}
+            disabled={issuing || busy}
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-white border-2 border-teal-500 text-teal-700 text-sm font-bold hover:bg-teal-100 disabled:opacity-50"
+            title="선택한 지역의 미답사 물건 전부로 답사지 PDF 발급"
+          >
+            <Printer className="w-4 h-4" /> PDF
+          </button>
+
+          <span className="w-px h-6 bg-teal-300" aria-hidden />
+
+          {/* 2차 액션 — 골라서 뽑고 싶을 때 */}
           <button
             onClick={loadSelected}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm font-bold hover:bg-teal-700"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-teal-300 bg-white text-sm font-bold text-teal-700 hover:bg-teal-100"
+            title="목록에서 물건을 골라 뽑고 싶을 때"
           >
-            선택 지역 불러오기 <ArrowRight className="w-3.5 h-3.5" />
+            목록에서 고르기 <ArrowRight className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setSelected(new Set())}

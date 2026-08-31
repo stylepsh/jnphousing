@@ -26,6 +26,7 @@ import { rejectAuctionProperties, blockOwner } from "./actions";
 import { selectForSurvey } from "../pipeline/actions";
 import { cn } from "@/lib/utils";
 import { textMatches } from "@/lib/auction/search";
+import { useIssueSheet } from "./use-issue-sheet";
 import { displayOwnerName } from "@/lib/auction/court-auction";
 
 export interface PoolItem {
@@ -57,9 +58,12 @@ export function PoolList({
   items,
   recentTeams = [],
   scopeKey = "all",
+  initialMin = 3,
 }: {
   items: PoolItem[];
   recentTeams?: string[];
+  /** 최소 N건 이상 임대인 필터 초기값 — 지역/회차로 들어오면 1(전부 보임) */
+  initialMin?: number;
   /** 지역/임대인/회차 조합 — 이 범위별로 선택 상태를 기억한다. */
   scopeKey?: string;
 }) {
@@ -73,14 +77,19 @@ export function PoolList({
   // 검색
   const [ownerSearch, setOwnerSearch] = useState("");
   const [regionSearch, setRegionSearch] = useState("");
+  // 이미 답사지로 나간 물건 숨기기 — 새로 줄 것만 고를 때
+  const [undeliveredOnly, setUndeliveredOnly] = useState(false);
   // 답사지를 받는 팀 (발급 이력에 기록 — 같은 지역 중복 배포 방지)
   const [team, setTeam] = useState("");
   // 방금 발급한 내역 배너 (또 누르는 실수 방지)
   const [lastIssue, setLastIssue] = useState<{ team: string; count: number; kind: string } | null>(
     null,
   );
+  const { issue, issuing } = useIssueSheet();
+  // 발급 확인창 — 무엇을 누구에게 주는지 보고 실행
+  const [confirmKind, setConfirmKind] = useState<"pdf" | "xlsx" | null>(null);
   // 최소 N건 이상 임대인만 (잡건 배제, 기본 3)
-  const [minPerOwner, setMinPerOwner] = useState(3);
+  const [minPerOwner, setMinPerOwner] = useState(initialMin);
   // 샘플 기준: 임대인별 / 지역별
   const [sampleMode, setSampleMode] = useState<"owner" | "region">("owner");
   // 임대인 카드 다중 선택 (샘플링 대상 한정)
@@ -100,13 +109,12 @@ export function PoolList({
 
   // 1) 검색 (소유주명 AND 지역)
   const searchedItems = useMemo(() => {
-    if (!ownerSearch.trim() && !regionSearch.trim()) return items;
-    return items.filter(
-      (p) =>
-        textMatches(ownerSearch, p.owner_name) &&
-        textMatches(regionSearch, p.address),
+    const base = undeliveredOnly ? items.filter((p) => !p.last_issued_at) : items;
+    if (!ownerSearch.trim() && !regionSearch.trim()) return base;
+    return base.filter(
+      (p) => textMatches(ownerSearch, p.owner_name) && textMatches(regionSearch, p.address),
     );
-  }, [items, ownerSearch, regionSearch]);
+  }, [items, ownerSearch, regionSearch, undeliveredOnly]);
 
   // 2) 소유자별 그룹화
   const allGroups = useMemo(() => {
@@ -396,94 +404,66 @@ export function PoolList({
   }
 
   /** 발급 전 확인 — 팀 미입력·이미 배포된 건 포함 여부. */
-  function confirmIssue(): boolean {
+  // ===== 답사지 발급 =====
+  const selectedItems = useMemo(
+    () => items.filter((i) => selected.has(i.id)),
+    [items, selected],
+  );
+  const alreadyIssued = useMemo(
+    () => selectedItems.filter((i) => i.last_issued_at),
+    [selectedItems],
+  );
+  const selectedRegions = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of selectedItems) {
+      const k = regionKey(p);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [selectedItems]);
+
+  /** 위험 작업 — 이 범위 전체 제외. 되돌리기가 없어 2단계로 확인한다. */
+  function purgeAll() {
+    const label = `${items.length}건`;
+    if (
+      !confirm(
+        `이 범위의 ${label}을 후보 풀에서 전부 제외합니다.
+
+` +
+          `되돌리는 버튼이 없습니다. 정말 진행할까요?`,
+      )
+    )
+      return;
+    const answer = window.prompt(`확인을 위해 건수를 그대로 입력하세요: ${items.length}`);
+    if (answer?.trim() !== String(items.length)) {
+      toast.error("건수가 일치하지 않아 취소했습니다.");
+      return;
+    }
+    deleteIds(items.map((i) => i.id), "후보 풀 전체");
+  }
+
+  function openIssue(kind: "pdf" | "xlsx") {
     if (selected.size === 0) {
       toast.error("선택된 물건이 없습니다.");
-      return false;
+      return;
     }
-    const already = items.filter((i) => selected.has(i.id) && i.last_issued_at);
-    if (already.length > 0) {
-      const teams = Array.from(new Set(already.map((i) => i.last_issued_team || "팀 미기재")));
-      if (
-        !confirm(
-          `선택분 중 ${already.length}건은 이미 답사지로 배포된 물건입니다.\n` +
-            `(최근 배포: ${teams.join(", ")})\n\n그래도 발급할까요?`,
-        )
-      )
-        return false;
-    }
-    if (!team.trim() && !confirm("받는 답사팀을 입력하지 않았습니다.\n기록 없이 그냥 발급할까요?"))
-      return false;
-    return true;
+    setConfirmKind(kind);
   }
 
-  // ===== 답사지 PDF (발급 이력 기록) =====
-  async function printPdf() {
-    if (!confirmIssue()) return;
-    try {
-      const res = await fetch("/admin/auction/pipeline/survey-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected), team }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(j.error ?? "PDF 생성 실패");
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const dateStr = new Date().toISOString().slice(0, 10);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `답사지_${dateStr}_${selected.size}건.pdf`;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      setLastIssue({ team: team.trim() || "팀 미기재", count: selected.size, kind: "인쇄" });
-      setSelected(new Set());
-      toast.success(`답사지 PDF ${selected.size}건 발급 — 발급 이력에 기록됨`);
-      router.refresh();
-    } catch {
-      toast.error("PDF 발급 실패");
-    }
-  }
-
-  // ===== 답사지 엑셀 (PDF와 동일 번호·순서, 답사자 입력→그대로 업로드) =====
-  async function downloadXlsx() {
-    if (!confirmIssue()) return;
-    try {
-      const res = await fetch("/admin/auction/pipeline/survey-xlsx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected), team }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(j.error ?? "엑셀 생성 실패");
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const dateStr = new Date().toISOString().slice(0, 10);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `답사용지_${dateStr}_${selected.size}건.xlsx`;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      setLastIssue({ team: team.trim() || "팀 미기재", count: selected.size, kind: "엑셀" });
-      setSelected(new Set());
-      toast.success(`답사지 엑셀 ${selected.size}건 발급 — 답사자에게 전달해 입력받으세요`);
-      router.refresh();
-    } catch {
-      toast.error("엑셀 발급 실패");
-    }
+  async function runIssue() {
+    const kind = confirmKind;
+    if (!kind) return;
+    const ok = await issue({
+      ids: Array.from(selected),
+      team,
+      kind,
+      label: selectedRegions[0]?.[0] ?? "답사지",
+    });
+    if (!ok) return;
+    setLastIssue({ team: team.trim(), count: selected.size, kind: kind === "pdf" ? "인쇄" : "엑셀" });
+    setSelected(new Set());
+    setConfirmKind(null);
+    router.refresh();
   }
 
   if (items.length === 0) {
@@ -609,6 +589,18 @@ export function PoolList({
               >
                 전체
               </button>
+              <button
+                onClick={() => setUndeliveredOnly((v) => !v)}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border",
+                  undeliveredOnly
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "bg-white text-amber-800 border-amber-200 hover:bg-amber-50",
+                )}
+                title="이미 답사지로 나간 물건을 숨기고 새로 줄 것만 봅니다"
+              >
+                미배포만 {undeliveredOnly ? "ON" : "OFF"}
+              </button>
               <div className="inline-flex items-center gap-1 text-[11px] bg-white px-1.5 py-0.5 rounded-md border border-blue-200">
                 <Filter className="w-3 h-3 text-blue-700" />
                 <span className="text-blue-700 font-bold">최소</span>
@@ -648,6 +640,21 @@ export function PoolList({
               </datalist>
             </div>
           )}
+          {selected.size > 0 &&
+            recentTeams.slice(0, 3).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTeam(t)}
+                className={cn(
+                  "px-2 py-1 rounded-md text-[11px] font-bold border",
+                  team === t
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-blue-700 border-blue-200 hover:bg-blue-50",
+                )}
+              >
+                {t}
+              </button>
+            ))}
           {selected.size > 0 && (
             <Button size="sm" disabled={pending} onClick={() => handleSelectForPipeline(Array.from(selected))} className="gap-1">
               <Workflow className="w-3.5 h-3.5" /> 답사 선정 ({selected.size})
@@ -658,31 +665,24 @@ export function PoolList({
               <Trash2 className="w-3.5 h-3.5" /> 제외
             </Button>
           )}
-          <Button size="sm" variant="outline" disabled={pending || selected.size === 0} onClick={printPdf} className="gap-1.5">
-            <Printer className="w-4 h-4" />
-            {selected.size > 0 ? `답사지 인쇄 (${selected.size})` : "답사지 인쇄"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pending || selected.size === 0}
-            onClick={downloadXlsx}
-            className="gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
-            title="PDF와 동일한 답사지를 엑셀로 — 답사자가 채워서 돌려주면 '답사결과 입력'에 그대로 업로드"
+          {/* 1차 액션 — 이 화면에서 제일 크고 진하게 */}
+          <button
+            disabled={pending || issuing || selected.size === 0}
+            onClick={() => openIssue("xlsx")}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-black shadow-sm hover:bg-blue-700 disabled:opacity-40"
+            title="답사자가 채워서 돌려주면 '답사결과 입력'에 그대로 업로드됩니다"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            {selected.size > 0 ? `답사지 엑셀 (${selected.size})` : "답사지 엑셀"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={() => deleteIds(items.map((i) => i.id), "후보 풀 전체")}
-            className="gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-700"
-            title="수집된 후보 풀 전체를 제외합니다 (데이터는 보존)"
+            {selected.size > 0 ? `답사지 엑셀 발급 (${selected.size})` : "답사지 엑셀 발급"}
+          </button>
+          <button
+            disabled={pending || issuing || selected.size === 0}
+            onClick={() => openIssue("pdf")}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-blue-500 bg-white text-blue-700 text-sm font-bold hover:bg-blue-50 disabled:opacity-40"
+            title="종이로 줄 때"
           >
-            <Trash2 className="w-4 h-4" /> 전체삭제 ({items.length})
-          </Button>
+            <Printer className="w-4 h-4" /> PDF
+          </button>
         </div>
 
         {filterOwner && (
@@ -697,6 +697,71 @@ export function PoolList({
       </div>
 
       {/* ── 지역 빠른 필터 칩 ── */}
+      {confirmKind && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setConfirmKind(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-black">
+              답사지 {confirmKind === "pdf" ? "PDF" : "엑셀"} 발급
+            </h3>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">건수</dt>
+                <dd className="font-black text-blue-700">{selected.size}건</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground shrink-0">지역</dt>
+                <dd className="font-bold text-right">
+                  {selectedRegions.slice(0, 3).map(([r, c]) => `${r} ${c}건`).join(" · ")}
+                  {selectedRegions.length > 3 ? ` 외 ${selectedRegions.length - 3}곳` : ""}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 items-center">
+                <dt className="text-muted-foreground">받는 팀</dt>
+                <dd className="font-bold">
+                  <input
+                    value={team}
+                    onChange={(e) => setTeam(e.target.value)}
+                    list="recent-survey-teams"
+                    placeholder="필수 입력"
+                    className="w-32 px-2 py-1 rounded border text-right font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </dd>
+              </div>
+            </dl>
+
+            {alreadyIssued.length > 0 && (
+              <p className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                <strong>{alreadyIssued.length}건은 이미 배포된 물건</strong>입니다 (최근:{" "}
+                {Array.from(new Set(alreadyIssued.map((i) => i.last_issued_team || "팀미기재"))).join(", ")}).
+                같은 물건을 두 팀이 도는 일이 없도록 확인하세요.
+              </p>
+            )}
+
+            <div className="mt-5 flex items-center gap-2">
+              <button
+                onClick={runIssue}
+                disabled={issuing || !team.trim()}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white font-black hover:bg-blue-700 disabled:opacity-40"
+              >
+                {issuing ? "발급 중…" : !team.trim() ? "팀 이름을 입력하세요" : `${selected.size}건 발급`}
+              </button>
+              <button
+                onClick={() => setConfirmKind(null)}
+                className="px-4 py-2.5 rounded-lg border font-bold hover:bg-muted"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {lastIssue && (
         <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-emerald-900">
@@ -851,6 +916,34 @@ export function PoolList({
               />
             )}
           </div>
+        </div>
+      )}
+
+      {/* 모바일: 하단 고정 발급 바 (컨트롤 바가 화면 밖으로 밀려도 발급 가능) */}
+      {selected.size > 0 && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur p-2 flex items-center gap-2">
+          <span className="text-xs font-black text-blue-900 shrink-0">{selected.size}건</span>
+          <input
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+            list="recent-survey-teams"
+            placeholder="받는 팀"
+            className="w-20 px-2 py-2 rounded border text-xs font-bold focus:outline-none"
+          />
+          <button
+            onClick={() => openIssue("xlsx")}
+            disabled={issuing}
+            className="flex-1 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-black disabled:opacity-40"
+          >
+            답사지 엑셀 발급
+          </button>
+          <button
+            onClick={clearAll}
+            className="px-2 py-2 rounded-lg border text-xs font-bold"
+            title="선택 해제"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -1032,6 +1125,26 @@ export function PoolList({
           </div>
         );
       })}
+      {/* 위험 작업 — 발급 버튼과 멀리 떨어뜨린다 */}
+      <details className="rounded-xl border border-rose-200 bg-rose-50/40 mt-6">
+        <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold text-rose-800">
+          위험 작업 (이 범위 전체 제외)
+        </summary>
+        <div className="px-4 pb-4">
+          <p className="text-xs text-rose-900 mb-2">
+            이 범위의 {items.length}건을 후보 풀에서 전부 제외합니다. 데이터는 보존되지만
+            <strong> 되돌리는 버튼이 없습니다.</strong>
+          </p>
+          <button
+            onClick={purgeAll}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 bg-white text-rose-700 text-xs font-bold hover:bg-rose-100 disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> 전체 제외 ({items.length}건)
+          </button>
+        </div>
+      </details>
+
     </div>
   );
 }

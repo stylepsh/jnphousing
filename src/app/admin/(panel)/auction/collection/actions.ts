@@ -521,3 +521,50 @@ export async function listBlockedProperties(): Promise<BlockedProperty[]> {
     return [];
   }
 }
+
+/**
+ * 지역 선택만으로 답사지를 바로 발급하기 위한 대상 id 조회.
+ * 지역 게이트에서 "이 지역 전부 발급"을 누르면 목록 화면을 거치지 않고 곧장 파일을 만든다.
+ */
+export async function idsForRegions(
+  regions: string[],
+  limit = 3000,
+): Promise<{ ok: boolean; ids?: string[]; total?: number; error?: string }> {
+  try {
+    await requireAdmin();
+    const parsed = z.array(z.string().trim().min(1)).min(1).max(60).safeParse(regions);
+    if (!parsed.success) return { ok: false, error: "지역이 선택되지 않았습니다" };
+
+    const supabase = createServiceClient();
+    const orFilter = parsed.data.map((r) => `address.ilike.${r}*`).join(",");
+    const { data, error } = await supabase
+      .from("auction_property")
+      .select("id, address, owner_name")
+      .eq("survey_status", "pending")
+      .or(orFilter)
+      .order("address", { ascending: true })
+      .limit(limit + 1);
+    if (error) return { ok: false, error: error.message };
+
+    const rows = (data ?? []) as { id: string; address: string; owner_name: string | null }[];
+    const blockedKeys = await fetchBlockedOwnerKeys(supabase);
+    const alive = blockedKeys.size
+      ? rows.filter((r) => !blockedKeys.has(normalizeOwnerName(r.owner_name)))
+      : rows;
+
+    // 완전히 같은 주소는 1건으로 (목록 화면과 동일 규칙)
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const r of alive) {
+      const key = (r.address ?? "").trim();
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      ids.push(r.id);
+      if (ids.length >= limit) break;
+    }
+    return { ok: true, ids, total: ids.length };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "대상 조회 중 오류가 발생했습니다." };
+  }
+}
