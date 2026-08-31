@@ -19,6 +19,7 @@ import {
   type SheetLog,
   type SheetItemRow,
 } from "./actions";
+import { displayOwnerName } from "@/lib/auction/court-auction";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "미답사",
@@ -194,7 +195,7 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
                     {it.case_number}
                   </span>
                   <span className="flex-1 min-w-[200px]">{it.address}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">{it.owner_name}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{displayOwnerName(it.owner_name)}</span>
                   <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-muted shrink-0">
                     {STATUS_LABEL[it.survey_status] ?? it.survey_status}
                   </span>

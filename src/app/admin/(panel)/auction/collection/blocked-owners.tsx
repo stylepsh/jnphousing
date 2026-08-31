@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Ban, Plus, RotateCcw } from "lucide-react";
 import { blockOwner, unblockOwner, type BlockedOwner } from "./actions";
+import { displayOwnerName } from "@/lib/auction/court-auction";
 
 /**
  * 차단 임대인 패널 — "이 사람 물건은 아예 안 본다".
@@ -116,7 +117,7 @@ export function BlockedOwners({
             <ul className="divide-y rounded-lg border">
               {owners.map((o) => (
                 <li key={o.owner_key} className="flex items-center gap-2 px-3 py-2">
-                  <span className="font-bold text-sm">{o.owner_name}</span>
+                  <span className="font-bold text-sm">{displayOwnerName(o.owner_name)}</span>
                   {o.reason && (
                     <span className="text-xs text-muted-foreground truncate">— {o.reason}</span>
                   )}
