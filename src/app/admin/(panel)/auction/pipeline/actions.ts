@@ -294,20 +294,33 @@ export async function batchReviewInspections(
     const supabase = createServiceClient();
     let count = 0;
 
-    for (const { inspectionId, propertyId } of validItems) {
-      const { data: insp } = await supabase
-        .from("auction_inspection")
-        .select("occupancy, can_open")
-        .eq("id", inspectionId)
-        .single();
-      const data: TransitionData = {
-        occupancy: (insp as { occupancy?: string } | null)?.occupancy,
-        canOpen: (insp as { can_open?: string } | null)?.can_open,
-      };
+    // 조사 정보는 한 번에 읽는다 — 건별 조회하면 50건 승인에 왕복 100회가 된다.
+    const { data: inspRows } = await supabase
+      .from("auction_inspection")
+      .select("id, occupancy, can_open")
+      .in(
+        "id",
+        validItems.map((v) => v.inspectionId),
+      );
+    const inspById = new Map(
+      ((inspRows ?? []) as { id: string; occupancy?: string; can_open?: string }[]).map((r) => [
+        r.id,
+        r,
+      ]),
+    );
 
+    // 전이는 물건별 상태 검증이 필요해 순차 유지. 성공한 것만 모아 마지막에 일괄 갱신.
+    const reviewedIds: string[] = [];
+    for (const { inspectionId, propertyId } of validItems) {
+      const insp = inspById.get(inspectionId);
+      const data: TransitionData = { occupancy: insp?.occupancy, canOpen: insp?.can_open };
       const r = await doTransition(ctx, propertyId, validAction, { data });
       if (!r.ok) continue;
+      reviewedIds.push(inspectionId);
+      count++;
+    }
 
+    for (let i = 0; i < reviewedIds.length; i += 300) {
       await supabase
         .from("auction_inspection")
         .update({
@@ -316,9 +329,7 @@ export async function batchReviewInspections(
           reviewed_by_name: ctx.admin.name,
           reviewed_at: new Date().toISOString(),
         })
-        .eq("id", inspectionId);
-
-      count++;
+        .in("id", reviewedIds.slice(i, i + 300));
     }
 
     revalidateAll();
