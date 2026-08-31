@@ -46,7 +46,12 @@ export function AssignBoard({ items }: { items: AssignItem[] }) {
       const res = await fetch("/admin/auction/pipeline/survey-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected), inspectorName: inspectorName.trim() || undefined }),
+        // 발급 이력에 팀(답사자)을 남긴다 — 비우면 "팀 미기재"로 쌓여 중복배포 경고가 무력해진다
+        body: JSON.stringify({
+          ids: Array.from(selected),
+          team: inspectorName.trim() || undefined,
+          inspectorName: inspectorName.trim() || undefined,
+        }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
