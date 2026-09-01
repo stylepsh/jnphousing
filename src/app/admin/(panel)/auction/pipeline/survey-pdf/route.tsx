@@ -30,6 +30,20 @@ export async function POST(req: NextRequest) {
     }
 
     const printedAtIso = new Date().toISOString();
+    const today = printedAtIso.slice(0, 10);
+
+    // 파일을 먼저 만든다. 렌더가 실패하면 발급 이력이 남지 않아야 한다
+    // (기록이 앞서면 실제로 못 받은 답사지가 "발급됨"으로 쌓여 중복 배포 방지가 무너진다).
+    const buf = await renderToBuffer(
+      <AuctionSurveyPdf
+        data={{
+          printedAt: today,
+          sheetLabel: regionLabel,
+          items: ordered, // 답사 대상 + 기존 답사완료(회색). PDF 가 지역별로 정렬·표시.
+        }}
+      />,
+    );
+
     const { sheetId } = await recordSheetIssue({
       propertyIds: todoRows.map((it) => it.id),
       regionLabel,
@@ -43,17 +57,6 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-
-    const today = printedAtIso.slice(0, 10);
-    const buf = await renderToBuffer(
-      <AuctionSurveyPdf
-        data={{
-          printedAt: today,
-          sheetLabel: regionLabel,
-          items: ordered, // 답사 대상 + 기존 답사완료(회색). PDF 가 지역별로 정렬·표시.
-        }}
-      />,
-    );
 
     const u8 = new Uint8Array(buf);
     const filename = `survey_${today}_${todoRows.length}.pdf`;

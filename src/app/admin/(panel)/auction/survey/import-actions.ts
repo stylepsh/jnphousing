@@ -4,7 +4,7 @@ import "server-only";
 import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import {
   extractRowsFromCsv,
@@ -26,6 +26,8 @@ export interface SurveyImportResult {
   occupied: number;
   recheck: number;
   skipped: number;
+  /** 저장에 실패해 다시 올려야 하는 행(사건번호 또는 주소). */
+  failed?: string[];
 }
 
 const EMPTY: SurveyImportResult = {
@@ -75,7 +77,7 @@ function cleanRegionLabel(raw: string | null): string | null {
 
 export async function importSurveySheet(formData: FormData): Promise<SurveyImportResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
       return { ...EMPTY, error: "파일이 없습니다." };
@@ -111,6 +113,41 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       const batchId = (batch as { id: string } | null)?.id ?? null;
       let bVacant = 0, bOccupied = 0, bRecheck = 0;
 
+      // 행마다 case_number 로 기존 물건을 조회하면 500행 업로드에 500회 왕복이 된다.
+      // 시트의 사건번호를 모아 한 번에(청크로) 조회한 뒤 메모리에서 매칭한다.
+      const normalized = sheet.rows.map((raw) => normalizeRow(raw));
+      const caseNumbers = [...new Set(
+        normalized.map((n) => n.caseNumber).filter((c): c is string => !!c),
+      )];
+      const existingByCase = new Map<string, { id: string; pipeline_state: string | null; survey_status: string | null }>();
+      for (let i = 0; i < caseNumbers.length; i += 200) {
+        const { data: matchRows, error: matchErr } = await supabase
+          .from("auction_property")
+          .select("id, case_number, pipeline_state, survey_status")
+          .in("case_number", caseNumbers.slice(i, i + 200))
+          .order("created_at", { ascending: true });
+        if (matchErr) {
+          console.error("[importSurveySheet] 기존 물건 조회 실패", matchErr);
+          return { ...EMPTY, error: "기존 물건 조회에 실패했습니다. 다시 시도해 주세요." };
+        }
+        // 같은 사건번호에 거부·차단 행과 활성 행이 함께 있으면 활성 행을 쓴다
+        // (거부해 둔 물건이 업로드로 되살아나지 않게 — 기존 동작 유지).
+        const isActive = (st: string | null) => st !== "rejected" && st !== "blocked";
+        for (const r of (matchRows ?? []) as {
+          id: string; case_number: string; pipeline_state: string | null; survey_status: string | null;
+        }[]) {
+          const prev = existingByCase.get(r.case_number);
+          if (!prev) {
+            existingByCase.set(r.case_number, r);
+          } else if (isActive(r.survey_status) && !isActive(prev.survey_status)) {
+            existingByCase.set(r.case_number, r);
+          }
+        }
+      }
+
+      // 부분 실패 집계 — 어떤 행이 왜 빠졌는지 사용자에게 알린다.
+      const failures: string[] = [];
+
       for (const raw of sheet.rows) {
         const n = normalizeRow(raw);
         if (!n.occupancy) {
@@ -122,25 +159,8 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
         let nextState = JUDGE_STATE_OF[n.occupancy as Occupancy] ?? "Approved";
         if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
-        // 사건번호 있을 때만 기존 풀과 매칭(최초 수집건). 없으면 신규.
-        // 같은 사건번호에 거부행+활성행이 함께 있으면 활성행을 우선 갱신(거부행이 덮이지 않게).
-        let existing: { id: string; pipeline_state: string | null } | null = null;
-        if (n.caseNumber) {
-          const { data: matchRows } = await supabase
-            .from("auction_property")
-            .select("id, pipeline_state, survey_status")
-            .eq("case_number", n.caseNumber)
-            .order("created_at", { ascending: true });
-          const list = (matchRows ?? []) as {
-            id: string;
-            pipeline_state: string | null;
-            survey_status: string | null;
-          }[];
-          existing =
-            list.find((r) => r.survey_status !== "rejected" && r.survey_status !== "blocked") ??
-            list[0] ??
-            null;
-        }
+        // 사건번호가 있으면 위에서 일괄 조회한 결과에서 매칭한다(왕복 0회).
+        const existing = n.caseNumber ? existingByCase.get(n.caseNumber) ?? null : null;
 
         let propertyId: string;
         let fromState = "Collected";
@@ -172,6 +192,8 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
             .select("id")
             .single();
           if (insErr || !created) {
+            console.error("[importSurveySheet] 물건 생성 실패", { caseNumber: n.caseNumber, insErr });
+            failures.push(n.caseNumber ?? n.address ?? "(사건번호 미상)");
             result.skipped++;
             continue;
           }
@@ -196,6 +218,11 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
         if (n.occupancy === "vacant") { result.vacant++; bVacant++; }
         else if (n.occupancy === "occupied") { result.occupied++; bOccupied++; }
         else { result.recheck++; bRecheck++; }
+      }
+
+      if (failures.length > 0) {
+        // 실패한 행만 다시 올리면 되도록 사건번호를 그대로 돌려준다.
+        result.failed = (result.failed ?? []).concat(failures);
       }
 
       if (batchId) {

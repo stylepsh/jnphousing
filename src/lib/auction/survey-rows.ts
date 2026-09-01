@@ -4,6 +4,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { AppError } from "@/lib/errors";
 import { groupByRegion, regionKey } from "@/lib/auction/survey-group";
 import { normalizeOwnerName, ownerNameAnchor } from "@/lib/auction/court-auction";
 
@@ -41,14 +42,23 @@ export async function computeSurveySheetRows(ids: string[]): Promise<{
   regionLabel: string;
 }> {
   const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("auction_property")
-    .select(SEL)
-    .in("id", ids)
-    .order("owner_name", { ascending: true })
-    .order("address", { ascending: true });
 
-  const selRows = (data ?? []) as SurveyRow[];
+  // id 를 한 번의 .in() 에 다 넣으면 URL 길이 한도를 넘긴다(수백 건 발급 시 실패).
+  // 청크로 나눠 조회하고 합친다.
+  const selRows: SurveyRow[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await supabase
+      .from("auction_property")
+      .select(SEL)
+      .in("id", ids.slice(i, i + 200))
+      .order("owner_name", { ascending: true })
+      .order("address", { ascending: true });
+    if (error) {
+      console.error("[computeSurveySheetRows] 물건 조회 실패", error);
+      throw new AppError("INTERNAL", "물건 목록을 불러오지 못했습니다. 다시 시도해 주세요.");
+    }
+    selRows.push(...((data ?? []) as SurveyRow[]));
+  }
   if (selRows.length === 0) return { selRows: [], ordered: [], todoRows: [], regionLabel: "" };
 
   // 선택분 임대인의 "이미 답사한" 물건(공실/거주/제외)을 회색 패스 줄로 자동 합쳐 재방문을 막는다.
@@ -61,14 +71,28 @@ export async function computeSurveySheetRows(ids: string[]): Promise<{
   const anchors = Array.from(
     new Set(selRows.map((r) => ownerNameAnchor(r.owner_name)).filter((a) => a.length >= 2)),
   );
+  // 지역 조건을 DB 쿼리에도 건다.
+  // (예전에는 임대인명으로만 전국을 조회한 뒤 메모리에서 지역을 걸렀다 →
+  //  Supabase 기본 반환 상한 1,000행에 잘려 해당 지역 물건이 조용히 누락될 수 있었다.)
+  // DB 의 region_key 는 주소 앞 2토큰, 화면의 regionKey() 는 3토큰이라
+  // 2토큰 집합으로 넓게 거른 뒤(인덱스 사용) 3토큰으로 정확히 맞춘다.
+  const region2 = (addr: string) => (addr || "").trim().split(/\s+/).slice(0, 2).join(" ");
+  const regionPrefixes = Array.from(new Set(selRows.map((r) => region2(r.address)).filter(Boolean)));
+
   let surveyedExtra: SurveyRow[] = [];
-  if (ownerKeys.size > 0 && anchors.length > 0) {
+  if (ownerKeys.size > 0 && anchors.length > 0 && regionPrefixes.length > 0) {
     const orFilter = anchors.map((a) => `owner_name.ilike.%${a}%`).join(",");
-    const { data: extra } = await supabase
+    const { data: extra, error: extraErr } = await supabase
       .from("auction_property")
       .select(SEL)
       .in("survey_status", DONE_STATUSES)
-      .or(orFilter);
+      .in("region_key", regionPrefixes)
+      .or(orFilter)
+      .limit(5000);
+    if (extraErr) {
+      console.error("[computeSurveySheetRows] 기존 답사완료 조회 실패", extraErr);
+      throw new AppError("INTERNAL", "기존 답사 이력을 불러오지 못했습니다. 다시 시도해 주세요.");
+    }
     surveyedExtra = ((extra ?? []) as SurveyRow[]).filter(
       (r) =>
         !selectedIds.has(r.id) &&
