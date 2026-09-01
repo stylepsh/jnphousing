@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { buildSchedules } from "@/lib/billing/schedule-builder";
 import { applyPaymentToInvoice } from "@/lib/billing/payment-allocator";
@@ -32,7 +32,7 @@ import type {
 
 export async function activateLease(leaseId: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(leaseId).success) {
       return { ok: false as const, error: "잘못된 ID" };
     }
@@ -94,7 +94,7 @@ export async function activateLease(leaseId: string) {
 
 export async function issueInvoicesForDate(targetDate: string, leadDays = 3) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(targetDate).success) {
       return { ok: false as const, error: "날짜 형식 오류" };
     }
@@ -177,7 +177,7 @@ const recordPaymentSchema = z.object({
 
 export async function recordPayment(formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const raw = {
       invoice_id: formData.get("invoice_id"),
       amount: formData.get("amount"),
@@ -287,7 +287,7 @@ async function findNextUnpaidInvoice(
 
 export async function refreshOverdueInvoices(now = new Date()) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const supabase = createServiceClient();
     const today = toIsoDate(now);
 
@@ -343,7 +343,7 @@ export async function refreshOverdueInvoices(now = new Date()) {
 
 export async function generateMonthlyCommissions(year: number, month1Based: number) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!Number.isInteger(year) || !Number.isInteger(month1Based) || month1Based < 1 || month1Based > 12) {
       return { ok: false as const, error: "잘못된 연/월" };
     }
@@ -428,7 +428,7 @@ const terminateSchema = z.object({
 
 export async function terminateLease(formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = terminateSchema.safeParse({
       lease_id: formData.get("lease_id"),
       termination_date: formData.get("termination_date"),
@@ -520,7 +520,7 @@ const renewSchema = z.object({
 
 export async function renewLease(formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = renewSchema.safeParse({
       lease_id: formData.get("lease_id"),
       new_start_date: formData.get("new_start_date"),

@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -27,7 +27,7 @@ const vendorSchema = z.object({
 
 export async function upsertBuildingVendor(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const parsed = vendorSchema.safeParse({
@@ -51,7 +51,7 @@ export async function upsertBuildingVendor(id: string | null, formData: FormData
 
 export async function deleteBuildingVendor(id: string, propertyId: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("building_vendors").delete().eq("id", id);
@@ -78,7 +78,7 @@ const autoDebitSchema = z.object({
 
 export async function upsertAutoDebit(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const parsed = autoDebitSchema.safeParse(raw);
@@ -98,7 +98,7 @@ export async function upsertAutoDebit(id: string | null, formData: FormData) {
 
 export async function deleteAutoDebit(id: string, propertyId: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("auto_debit_accounts").delete().eq("id", id);
@@ -128,7 +128,7 @@ const propertyExtSchema = z.object({
 
 export async function upsertBuildingManaged(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const modes = formData.getAll("service_modes").map(v => String(v)).filter(Boolean);

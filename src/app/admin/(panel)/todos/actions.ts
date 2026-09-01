@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -21,7 +21,7 @@ function revalidate() {
 
 export async function addTodo(formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = todoSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
 
@@ -47,7 +47,7 @@ export async function toggleTodo(id: string, done: boolean) {
 /** 상태 변경: 진행중(todo) / 지연(delayed) / 완료(done) */
 export async function setTodoStatus(id: string, status: "todo" | "delayed" | "done") {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
 
     const supabase = createServiceClient();
@@ -70,7 +70,7 @@ export async function setTodoStatus(id: string, status: "todo" | "delayed" | "do
 /** 일정 변경 — 기한(due_date)만 수정하고 진행중으로 유지 */
 export async function rescheduleTodo(id: string, dueDate: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return { ok: false as const, error: "날짜 형식 오류" };
 
@@ -91,7 +91,7 @@ export async function rescheduleTodo(id: string, dueDate: string) {
 
 export async function deleteTodo(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
 
     const supabase = createServiceClient();

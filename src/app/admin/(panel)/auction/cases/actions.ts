@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 
 const STAGES = [
@@ -104,7 +104,7 @@ function toRow(p: z.infer<typeof caseSchema>) {
 
 export async function createCase(input: CaseInput): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = caseSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -127,7 +127,7 @@ export async function createCase(input: CaseInput): Promise<ActionResult> {
 
 export async function updateCase(id: string, input: CaseInput): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = caseSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -151,7 +151,7 @@ export async function updateCase(id: string, input: CaseInput): Promise<ActionRe
 /** 단계만 빠르게 변경 (리스트 인라인) */
 export async function updateCaseStage(id: string, stage: string): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!(STAGES as readonly string[]).includes(stage)) {
       return { ok: false, error: "잘못된 단계값" };
     }
@@ -171,7 +171,7 @@ export async function updateCaseStage(id: string, stage: string): Promise<Action
 
 export async function deleteCase(id: string): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const supabase = createServiceClient();
     const { error } = await supabase.from("auction_case").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };

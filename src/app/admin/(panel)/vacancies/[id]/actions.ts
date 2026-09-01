@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin, getClientIp } from "@/lib/auth-guard";
+import { requireMutableAdmin, getClientIp } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { audit } from "@/lib/audit";
 
@@ -14,7 +14,7 @@ export async function addVacancyImages(
   urls: { url: string; caption?: string | null }[],
 ) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     if (!z.string().uuid().safeParse(vacancyId).success) {
       return { ok: false as const, error: "잘못된 ID" };
     }
@@ -69,7 +69,7 @@ export async function addVacancyImages(
 
 export async function deleteVacancyImage(imageId: string) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     if (!z.string().uuid().safeParse(imageId).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { data: row } = await supabase.from("vacancy_images").select("vacancy_id, url").eq("id", imageId).maybeSingle();
@@ -121,7 +121,7 @@ const listingSchema = z.object({
 
 export async function upsertListing(id: string | null, formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const raw = Object.fromEntries(formData.entries());
     const parsed = listingSchema.safeParse(raw);
     if (!parsed.success) return { ok: false as const, error: "입력값을 확인해 주세요." };
@@ -164,7 +164,7 @@ export async function upsertListing(id: string | null, formData: FormData) {
 
 export async function deleteListing(id: string, vacancyId: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const supabase = createServiceClient();
     const { error } = await supabase.from("vacancy_ad_listings").delete().eq("id", id);
     if (error) return { ok: false as const, error: "삭제 실패" };

@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient, createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -29,7 +29,7 @@ function parseModes(fd: FormData): string[] {
 /** 건물 등록 — owner_id 직접 연결, unit_type='building' */
 export async function createBuilding(ownerId: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = buildingSchema.safeParse({
       owner_id: ownerId,
       name: fd.get("name"), address: fd.get("address"), type: fd.get("type") || "villa",
@@ -76,7 +76,7 @@ async function getBuilding(buildingId: string | null) {
 /** 호실 1건 추가 — 건물 있으면 주소/유형/관리유형/기본값 상속, 단독이면 직접 입력 */
 export async function addUnit(ownerId: string, buildingId: string | null, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = unitSchema.safeParse({
       unit_no: fd.get("unit_no"), floor: fd.get("floor") || "",
       deposit_default: fd.get("deposit_default") || "", rent_default: fd.get("rent_default") || "",
@@ -125,7 +125,7 @@ const bulkSchema = z.object({
  */
 export async function addUnitsBulk(ownerId: string, buildingId: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = bulkSchema.safeParse({
       floor_from: fd.get("floor_from"), floor_to: fd.get("floor_to"),
       per_floor: fd.get("per_floor"), start_no: fd.get("start_no") || 1, pad: fd.get("pad") || 2,
@@ -188,7 +188,7 @@ const leaseSchema = z.object({
  */
 export async function createLeaseForUnit(ownerId: string, unitId: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(unitId).success) return { ok: false as const, error: "잘못된 호실" };
 
     const parsed = leaseSchema.safeParse({
@@ -239,7 +239,7 @@ export async function createLeaseForUnit(ownerId: string, unitId: string, fd: Fo
 /** 건물 정보 수정 */
 export async function updateBuilding(ownerId: string, id: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const parsed = buildingSchema.safeParse({
       owner_id: ownerId,
@@ -273,7 +273,7 @@ const unitEditSchema = z.object({
 /** 호실 정보 수정 (호수·층·보증금·월세·관리유형) */
 export async function updateUnit(ownerId: string, id: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const parsed = unitEditSchema.safeParse({
       unit_no: fd.get("unit_no"), floor: fd.get("floor") || "",
@@ -300,7 +300,7 @@ export async function updateUnit(ownerId: string, id: string, fd: FormData) {
 /** 호실 여러 개 일괄 삭제 (다중 선택). 계약이 걸린 호실은 FK 제약으로 건너뜀. */
 export async function deletePropertiesBulk(ownerId: string, ids: string[]) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const valid = ids.filter((id) => z.string().uuid().safeParse(id).success);
     if (valid.length === 0) return { ok: false as const, error: "선택된 호실이 없습니다." };
     const supabase = createServiceClient();
@@ -324,7 +324,7 @@ export async function deletePropertiesBulk(ownerId: string, ids: string[]) {
 /** 물건(건물/호실) 삭제. 건물 삭제 시 하위 호실의 parent는 FK on delete set null. */
 export async function deleteProperty(ownerId: string, id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("properties").delete().eq("id", id);

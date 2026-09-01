@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -21,7 +21,7 @@ export async function designateFullSurveyTarget(input: {
   sample_vacant?: number;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = designateSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -62,7 +62,7 @@ export async function updateFullSurveyTarget(input: {
   note?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = statusSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -84,7 +84,7 @@ export async function updateFullSurveyTarget(input: {
 /** 전수조사 대상 명단에서 제거. */
 export async function removeFullSurveyTarget(id: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false, error: "잘못된 대상" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("auction_full_survey_target").delete().eq("id", id);

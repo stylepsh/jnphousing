@@ -3,9 +3,9 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
-import { encryptPII } from "@/lib/crypto-pii";
+import { encryptPII, PiiKeyMissingError } from "@/lib/crypto-pii";
 
 const schema = z.object({
   name: z.string().min(1).max(80),
@@ -20,7 +20,7 @@ const schema = z.object({
 
 export async function upsertLandlord(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) {
       return { ok: false as const, error: "잘못된 ID" };
     }
@@ -60,6 +60,11 @@ export async function upsertLandlord(id: string | null, formData: FormData) {
     revalidatePath("/admin/landlords");
     return { ok: true as const };
   } catch (e) {
+    if (e instanceof PiiKeyMissingError) {
+      // 평문 저장을 막고 실패로 끝낸다. 원인은 서버 로그(crypto-pii)에 남는다.
+      console.error("[PII]", e.message);
+      return { ok: false as const, error: e.message };
+    }
     if (e instanceof AppError) return { ok: false as const, error: e.message };
     return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
   }
@@ -67,7 +72,7 @@ export async function upsertLandlord(id: string | null, formData: FormData) {
 
 export async function deleteLandlord(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("landlords").delete().eq("id", id);
@@ -78,6 +83,11 @@ export async function deleteLandlord(id: string) {
     revalidatePath("/admin/landlords");
     return { ok: true as const };
   } catch (e) {
+    if (e instanceof PiiKeyMissingError) {
+      // 평문 저장을 막고 실패로 끝낸다. 원인은 서버 로그(crypto-pii)에 남는다.
+      console.error("[PII]", e.message);
+      return { ok: false as const, error: e.message };
+    }
     if (e instanceof AppError) return { ok: false as const, error: e.message };
     return { ok: false as const, error: "처리 중 오류가 발생했습니다." };
   }

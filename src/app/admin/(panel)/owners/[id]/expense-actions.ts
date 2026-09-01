@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -21,7 +21,7 @@ const expenseSchema = z.object({
 /** 호실 지출 등록 (+ 임대인/회사 분배 자동계산) */
 export async function createUnitExpense(ownerId: string, fd: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = expenseSchema.safeParse({
       unit_id: fd.get("unit_id"),
       category: fd.get("category") || "repair",
@@ -63,7 +63,7 @@ export async function createUnitExpense(ownerId: string, fd: FormData) {
 /** 지출 삭제 */
 export async function deleteUnitExpense(ownerId: string, id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("unit_expenses").delete().eq("id", id);
@@ -79,7 +79,7 @@ export async function deleteUnitExpense(ownerId: string, id: string) {
 /** 임대인 청구 처리 표시(토글) */
 export async function toggleExpenseBilled(ownerId: string, id: string, billed: boolean) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("unit_expenses")
