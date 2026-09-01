@@ -3,6 +3,8 @@
  * DB blog_posts 테이블 비어있을 때 fallback.
  */
 
+import { COMPANY } from "@/lib/company";
+
 export interface BlogPost {
   slug: string;
   title: string;
@@ -65,7 +67,7 @@ HUG 는 일정 요건 충족 시 분할 변제(최장 5년)를 허용합니다. 
 
 **한 통의 통보서가 자산을 결정짓지 않습니다.** 빠르고 정확한 초기 대응이 손실의 80%를 막습니다.
 
-[관리문의](/contact) 또는 010-9893-6882 로 연락 주세요.`,
+[관리문의](/contact) 또는 ${COMPANY.contact.phone} 로 연락 주세요.`,
   },
   {
     slug: "jeonse-fraud-24-hour-checklist",
@@ -113,7 +115,7 @@ HUG 는 일정 요건 충족 시 분할 변제(최장 5년)를 허용합니다. 
 
 **JNP는 임대인 분쟁뿐 아니라 임차인 사기 사건 컨설팅도 동행합니다.**
 
-긴급 상담: 010-9893-6882`,
+긴급 상담: ${COMPANY.contact.phone}`,
   },
   {
     slug: "vacancy-rate-halving-strategy",
@@ -170,7 +172,7 @@ HUG 는 일정 요건 충족 시 분할 변제(최장 5년)를 허용합니다. 
 
 **위탁관리는 단순 대행이 아니라 자산 운영입니다.** 누적된 현장 데이터로 공실 해결 패턴이 정해져 있습니다.
 
-[관리문의](/contact) · 010-9893-6882`,
+[관리문의](/contact) · ${COMPANY.contact.phone}`,
   },
 ];
 
