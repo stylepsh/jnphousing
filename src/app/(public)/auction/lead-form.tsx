@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Loader2, Send, CheckCircle2 } from "lucide-react";
 import { submitAuctionLead } from "./actions";
+import { COMPANY } from "@/lib/company";
 
 export function LeadForm() {
   const [pending, startTransition] = useTransition();
@@ -28,7 +29,7 @@ export function LeadForm() {
       <div className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md p-8 text-center">
         <CheckCircle2 className="h-12 w-12 text-amber-300 mx-auto mb-3" />
         <p className="text-white text-lg font-bold">접수가 완료되었습니다.</p>
-        <p className="text-white/70 text-sm mt-2">담당자가 검토 후 빠르게 연락드리겠습니다. 급하시면 010-9893-6882로 전화 주세요.</p>
+        <p className="text-white/70 text-sm mt-2">담당자가 검토 후 연락드리겠습니다. 급하시면 {COMPANY.contact.phone}으로 전화 주세요.</p>
       </div>
     );
   }

@@ -2,30 +2,28 @@ import type { Metadata } from "next";
 import { Phone, ArrowRight, CheckCircle, ShieldCheck, AlertTriangle } from "lucide-react";
 import { CostCalculator } from "./cost-calculator";
 import { LeadForm } from "./lead-form";
-
-const TEL = "010-9893-6882";
-const TEL_HREF = "tel:01098936882";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
-  title: "경매 건물 공실 관리 — 낙찰 전 수익 창출 | JNP주택관리",
+  title: "경매 건물 공실·운영 검토 | JNP주택관리",
   description:
-    "경매 진행 중인 건물, 공실로 방치하고 계십니까? 임차권등기·HUG 대위변제·장기 공실 건물 전문. 낙찰 전까지 수익을 만들어드립니다. 무료 상담 010-9893-6882",
+    `경매 진행 중인 건물의 공실·운영 가능성을 검토합니다. 임차권등기·HUG 대위변제·장기 공실 상담 ${COMPANY.contact.phone}`,
   keywords: [
     "경매 건물 관리", "경매 공실 수익", "임차권등기 관리", "HUG 대위변제", "경매 건물 임대", "JNP주택관리",
   ],
   openGraph: {
-    title: "경매 건물 공실 관리 — 낙찰 전 수익 창출 | JNP주택관리",
-    description: "경매 진행 중인 건물도 낙찰 전까지 수익 창출이 가능합니다. 임차권등기·HUG 대위변제·장기 공실 전문. 무료 상담 010-9893-6882",
+    title: "경매 건물 공실·운영 검토 | JNP주택관리",
+    description: `경매 진행 중인 건물의 공실·운영 가능성을 검토합니다. 무료 상담 ${COMPANY.contact.phone}`,
     type: "website",
   },
 };
 
 const CHECKLIST = [
-  { title: "임차권등기 세대가 많은 건물", desc: "복잡한 등기 정리와 임차인 관리를 동시에 진행해 드립니다." },
-  { title: "HUG 대위변제 진행 건물", desc: "보증사고 이후의 자산 정리·재임대를 전문적으로 대응합니다." },
-  { title: "공실이 다수 발생한 건물", desc: "단기 임대 등으로 낙찰 전까지 공실을 수익으로 전환합니다." },
+  { title: "임차권등기 세대가 많은 건물", desc: "등기와 임차인 현황을 함께 확인해 운영 범위를 검토합니다." },
+  { title: "HUG 대위변제 진행 건물", desc: "보증사고 이후 필요한 자산·임차인 현황 확인을 지원합니다." },
+  { title: "공실이 다수 발생한 건물", desc: "현장과 계약 조건을 바탕으로 가능한 공실 운영안을 검토합니다." },
   { title: "관리가 어려운 건물", desc: "명도·시설·세입자 문제를 종합적으로 대응합니다." },
-  { title: "경매 진행 중인 건물", desc: "낙찰 전 남은 기간 동안 수익을 극대화하는 운영을 제안합니다." },
+  { title: "경매 진행 중인 건물", desc: "낙찰 전 남은 기간과 권리 관계를 고려한 운영안을 검토합니다." },
 ];
 
 export default function AuctionLandingPage() {
@@ -47,12 +45,12 @@ export default function AuctionLandingPage() {
           </p>
           <p className="mt-4 text-base md:text-lg text-white/75 max-w-2xl mx-auto leading-relaxed">
             임차권등기 · HUG 대위변제 · 명도 · 장기 공실 — 사실상 방치된 건물도
-            낙찰 전까지 수익을 만들 수 있습니다.
+            낙찰 전 운영 가능성을 함께 검토할 수 있습니다.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href={TEL_HREF} className="inline-flex items-center justify-center gap-2 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-16 px-10 rounded-xl text-xl font-black transition-all hover:shadow-2xl hover:-translate-y-0.5">
+            <a href={COMPANY.contact.phoneHref} className="inline-flex items-center justify-center gap-2 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-16 px-10 rounded-xl text-xl font-black transition-all hover:shadow-2xl hover:-translate-y-0.5">
               <Phone className="h-6 w-6" />
-              {TEL}
+              {COMPANY.contact.phone}
             </a>
             <a href="#consult" className="inline-flex items-center justify-center gap-2 bg-white/15 text-white border border-white/30 hover:bg-white/25 h-16 px-8 rounded-xl text-lg font-semibold transition-all">
               무료 상담 신청
@@ -117,7 +115,7 @@ export default function AuctionLandingPage() {
                   <p className="text-base md:text-lg font-bold text-slate-900 flex-1">{item.title}</p>
                   <ArrowRight className="h-4 w-4 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="max-h-0 group-hover:max-h-24 overflow-hidden transition-all duration-300">
+                <div className="max-h-24 overflow-hidden transition-all duration-300">
                   <p className="text-sm text-slate-600 pl-12 pt-2">{item.desc}</p>
                 </div>
               </div>
@@ -155,9 +153,9 @@ export default function AuctionLandingPage() {
               건물 주소 또는 연락처를 남겨주시면, 담당자가 직접 검토 후 연락드립니다.
             </p>
 
-            <a href={TEL_HREF} className="mt-8 inline-flex items-center gap-3 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-16 px-8 rounded-2xl text-2xl font-black transition-all hover:shadow-2xl hover:-translate-y-0.5">
+            <a href={COMPANY.contact.phoneHref} className="mt-8 inline-flex items-center gap-3 bg-amber-400 text-[#0F2B5B] hover:bg-amber-300 h-16 px-8 rounded-2xl text-2xl font-black transition-all hover:shadow-2xl hover:-translate-y-0.5">
               <Phone className="h-7 w-7" />
-              {TEL}
+              {COMPANY.contact.phone}
             </a>
             <p className="mt-5 text-amber-300 text-sm font-medium">
               ※ 경매 진행 건물 · 임차권등기 다수 건물 · 공실 다수 건물 우선 상담

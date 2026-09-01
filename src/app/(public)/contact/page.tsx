@@ -32,10 +32,10 @@ export default function ContactPage() {
                   <div className="mb-8 p-5 rounded-xl bg-primary/5 border border-primary/15">
                     <p className="text-sm font-semibold mb-3">양식 작성이 번거로우시다면:</p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <a href="tel:01098936882" className="flex items-center justify-center gap-2 bg-primary text-white rounded-lg h-11 px-5 text-sm font-semibold hover:bg-primary/90 transition-colors">
+                      <a href={COMPANY.contact.phoneHref} className="flex items-center justify-center gap-2 bg-primary text-white rounded-lg h-11 px-5 text-sm font-semibold hover:bg-primary/90 transition-colors">
                         <Phone className="h-4 w-4" /> 전화로 바로 상담하기
                       </a>
-                      <a href="https://open.kakao.com/o/scZWs5vi" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] rounded-lg h-11 px-5 text-sm font-semibold hover:bg-[#FDD800] transition-colors">
+                      <a href={COMPANY.contact.kakaoOpenChat} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] rounded-lg h-11 px-5 text-sm font-semibold hover:bg-[#FDD800] transition-colors">
                         <MessageCircle className="h-4 w-4" /> 카카오톡 상담하기
                       </a>
                     </div>
@@ -85,10 +85,10 @@ export default function ContactPage() {
                   <h3 className="font-semibold mb-3">이런 분들께 꼭 필요합니다</h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li>• HUG 대위변제 통보를 받으셨나요? 당황하지 마세요.</li>
-                    <li>• 빈 건물에서 수익이 0원? 4개월 안에 정상화한 사례가 있습니다.</li>
+                    <li>• 빈 건물의 공실 원인과 운영 가능성을 점검하고 싶으신가요?</li>
                     <li>• 세입자 문제로 잠을 못 주무시나요? 저희가 중재합니다.</li>
                     <li>• 가족 생활비가 건물에 묶여 있나요? 현금 흐름을 만들어드립니다.</li>
-                    <li>• 변호사비 부담 없이 법적 대응을 시작할 수 있습니다.</li>
+                    <li>• 법적 검토가 필요한 사안의 대응 절차가 막막하신가요?</li>
                     <li>• 기존 관리회사가 불만족스러우신가요? 비교 견적을 드립니다.</li>
                   </ul>
                 </CardContent>
