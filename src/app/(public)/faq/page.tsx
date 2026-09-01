@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HelpCircle, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FAQPageJsonLd } from "@/components/shared/JsonLd";
+import { PageHero, SUPPORT_TABS } from "@/components/layout/PageHero";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문",
@@ -93,20 +94,13 @@ export default async function FaqPage() {
   return (
     <>
       <FAQPageJsonLd items={items.map(i => ({ question: i.question, answer: i.answer }))} />
-      <section className="bg-primary text-white py-16 md:py-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
-            <HelpCircle className="h-3.5 w-3.5" /> FAQ
-          </div>
-          <h1 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-            자주 묻는 질문
-          </h1>
-          <p className="mt-3 text-blue-100 max-w-2xl">
-            위탁임대·주택관리·HUG 대응에 대해 가장 많이 받는 질문들입니다.
-            더 궁금한 점은 카톡 또는 전화로 문의해 주세요.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="FAQ"
+        title="자주 묻는 질문"
+        description="위탁임대·주택관리·HUG 대응에 대해 가장 많이 받는 질문들입니다. 더 궁금한 점은 전화나 카카오톡으로 문의해 주세요."
+        tabs={SUPPORT_TABS}
+        activeHref="/faq"
+      />
 
       <section className="bg-background py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">

@@ -102,7 +102,23 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-slate-800">
+        {/* 대표번호 강조 — 광고 유입 고객이 스크롤 끝에서도 바로 전화할 수 있게. */}
+        <div className="mt-10 pt-8 border-t border-slate-800">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">{COMPANY.contact.phoneLabel}</p>
+              <p className="mt-1 text-xs text-slate-400">전화 상담은 무료이며, 상담 후 계약 의무가 없습니다.</p>
+            </div>
+            <a
+              href={COMPANY.contact.phoneHref}
+              className="text-3xl font-bold tracking-tight text-white transition-colors hover:text-blue-300 sm:text-4xl"
+            >
+              {COMPANY.contact.phone}
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-500">
             <div className="space-y-1">
               <p>© {new Date().getFullYear()} {COMPANY.brand} ({COMPANY.legalName}). All rights reserved.</p>

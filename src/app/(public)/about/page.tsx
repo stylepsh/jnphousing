@@ -6,6 +6,7 @@ import { Building2, Target, Heart, ShieldCheck, Award, MapPin, FileText, Phone, 
 import { COMPANY } from "@/lib/company";
 import { CountUp } from "@/components/shared/CountUp";
 import { createClient } from "@/lib/supabase/server";
+import { PageHero, COMPANY_TABS } from "@/components/layout/PageHero";
 
 export const metadata: Metadata = {
   title: "회사소개",
@@ -117,32 +118,13 @@ export default async function AboutPage() {
 
   return (
     <>
-      {/* ============ HERO ============ */}
-      <section className="bg-primary text-white py-20 md:py-28 relative overflow-hidden">
-        <div className="relative mx-auto max-w-5xl px-6">
-          <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">About Us</p>
-          <h1 className="mt-2 heading-section">회사소개</h1>
-          <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
-            건물의 가치를 지키는 일, 임대인의 자산을 지키는 일.
-            <br />
-            {COMPANY.legalName}이 {COMPANY.serviceArea}에서 묵묵히 해온 일입니다.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm border border-white/20">
-              <Award className="h-4 w-4 text-blue-300" />
-              <span className="font-semibold">위기 자산 정상화 전문</span>
-            </div>
-            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm border border-white/20">
-              <MapPin className="h-4 w-4 text-blue-300" />
-              <span>{COMPANY.serviceArea}</span>
-            </div>
-            <div className="rounded-lg bg-white/10 backdrop-blur px-4 py-2.5 flex items-center gap-2 text-sm border border-white/20">
-              <Building2 className="h-4 w-4 text-blue-300" />
-              <span>위탁임대 · 분쟁 대응 전문</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="About Us"
+        title="회사소개"
+        description={`건물의 가치를 지키는 일, 임대인의 자산을 지키는 일. ${COMPANY.legalName}가 ${COMPANY.serviceArea}에서 해온 일입니다.`}
+        tabs={COMPANY_TABS}
+        activeHref="/about"
+      />
 
       {/* ============ 핵심 통계 ============ */}
       <section className="bg-white border-b border-border/60 py-12 md:py-14">
