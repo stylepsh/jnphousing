@@ -86,7 +86,7 @@ export function Footer() {
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 <span className="relative">
-                  카카오톡 그룹채팅
+                  카카오톡 1:1 상담
                   <span className="absolute -right-2 top-0 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft"></span>
                 </span>
                 <Users className="h-2.5 w-2.5 text-slate-500" />

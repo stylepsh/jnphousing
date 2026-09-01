@@ -19,7 +19,7 @@
 --     for insert with check (true);
 --   -- 3) 배너 URL 복원
 --   update public.site_popup_banner set link_url='https://open.kakao.com/o/scZWs5vi'
---     where link_url='https://open.kakao.com/o/gtMOCALi';
+--     where link_url='https://open.kakao.com/o/s69LUALi';
 
 -- ---------------------------------------------------------------------------
 -- 1) 역할 3단계: super / staff / readonly
@@ -56,13 +56,16 @@ comment on function public.is_admin_mutable() is
 drop policy if exists "inquiries_public_insert" on public.inquiries;
 
 -- ---------------------------------------------------------------------------
--- 3) 팝업 배너 오픈채팅 URL 교체 (구 주소가 남아있는 행만)
+-- 3) 팝업 배너 오픈채팅 URL 을 1:1 상담방으로 교체 (구 주소가 남아있는 행만)
 -- ---------------------------------------------------------------------------
 do $$
 begin
   if to_regclass('public.site_popup_banner') is not null then
     update public.site_popup_banner
-       set link_url = 'https://open.kakao.com/o/gtMOCALi', updated_at = now()
-     where link_url = 'https://open.kakao.com/o/scZWs5vi';
+       set link_url = 'https://open.kakao.com/o/s69LUALi', updated_at = now()
+     where link_url in (
+       'https://open.kakao.com/o/scZWs5vi',   -- 최초 그룹 오픈채팅
+       'https://open.kakao.com/o/gtMOCALi'    -- 중간에 쓰던 그룹 오픈채팅
+     );
   end if;
 end $$;

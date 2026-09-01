@@ -43,7 +43,7 @@ export const COMPANY = {
     phoneHref: "tel:01024280003",
     phoneLabel: "신규 위탁운영 관리 문의",
     email: "info@jnphousing.com",
-    kakaoOpenChat: "https://open.kakao.com/o/gtMOCALi",
+    kakaoOpenChat: "https://open.kakao.com/o/s69LUALi",  // 1:1 상담 오픈채팅
   },
 
   legal: {
