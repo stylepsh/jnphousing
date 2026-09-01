@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin, type AdminContext } from "@/lib/auth-guard";
+import { requireAdmin, requireMutableAdmin, type AdminContext } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import {
   getNextState,
@@ -36,7 +36,12 @@ function revalidateAll() {
 }
 
 /**
- * 단일 물건 상태전이 코어. 현재 상태 읽고 → 검증 → auction_property 갱신 + 이벤트 기록.
+ * 단일 물건 상태전이 코어.
+ *
+ * 상태 읽기 → 검증 → 갱신 → 이벤트 기록 → (선택) 답사 갱신을 DB 함수
+ * auction_apply_transition 한 번으로 처리한다(마이그레이션 041).
+ * 함수 안에서 행을 잠그고 기대 상태와 대조하므로, 동시에 두 명이 같은 물건을
+ * 처리해도 상태와 이벤트 로그가 어긋나지 않는다.
  */
 async function doTransition(
   ctx: AdminContext,
@@ -47,9 +52,14 @@ async function doTransition(
     patch?: Record<string, unknown>;
     detail?: string;
     metadata?: Record<string, unknown>;
+    inspectionId?: string;
+    inspectionPatch?: Record<string, unknown>;
   } = {},
 ): Promise<{ ok: boolean; from?: PipelineState; to?: PipelineState; error?: string }> {
   const supabase = createServiceClient();
+
+  // 다음 상태 계산에는 현재 상태가 필요하다. 이 값은 RPC 에 기대 상태로 넘겨
+  // 그 사이에 상태가 바뀌었으면 전이가 거부되게 한다(낙관적 잠금).
   const { data: row, error: readErr } = await supabase
     .from("auction_property")
     .select("id, pipeline_state")
@@ -61,26 +71,40 @@ async function doTransition(
   const next = getNextState(from, action, opts.data);
   if (!next.ok || !next.nextState) return { ok: false, error: next.error };
 
-  const { error: updErr } = await supabase
-    .from("auction_property")
-    .update({
-      pipeline_state: next.nextState,
-      pipeline_entered_at: new Date().toISOString(),
-      ...(opts.patch ?? {}),
-    })
-    .eq("id", propertyId);
-  if (updErr) return { ok: false, error: updErr.message };
-
-  await supabase.from("auction_pipeline_event").insert({
-    auction_property_id: propertyId,
-    from_state: from,
-    to_state: next.nextState,
-    action,
-    performed_by_id: ctx.user.id,
-    performed_by: ctx.admin.name,
-    detail: opts.detail ?? next.logMessage,
-    metadata: opts.metadata ?? null,
+  const { data: res, error: rpcErr } = await supabase.rpc("auction_apply_transition", {
+    p_property_id: propertyId,
+    p_expected_from: from,
+    p_to: next.nextState,
+    p_action: action,
+    p_performed_by_id: ctx.user.id,
+    p_performed_by: ctx.admin.name,
+    p_detail: opts.detail ?? next.logMessage,
+    p_metadata: opts.metadata ?? null,
+    p_patch: opts.patch ?? null,
+    p_inspection_id: opts.inspectionId ?? null,
+    p_inspection_patch: opts.inspectionPatch ?? null,
   });
+
+  if (rpcErr) {
+    // 답사 id 가 다른 물건 소속이면 DB 함수가 예외를 던진다.
+    if (/inspection_mismatch/.test(rpcErr.message)) {
+      console.error("[doTransition] 답사-물건 불일치", { propertyId, inspectionId: opts.inspectionId });
+      return { ok: false, error: "답사 정보가 이 물건에 속하지 않습니다." };
+    }
+    console.error("[doTransition]", rpcErr);
+    return { ok: false, error: "상태 전이에 실패했습니다." };
+  }
+
+  const out = (res ?? {}) as { ok?: boolean; error?: string; from?: string };
+  if (!out.ok) {
+    if (out.error === "state_conflict") {
+      return {
+        ok: false,
+        error: `다른 사용자가 먼저 처리해 현재 '${STATE_LABELS[out.from as PipelineState] ?? out.from}' 입니다. 새로고침 후 다시 시도해 주세요.`,
+      };
+    }
+    return { ok: false, error: "물건을 찾을 수 없습니다." };
+  }
 
   return { ok: true, from, to: next.nextState };
 }
@@ -144,7 +168,7 @@ const assignSchema = z.object({
 /** 답사 배정: Inspection 생성 + Selected/Recheck → Inspecting */
 export async function assignInspection(input: z.input<typeof assignSchema>): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = assignSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
     const { propertyIds, inspectorId, inspectorName } = parsed.data;
@@ -189,15 +213,17 @@ const submitSchema = z.object({
 /** 답사 제출 (답사자 포털): Inspection 갱신 + Inspecting → Reviewing */
 export async function submitInspection(input: z.input<typeof submitSchema>): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = submitSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
     const p = parsed.data;
-    const supabase = createServiceClient();
 
-    const { error: upErr } = await supabase
-      .from("auction_inspection")
-      .update({
+    // 답사 갱신과 상태 전이를 한 트랜잭션으로 처리한다.
+    // inspectionId 가 propertyId 소속인지는 DB 함수가 검증한다(클라이언트 값 불신).
+    const r = await doTransition(ctx, p.propertyId, "SUBMIT_INSPECTION", {
+      metadata: { inspectionId: p.inspectionId, occupancy: p.occupancy, canOpen: p.canOpen },
+      inspectionId: p.inspectionId,
+      inspectionPatch: {
         occupancy: p.occupancy,
         mail_status: p.mailStatus,
         key_needed: p.keyNeeded,
@@ -207,12 +233,7 @@ export async function submitInspection(input: z.input<typeof submitSchema>): Pro
         comment: p.comment,
         status: "submitted",
         submitted_at: new Date().toISOString(),
-      })
-      .eq("id", p.inspectionId);
-    if (upErr) return { ok: false, error: upErr.message };
-
-    const r = await doTransition(ctx, p.propertyId, "SUBMIT_INSPECTION", {
-      metadata: { inspectionId: p.inspectionId, occupancy: p.occupancy, canOpen: p.canOpen },
+      },
     });
     if (!r.ok) return { ok: false, error: r.error };
 
@@ -233,33 +254,41 @@ export async function reviewInspection(
   memo?: string,
 ): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const supabase = createServiceClient();
 
-    // 분기 판단용 답사 결과 로드
-    const { data: insp } = await supabase
+    // 분기 판단용 답사 결과 로드 — 반드시 propertyId 소속 행만 읽는다.
+    // (클라이언트가 보낸 두 id 를 각각 믿지 않고 소속 관계를 서버에서 확인)
+    const { data: insp, error: inspErr } = await supabase
       .from("auction_inspection")
-      .select("occupancy, can_open")
+      .select("id, occupancy, can_open")
       .eq("id", inspectionId)
-      .single();
+      .eq("auction_property_id", propertyId)
+      .maybeSingle();
+    if (inspErr) {
+      console.error("[reviewInspection] 답사 조회 실패", inspErr);
+      return { ok: false, error: "답사 정보를 불러오지 못했습니다. 다시 시도해 주세요." };
+    }
+    if (!insp) return { ok: false, error: "답사 정보가 이 물건에 속하지 않습니다." };
+
     const data: TransitionData = {
-      occupancy: (insp as { occupancy?: string } | null)?.occupancy,
-      canOpen: (insp as { can_open?: string } | null)?.can_open,
+      occupancy: (insp as { occupancy?: string }).occupancy,
+      canOpen: (insp as { can_open?: string }).can_open,
     };
 
-    const r = await doTransition(ctx, propertyId, action, { data, detail: memo });
-    if (!r.ok) return { ok: false, error: r.error };
-
-    await supabase
-      .from("auction_inspection")
-      .update({
+    const r = await doTransition(ctx, propertyId, action, {
+      data,
+      detail: memo,
+      inspectionId,
+      inspectionPatch: {
         status: "reviewed",
         reviewed_by_id: ctx.user.id,
         reviewed_by_name: ctx.admin.name,
         reviewed_at: new Date().toISOString(),
         review_memo: memo ?? null,
-      })
-      .eq("id", inspectionId);
+      },
+    });
+    if (!r.ok) return { ok: false, error: r.error };
 
     revalidateAll();
     return { ok: true };
@@ -286,7 +315,7 @@ export async function batchReviewInspections(
   action: "APPROVE" | "REQUEST_RECHECK" | "MARK_OCCUPIED" | "REJECT",
 ): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = batchReviewSchema.safeParse({ items, action });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
     const { items: validItems, action: validAction } = parsed.data;
@@ -295,44 +324,55 @@ export async function batchReviewInspections(
     let count = 0;
 
     // 조사 정보는 한 번에 읽는다 — 건별 조회하면 50건 승인에 왕복 100회가 된다.
-    const { data: inspRows } = await supabase
-      .from("auction_inspection")
-      .select("id, occupancy, can_open")
-      .in(
-        "id",
-        validItems.map((v) => v.inspectionId),
-      );
-    const inspById = new Map(
-      ((inspRows ?? []) as { id: string; occupancy?: string; can_open?: string }[]).map((r) => [
-        r.id,
-        r,
-      ]),
-    );
-
-    // 전이는 물건별 상태 검증이 필요해 순차 유지. 성공한 것만 모아 마지막에 일괄 갱신.
-    const reviewedIds: string[] = [];
-    for (const { inspectionId, propertyId } of validItems) {
-      const insp = inspById.get(inspectionId);
-      const data: TransitionData = { occupancy: insp?.occupancy, canOpen: insp?.can_open };
-      const r = await doTransition(ctx, propertyId, validAction, { data });
-      if (!r.ok) continue;
-      reviewedIds.push(inspectionId);
-      count++;
+    // 답사 정보는 한 번에 읽되 auction_property_id 도 함께 가져와 소속을 서버에서 대조한다.
+    // id 목록이 길면 URL 이 한도를 넘으므로 청크로 나눠 조회한다.
+    const inspById = new Map<string, { id: string; auction_property_id: string; occupancy?: string; can_open?: string }>();
+    const allIds = validItems.map((v) => v.inspectionId);
+    for (let i = 0; i < allIds.length; i += 200) {
+      const { data: inspRows, error: inspErr } = await supabase
+        .from("auction_inspection")
+        .select("id, auction_property_id, occupancy, can_open")
+        .in("id", allIds.slice(i, i + 200));
+      if (inspErr) {
+        console.error("[batchReviewInspections] 답사 조회 실패", inspErr);
+        return { ok: false, error: "답사 정보를 불러오지 못했습니다. 다시 시도해 주세요." };
+      }
+      for (const r of (inspRows ?? []) as { id: string; auction_property_id: string; occupancy?: string; can_open?: string }[]) {
+        inspById.set(r.id, r);
+      }
     }
 
-    for (let i = 0; i < reviewedIds.length; i += 300) {
-      await supabase
-        .from("auction_inspection")
-        .update({
+    // 전이는 물건별 상태 검증이 필요해 순차 유지.
+    // 답사 갱신은 각 전이와 같은 트랜잭션 안에서 처리된다(041 RPC).
+    const reviewedAt = new Date().toISOString();
+    let mismatched = 0;
+    for (const { inspectionId, propertyId } of validItems) {
+      const insp = inspById.get(inspectionId);
+      // 클라이언트가 짝지어 보낸 두 id 를 그대로 믿지 않는다.
+      if (!insp || insp.auction_property_id !== propertyId) {
+        mismatched++;
+        continue;
+      }
+      const data: TransitionData = { occupancy: insp.occupancy, canOpen: insp.can_open };
+      const r = await doTransition(ctx, propertyId, validAction, {
+        data,
+        inspectionId,
+        inspectionPatch: {
           status: "reviewed",
           reviewed_by_id: ctx.user.id,
           reviewed_by_name: ctx.admin.name,
-          reviewed_at: new Date().toISOString(),
-        })
-        .in("id", reviewedIds.slice(i, i + 300));
+          reviewed_at: reviewedAt,
+        },
+      });
+      if (!r.ok) continue;
+      count++;
     }
 
     revalidateAll();
+    if (mismatched > 0) {
+      console.error("[batchReviewInspections] 소속 불일치", { mismatched });
+      return { ok: true, count, error: `${mismatched}건은 답사-물건 정보가 맞지 않아 제외했습니다.` };
+    }
     return { ok: true, count };
   } catch (e) {
     return err(e);
@@ -351,7 +391,7 @@ const workItemSchema = z.object({
 /** 상품화 작업 비용 항목 추가 (total_work_cost 는 DB 트리거가 자동 집계) */
 export async function addWorkItem(input: z.input<typeof workItemSchema>): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = workItemSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
     const p = parsed.data;
@@ -401,7 +441,7 @@ const MANUAL_MOVE_ALLOWED: Record<string, string[]> = {
  */
 export async function moveAuctionStage(propertyId: string, target: string): Promise<ActionResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = moveTargetSchema.safeParse(target);
     if (!parsed.success) return { ok: false, error: "이동할 단계가 올바르지 않습니다." };
     const to = parsed.data;
