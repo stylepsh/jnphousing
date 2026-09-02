@@ -30,7 +30,7 @@ import {
   ClipboardList,
   Workflow,
   ListTodo,
-  UserCheck,
+  UserCheck,  Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -126,6 +126,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/auction/leases", label: "임차 현황판", icon: Building2 },
       { href: "/admin/auction/sheets", label: "답사지 발급 이력", icon: ClipboardList },
       { href: "/admin/auction/revenue", label: "수익·정산", icon: Wallet },
+      { href: "/admin/auction/rental-import", label: "임대 취합 업로드", icon: Upload },
       { href: "/admin/auction/blocked", label: "차단 임대인", icon: Ban },
     ],
   },
