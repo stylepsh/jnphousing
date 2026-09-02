@@ -18,7 +18,7 @@ const COLS: FooterCol[] = [
       { href: "/about",      label: "회사소개" },
       { href: "/services",   label: "서비스" },
       { href: "/properties", label: "관리현장" },
-      { href: "/reviews",    label: "고객 후기" },
+      { href: "/reviews",    label: "운영사례·후기" },
       { href: "/contact",    label: "관리문의" },
     ],
   },

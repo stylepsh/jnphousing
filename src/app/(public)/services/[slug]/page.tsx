@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Icons } from "@/lib/icons";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { SERVICE_AREAS, getServiceArea, type ServiceArea } from "@/lib/data/services";
+import { SERVICE_AREAS, getServiceArea } from "@/lib/data/services";
 import { CASE_STUDIES } from "@/lib/data/cases";
 import { CaseCarousel } from "@/components/shared/CaseCarousel";
-import { ArrowRight, Phone, MessageCircle, Check } from "lucide-react";
+import { Phone, MessageCircle } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 import { buildFaqPageLd, jsonLdSafeStringify } from "@/lib/seo/jsonld";
+import { PageHero, SERVICE_TABS } from "@/components/layout/PageHero";
 
 export async function generateStaticParams() {
   return SERVICE_AREAS.map(s => ({ slug: s.slug }));
@@ -43,32 +42,21 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const relatedCases = CASE_STUDIES.filter(c => svc.casesTags.includes(c.category));
 
   return (
-    <>
+    <main id="main-content" className="bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdSafeStringify(buildFaqPageLd(svc.faq.map(f => ({ question: f.q, answer: f.a })))) }}
       />
 
-      {/* Hero */}
-      <section
-        className="relative text-white py-16 md:py-24 overflow-hidden"
-        style={{ background: `linear-gradient(135deg, hsl(${svc.hue}, 60%, 30%) 0%, hsl(${svc.hue}, 50%, 18%) 100%)` }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.15),transparent_60%)] animate-gradient" />
-        <div className="relative mx-auto max-w-5xl px-6">
-          <Breadcrumbs
-            items={[{ name: "서비스", href: "/services" }, { name: svc.title }]}
-            className="text-white/70 mb-6"
-          />
-          <p className="text-sm font-semibold uppercase tracking-wide text-white/70">{svc.category}</p>
-          <h1 className="mt-2 font-bold tracking-tight leading-tight" style={{ fontSize: "clamp(28px, 5vw, 48px)" }}>
-            {svc.title}
-          </h1>
-          <p className="mt-4 text-lg md:text-xl text-white/85">{svc.tagline}</p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={svc.category}
+        title={svc.title}
+        description={`${svc.tagline}. 접수부터 실행·정산·보고까지 하나의 운영 흐름으로 연결합니다.`}
+        tabs={SERVICE_TABS}
+        activeHref={`/services/${svc.slug}`}
+      />
 
-      <main id="main-content" className="bg-background">
+      <div>
         {/* 설명 */}
         <section className="py-12 md:py-16">
           <div className="mx-auto max-w-3xl px-6 text-base leading-relaxed text-foreground/85">
@@ -172,11 +160,15 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           </div>
         </section>
 
-        {/* 관련 사례 */}
+        {/* 상담 이해용 비식별 운영 시나리오 */}
         {relatedCases.length > 0 && (
           <section className="bg-slate-50 py-16 border-t border-border/60">
             <div className="mx-auto max-w-6xl px-6">
-              <h2 className="heading-section-sm mb-8">관련 사례</h2>
+              <div className="mb-8 max-w-2xl">
+                <p className="text-sm font-bold text-primary">운영 흐름 미리보기</p>
+                <h2 className="heading-section-sm mt-2">관련 운영 시나리오</h2>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">특정 고객의 실적을 주장하는 자료가 아니라, 상담 이해를 돕기 위한 비식별 예시입니다.</p>
+              </div>
               <CaseCarousel cases={relatedCases} />
             </div>
           </section>
@@ -206,7 +198,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
         </section>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

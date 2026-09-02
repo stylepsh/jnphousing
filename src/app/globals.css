@@ -384,10 +384,39 @@
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.7; }
 }
+@keyframes jnp-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes jnp-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.75; }
+  85% { opacity: 0.45; }
+  100% { transform: translateY(680px); opacity: 0; }
+}
+@keyframes jnp-progress {
+  from { width: 18%; }
+  to { width: 82%; }
+}
+@keyframes jnp-orbit {
+  from { transform: rotate(0deg) translateX(12px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(12px) rotate(-360deg); }
+}
 @keyframes spin-slow {
   to { transform: rotate(360deg); }
 }
 .animate-spin-slow { animation: spin-slow 3s linear infinite; }
+.jnp-float { animation: jnp-float 4.8s ease-in-out infinite; }
+.jnp-scan { animation: jnp-scan 5.5s linear infinite; }
+.jnp-progress { animation: jnp-progress 1.5s cubic-bezier(.2,.8,.2,1) both; }
+.jnp-orb { animation: jnp-pulse-soft 4s ease-in-out infinite; }
+.jnp-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
 
 /* animate-gradient / animate-shimmer 는 background-size 설정 필요 → utility 보조 */
 .animate-gradient {
@@ -416,4 +445,11 @@
   .animate-pulse-soft {
     animation: none !important;
   }
+  .jnp-float,
+  .jnp-scan,
+  .jnp-progress,
+  .jnp-orb {
+    animation: none !important;
+  }
+  .jnp-progress { width: 82%; }
 }

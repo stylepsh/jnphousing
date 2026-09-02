@@ -34,6 +34,8 @@ export interface PublicPropertyGroup {
   totalUnits: number;
   imagePath: string;
   updatedAt: string;
+  summary?: string;
+  focus?: string[];
 }
 
 const PROPERTY_IMAGE_PATH: Record<PropertyType, string> = {

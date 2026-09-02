@@ -8,6 +8,7 @@ import {
   type PublicPropertyGroup,
   type PublicPropertySource,
 } from "@/lib/public-properties";
+import { PUBLIC_SHOWCASE_PROPERTIES } from "@/lib/data/public-showcase";
 
 export const fetchPublicPropertyRows = cache(async (): Promise<PublicPropertySource[]> => {
   try {
@@ -28,11 +29,20 @@ export const fetchPublicPropertyRows = cache(async (): Promise<PublicPropertySou
 });
 
 export const fetchPublicPropertyGroups = cache(async (): Promise<PublicPropertyGroup[]> => {
-  return groupPublicProperties(await fetchPublicPropertyRows());
+  return PUBLIC_SHOWCASE_PROPERTIES;
 });
 
 export const fetchPublicPropertyGroup = cache(async (sourceId: string): Promise<PublicPropertyGroup | null> => {
-  return findPublicPropertyGroup(await fetchPublicPropertyRows(), sourceId);
+  const showcase = PUBLIC_SHOWCASE_PROPERTIES.find((property) => property.id === sourceId);
+  if (showcase) return showcase;
+
+  // 이전에 공유된 UUID 상세주소도 끊기지 않도록 공개용 예시 현장으로 연결한다.
+  const rows = await fetchPublicPropertyRows();
+  const legacyGroup = findPublicPropertyGroup(rows, sourceId);
+  if (!legacyGroup) return null;
+  const legacyGroups = groupPublicProperties(rows);
+  const index = legacyGroups.findIndex((group) => group.id === legacyGroup.id);
+  return PUBLIC_SHOWCASE_PROPERTIES[Math.max(index, 0) % PUBLIC_SHOWCASE_PROPERTIES.length];
 });
 
 export async function fetchPublicVacancyCount(sourceIds: string[]): Promise<number> {

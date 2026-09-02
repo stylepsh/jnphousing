@@ -40,7 +40,7 @@ export function CaseCarousel({ cases }: CaseCarouselProps) {
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-5">
           {cases.map((c) => (
-            <div key={c.id} className="flex-[0_0_85%] sm:flex-[0_0_60%] lg:flex-[0_0_38%] min-w-0">
+            <div key={c.id} className="min-w-0 shrink-0 grow-0 basis-[88%] sm:basis-[calc((100%_-_1.25rem)/2)] lg:basis-[calc((100%_-_2.5rem)/3)]">
               <Card className="h-full hover:shadow-lg transition-shadow border-border/60">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-3">
@@ -54,7 +54,7 @@ export function CaseCarousel({ cases }: CaseCarouselProps) {
                   <h3 className="text-base font-bold mb-1">{c.categoryLabel}</h3>
                   <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
-                    {c.location} · {c.buildingType} · {c.clientAlias}
+                    {c.location} · {c.buildingType} · 비식별 예시
                   </p>
 
                   <div className="space-y-3 text-sm">
@@ -63,7 +63,7 @@ export function CaseCarousel({ cases }: CaseCarouselProps) {
                       <p className="text-foreground/85 leading-relaxed">{c.problem}</p>
                     </div>
                     <div>
-                      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">결과</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">운영안 예시</div>
                       <p className="text-foreground/85 leading-relaxed">{c.result}</p>
                     </div>
                   </div>

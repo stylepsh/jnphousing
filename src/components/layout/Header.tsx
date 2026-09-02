@@ -28,7 +28,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "고객지원",
     items: [
       { href: "/news", label: "공지사항", desc: "최신 소식·보도자료" },
-      { href: "/reviews", label: "고객 후기", desc: "원문·게재 동의를 확인한 후기" },
+      { href: "/reviews", label: "운영사례·후기", desc: "처리 흐름과 확인된 고객 경험" },
       { href: "/faq", label: "자주 묻는 질문", desc: "FAQ" },
       { href: "/contact", label: "관리문의", desc: "신규 위탁·상담 접수" },
       { href: "/tenant/complaint", label: "민원·AS 접수", desc: "전화 없이 온라인 접수" },

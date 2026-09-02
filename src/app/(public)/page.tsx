@@ -21,6 +21,7 @@ import { CoreServicesCarousel } from "@/components/shared/CoreServicesCarousel";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY } from "@/lib/company";
 import { PUBLIC_REVIEWS } from "@/lib/data/reviews";
+import { OperationsHeroVisual } from "@/components/shared/OperationsHeroVisual";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물 운영 전문",
@@ -46,7 +47,7 @@ const TRUST_PROOFS = [
   {
     icon: Building2,
     title: "관리현장 공개",
-    body: "공개에 동의한 운영 현장은 건물 정보와 함께 확인할 수 있습니다.",
+    body: "개인정보를 제외한 가상 포트폴리오로 운영 유형과 규모를 확인할 수 있습니다.",
     href: "/properties",
     linkLabel: "관리현장 보기",
   },
@@ -66,11 +67,17 @@ const TRUST_PROOFS = [
   },
   {
     icon: BadgeCheck,
-    title: "확인된 후기만 공개",
-    body: "원문 확인과 게재 동의를 마친 고객 의견만 게시합니다.",
+    title: "운영 흐름 공개",
+    body: "과장된 성공담 대신 어떤 문제를 어떻게 처리하는지 보여드립니다.",
     href: "/reviews",
-    linkLabel: "고객 후기 보기",
+    linkLabel: "운영사례·후기 보기",
   },
+];
+
+const OPERATING_SCENARIOS = [
+  { label: "공실 대응", before: "문의가 흩어지고 공실 기간을 놓침", after: "현장 점검 → 상품화 → 중개 채널 진행" },
+  { label: "미수금 관리", before: "납부 확인과 연락 기록이 제각각", after: "납부일 확인 → 안내 → 정산 기록" },
+  { label: "민원·시설", before: "누가 무엇을 처리하는지 알기 어려움", after: "접수 → 담당 배정 → 완료 보고" },
 ];
 
 export default function HomePage() {
@@ -81,23 +88,17 @@ export default function HomePage() {
         <div className="mx-auto grid min-h-[680px] max-w-7xl lg:grid-cols-[0.92fr_1.08fr]">
           <div className="relative z-10 flex items-center px-6 py-16 sm:py-20 lg:px-10 lg:py-24">
             <div className="max-w-xl animate-fade-in">
-              <p className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-primary"><span className="h-2 w-2 rounded-full bg-[#3182F6]" />건물 운영을 한 곳에서</p>
-              <h1 className="text-[2.45rem] font-bold leading-[1.13] tracking-[-0.045em] text-[#16233A] sm:text-5xl lg:text-[3.55rem]">건물 관리의 부담은 줄이고,<br />운영의 기준은 높입니다.</h1>
-              <p className="mt-7 max-w-lg text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">공실 관리부터 임대료 수금, 시설 점검, 임차인 응대까지. JNP가 현장을 직접 살피고 운영 과정을 투명하게 공유합니다.</p>
+              <p className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700"><span className="h-2 w-2 rounded-full bg-blue-500" />혼자 감당하던 건물 운영을 한 팀으로</p>
+              <h1 className="text-[2.55rem] font-bold leading-[1.1] tracking-[-0.05em] text-[#16233A] sm:text-5xl lg:text-[3.65rem]">공실·미수금·민원,<br /><span className="text-blue-600">혼자 버티지 마세요.</span></h1>
+              <p className="mt-7 max-w-lg text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">연락은 계속 오고 정산은 밀리고 어디부터 손대야 할지 막막할 때, JNP가 현장을 확인하고 담당을 나누고 결과까지 보고합니다.</p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <a href={COMPANY.contact.phoneHref} className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-primary px-6 font-semibold text-white transition hover:bg-[#13213D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"><Phone className="h-4.5 w-4.5" /> {COMPANY.contact.phone}</a>
-                <a href={COMPANY.contact.kakaoOpenChat} target="_blank" rel="noopener noreferrer" className="inline-flex h-13 items-center justify-center gap-2 rounded-xl border border-[#D7DEE9] bg-white px-6 font-semibold text-[#16233A] transition hover:border-primary/40 hover:bg-[#F7F9FC]"><MessageCircle className="h-4.5 w-4.5" /> 카카오로 상담하기</a>
+                <Link href="/contact" className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"><ClipboardCheck className="h-4.5 w-4.5" /> 내 건물 무료 진단</Link>
+                <a href={COMPANY.contact.kakaoOpenChat} target="_blank" rel="noopener noreferrer" className="inline-flex h-13 items-center justify-center gap-2 rounded-xl border border-[#D7DEE9] bg-white px-6 font-bold text-[#16233A] transition hover:border-blue-300 hover:bg-blue-50"><MessageCircle className="h-4.5 w-4.5" /> 카카오로 바로 묻기</a>
               </div>
-              <p className="mt-4 text-xs text-slate-500">상담은 무료이며, 상담만으로 계약 의무가 생기지 않습니다.</p>
+              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-slate-500"><span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> 상황 설명 10분</span><span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> 상담 무료</span><span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> 계약 의무 없음</span></div>
             </div>
           </div>
-          <div className="relative min-h-[390px] lg:min-h-full">
-            <Image src="/images/home/hero-property-management.png" alt="관리 대상 공동주택을 점검하는 JNP 주택관리 담당자" fill priority sizes="(max-width: 1024px) 100vw, 54vw" className="object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0D1C35]/30 via-transparent to-transparent lg:bg-gradient-to-r lg:from-white/15 lg:to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6 animate-slide-up rounded-2xl border border-white/60 bg-white/90 p-5 shadow-xl backdrop-blur-md sm:left-auto sm:w-[330px] lg:bottom-10 lg:right-10">
-              <p className="text-xs font-semibold text-primary">JNP FIELD STANDARD</p><p className="mt-2 font-bold text-[#16233A]">현장을 보고, 기록하고, 보고합니다.</p><p className="mt-1 text-sm leading-6 text-slate-600">말뿐인 관리가 아닌 확인 가능한 운영을 지향합니다.</p>
-            </div>
-          </div>
+          <OperationsHeroVisual />
         </div>
       </section>
 
@@ -184,16 +185,16 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold text-primary">고객 후기</p>
+              <p className="text-sm font-semibold text-primary">운영사례 · 고객 후기</p>
               <h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-[#16233A] sm:text-4xl">
-                고객의 목소리도<br className="sm:hidden" /> 확인된 내용만 전합니다.
+                꾸며낸 칭찬보다<br className="sm:hidden" /> 처리 흐름을 먼저 보여드립니다.
               </h2>
               <p className="mt-4 leading-7 text-slate-600">
-                원문과 게재 동의를 확인한 후기만 공개하고, 이름과 상세 주소는 안전하게 가립니다.
+                운영사례는 상담 이해를 위한 예시로 표시하고, 고객 후기는 원문과 게재 동의를 확인한 내용만 공개합니다.
               </p>
             </div>
             <Link href="/reviews" className="inline-flex min-h-11 items-center gap-2 self-start font-semibold text-primary sm:self-auto">
-              후기 전체 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              운영사례·후기 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
 
@@ -213,16 +214,23 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="mt-10 grid overflow-hidden rounded-2xl border border-[#DDE3EC] bg-[#F7F9FC] lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="p-6 sm:p-8">
-                <p className="font-bold text-[#16233A]">실제 후기 자료를 확인하고 있습니다.</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  기존 화면의 예시 후기는 공개에서 제외했습니다. 확인이 끝난 카카오톡·문자·서면 후기부터 순차적으로 게시합니다.
-                </p>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {OPERATING_SCENARIOS.map((scenario, index) => (
+                <article key={scenario.label} className="group rounded-2xl border border-[#DDE3EC] bg-white p-6 transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-slate-900/5">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">운영 시나리오 예시</span>
+                    <span className="text-xs font-bold text-slate-400">0{index + 1}</span>
+                  </div>
+                  <h3 className="mt-5 text-lg font-bold text-[#16233A]">{scenario.label}</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-500">{scenario.before}</p>
+                  <div className="my-3 h-px bg-gradient-to-r from-blue-500 to-transparent" />
+                  <p className="text-sm font-semibold leading-6 text-[#253A5B]">{scenario.after}</p>
+                </article>
+              ))}
+              <div className="md:col-span-3 flex flex-col items-start justify-between gap-4 rounded-2xl bg-[#13233F] p-6 text-white sm:flex-row sm:items-center">
+                <div><p className="font-bold">실제 고객 후기는 확인이 끝난 자료만 게시합니다.</p><p className="mt-1 text-sm text-white/65">가명·상세주소 보호와 게재 동의 절차를 지킵니다.</p></div>
+                <Link href="/reviews" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-[#13233F] hover:bg-blue-50">공개 기준 확인 <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
-              <Link href="/reviews" className="m-6 mt-0 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-semibold text-white hover:bg-[#13213D] lg:mt-6">
-                후기 공개 기준 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
             </div>
           )}
         </div>

@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { groupPublicProperties, type PublicPropertySource } from "@/lib/public-properties";
 import { SERVICE_AREAS } from "@/lib/data/services";
 import { BLOG_POSTS } from "@/lib/data/blog-posts";
+import { PUBLIC_SHOWCASE_PROPERTIES } from "@/lib/data/public-showcase";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.co.kr";
 
@@ -31,23 +31,10 @@ interface NoticeRow   { id: string; slug: string | null; updated_at?: string | n
 async function fetchDynamic(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = await createClient();
-    const [{ data: props }, { data: notices }] = await Promise.all([
-      supabase.from("properties")
-        .select("id,name,address,type,total_units,is_published,display_order,created_at,updated_at,unit_type,parent_building_id,unit_no,ho,short_alias,household_count")
-        .eq("is_published", true)
-        .limit(1000),
-      supabase.from("notices_board")
-        .select("id, slug, updated_at, published_at, created_at")
-        .eq("is_published", true)
-        .limit(500),
-    ]);
-
-    const propsUrls: MetadataRoute.Sitemap = groupPublicProperties((props ?? []) as PublicPropertySource[]).map((p) => ({
-      url: `${BASE}/properties/${p.id}`,
-      lastModified: new Date(p.updatedAt),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    }));
+    const { data: notices } = await supabase.from("notices_board")
+      .select("id, slug, updated_at, published_at, created_at")
+      .eq("is_published", true)
+      .limit(500);
 
     const noticesUrls: MetadataRoute.Sitemap = ((notices ?? []) as NoticeRow[]).map((n) => ({
       url: `${BASE}/news/${n.slug ?? n.id}`,
@@ -56,7 +43,7 @@ async function fetchDynamic(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }));
 
-    return [...propsUrls, ...noticesUrls];
+    return noticesUrls;
   } catch {
     return [];
   }
@@ -77,6 +64,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly",
     priority: 0.6,
   }));
+  const propertyRoutes: MetadataRoute.Sitemap = PUBLIC_SHOWCASE_PROPERTIES.map((property) => ({
+    url: `${BASE}/properties/${property.id}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
   const dynamic = await fetchDynamic();
-  return [...baseRoutes, ...serviceRoutes, ...blogRoutes, ...dynamic];
+  return [...baseRoutes, ...serviceRoutes, ...propertyRoutes, ...blogRoutes, ...dynamic];
 }

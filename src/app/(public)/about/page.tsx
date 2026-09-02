@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Target, Heart, ShieldCheck, Award, MapPin, FileText, Phone, Quote, Navigation, ExternalLink } from "lucide-react";
 import { COMPANY } from "@/lib/company";
-import { CountUp } from "@/components/shared/CountUp";
 import { createClient } from "@/lib/supabase/server";
 import { PageHero, COMPANY_TABS } from "@/components/layout/PageHero";
 
@@ -117,7 +116,7 @@ export default async function AboutPage() {
   ]);
 
   return (
-    <>
+    <main id="main-content">
       <PageHero
         eyebrow="About Us"
         title="회사소개"
@@ -126,34 +125,22 @@ export default async function AboutPage() {
         activeHref="/about"
       />
 
-      {/* ============ 핵심 통계 ============ */}
-      <section className="bg-white border-b border-border/60 py-12 md:py-14">
+      {/* 공개 근거 없이 큰 수치를 제시하지 않고, 실제 운영 원칙을 먼저 보여준다. */}
+      <section className="border-b border-border/60 bg-white py-12 md:py-14">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.operatedBuildings} suffix="+" />
+          <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[#DDE3EC] bg-[#DDE3EC] md:grid-cols-4">
+            {[
+              ["01", "현장 진단", "문제 원인 확인"],
+              ["02", "범위 합의", "업무·비용 안내"],
+              ["03", "과정 기록", "담당·진행 공유"],
+              ["04", "결과 보고", "정산·다음 일정"],
+            ].map(([number, title, body]) => (
+              <div key={number} className="animate-fade-in bg-white p-5 sm:p-6">
+                <p className="text-xs font-bold tracking-[0.15em] text-blue-600">{number}</p>
+                <p className="mt-5 font-bold text-[#16233A]">{title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{body}</p>
               </div>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">운영 건물</p>
-            </div>
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.managedUnits} suffix="+" />
-              </div>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">관리 세대</p>
-            </div>
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.resolvedDisputes} suffix="+" />
-              </div>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">해결 분쟁</p>
-            </div>
-            <div className="text-center animate-fade-in">
-              <div className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
-                <CountUp end={COMPANY.stats.collectionRate} suffix="%" />
-              </div>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">평균 수금률</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -193,18 +180,19 @@ export default async function AboutPage() {
           </div>
 
           <div className="grid md:grid-cols-[300px_1fr] gap-10 lg:gap-14 items-start">
-            {/* 대표 사진 */}
             <div className="md:sticky md:top-24">
-              {/* 대표 실제 사진 준비 전 — 네이비 모노그램 패널 (스톡 인물 사진 사용 금지) */}
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-primary shadow-xl shadow-primary/15 flex flex-col items-center justify-center text-white">
-                <div className="h-24 w-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-3xl font-bold">
-                  {COMPANY.representative.slice(0, 1)}
+              <div className="relative overflow-hidden rounded-3xl bg-[#14233F] p-7 text-white shadow-xl shadow-primary/15">
+                <div className="jnp-grid absolute inset-0 opacity-20" aria-hidden="true" />
+                <div className="relative">
+                  <p className="text-xs font-bold tracking-[0.18em] text-blue-300">FIELD PRINCIPLE</p>
+                  <Building2 className="mt-10 h-12 w-12 text-blue-200" />
+                  <p className="mt-8 text-2xl font-bold leading-snug">건물을 아는 사람이<br />운영도 책임집니다.</p>
+                  <div className="mt-8 space-y-3 border-t border-white/15 pt-6 text-sm text-slate-200">
+                    <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> 현장 원인부터 확인</p>
+                    <p className="flex items-center gap-2"><Target className="h-4 w-4 text-blue-300" /> 비용·일정 사전 공유</p>
+                    <p className="flex items-center gap-2"><FileText className="h-4 w-4 text-amber-300" /> 완료 결과까지 보고</p>
+                  </div>
                 </div>
-                <p className="mt-5 text-lg font-bold tracking-tight">{COMPANY.representative}</p>
-                <p className="mt-1 text-xs text-white/60">{COMPANY.legalName} 대표</p>
-                <p className="mt-6 text-[11px] text-white/40 px-8 text-center leading-relaxed">
-                  건설 현장에서 시작해<br />건물을 아는 관리를 합니다
-                </p>
               </div>
               <div className="mt-5 text-center md:text-left">
                 <p className="font-bold text-lg tracking-tight">{COMPANY.representative} <span className="text-base font-medium text-muted-foreground">대표</span></p>
@@ -411,7 +399,7 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }
 
