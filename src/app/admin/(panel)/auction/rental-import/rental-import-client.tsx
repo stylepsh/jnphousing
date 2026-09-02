@@ -19,8 +19,10 @@ export function RentalImportClient() {
   const [fileName, setFileName] = React.useState("");
 
   // 정산 조건
-  const [feeRate, setFeeRate] = React.useState(40);
+  const [profitShare, setProfitShare] = React.useState(50);
+  const [depositShare, setDepositShare] = React.useState(50);
   const [basis, setBasis] = React.useState<"paid" | "charged">("paid");
+  const [expenses, setExpenses] = React.useState(0);
   const [cost, setCost] = React.useState(0);
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -34,7 +36,13 @@ export function RentalImportClient() {
 
   const summary: WorkbookSummary | null = result?.ok ? result.summary : null;
   const settlement = summary
-    ? calcSettlement(summary, { feeRatePercent: feeRate, basis, costToRecover: cost })
+    ? calcSettlement(summary, {
+        profitSharePercent: profitShare,
+        depositSharePercent: depositShare,
+        basis,
+        expenses,
+        costToRecover: cost,
+      })
     : null;
 
   return (
@@ -254,13 +262,30 @@ export function RentalImportClient() {
               <FileSpreadsheet className="h-4 w-4" /> 정산 계산
             </h2>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <label className="block">
-                <span className="text-xs font-medium text-muted-foreground">우리 수익률 (%)</span>
+                <span className="text-xs font-medium text-muted-foreground">수익 배분율 (%)</span>
                 <input
-                  type="number" min={0} max={100} step={0.5} value={feeRate}
-                  onChange={(e) => setFeeRate(Number(e.target.value))}
+                  type="number" min={0} max={100} step={1} value={profitShare}
+                  onChange={(e) => setProfitShare(Number(e.target.value))}
                   className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-muted-foreground">보증금 배분율 (%)</span>
+                <input
+                  type="number" min={0} max={100} step={1} value={depositShare}
+                  onChange={(e) => setDepositShare(Number(e.target.value))}
+                  className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-muted-foreground">지출비용 (원)</span>
+                <input
+                  type="number" min={0} step={10000} value={expenses}
+                  onChange={(e) => setExpenses(Number(e.target.value))}
+                  className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+                  placeholder="문 개방비 등"
                 />
               </label>
               <label className="block">
@@ -275,7 +300,7 @@ export function RentalImportClient() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs font-medium text-muted-foreground">회수할 투입비 (원)</span>
+                <span className="text-xs font-medium text-muted-foreground">미회수 투입비 (원)</span>
                 <input
                   type="number" min={0} step={10000} value={cost}
                   onChange={(e) => setCost(Number(e.target.value))}
@@ -286,10 +311,14 @@ export function RentalImportClient() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: "정산 기준 금액", value: won(settlement.base), strong: false },
-                { label: `우리 몫 (${feeRate}%)`, value: won(settlement.fee), strong: true },
-                { label: "임대인 몫", value: won(settlement.ownerShare), strong: false },
-                { label: "투입비 회수 후", value: won(settlement.netToUs), strong: true },
+                { label: "월세 수입", value: won(settlement.income), strong: false },
+                { label: "지출비용", value: `-${won(settlement.expenses)}`, strong: false },
+                { label: "순수익", value: won(settlement.netProfit), strong: false },
+                { label: `우리 몫 (${profitShare}%)`, value: won(settlement.ourProfit), strong: true },
+                { label: `임대인 몫 (${100 - profitShare}%)`, value: won(settlement.ownerProfit), strong: false },
+                { label: `보증금 보유 (${depositShare}%)`, value: won(settlement.ourDeposit), strong: false },
+                { label: "투입비 회수", value: `-${won(settlement.costRecovered)}`, strong: false },
+                { label: "최종 수령액", value: won(settlement.total), strong: true },
               ].map((c) => (
                 <div key={c.label} className="rounded-lg bg-white p-4 shadow-sm">
                   <p className="text-xs text-muted-foreground">{c.label}</p>
@@ -300,9 +329,22 @@ export function RentalImportClient() {
               ))}
             </div>
 
+            <p className="mt-3 rounded-lg bg-white/70 p-3 font-mono text-xs text-slate-600">
+              ({won(settlement.income)} - {won(settlement.expenses)}) x {profitShare}%
+              = {won(settlement.ourProfit)}
+              {settlement.costRecovered > 0 && ` - ${won(settlement.costRecovered)}`}
+              {" + 보증금 "}{won(settlement.depositTotal)} x {depositShare}% = {won(settlement.ourDeposit)}
+              {"  →  TOTAL "}{won(settlement.total)}
+            </p>
+
             {settlement.remainingCost > 0 && (
               <p className="mt-3 text-sm text-amber-700">
                 투입비 {won(settlement.remainingCost)} 가 아직 회수되지 않았습니다.
+              </p>
+            )}
+            {settlement.netProfit < 0 && (
+              <p className="mt-3 text-sm text-red-700">
+                지출이 수입보다 큽니다. 이 기간은 적자입니다.
               </p>
             )}
             {basis === "charged" && (

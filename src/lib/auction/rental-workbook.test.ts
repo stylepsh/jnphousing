@@ -101,8 +101,10 @@ describe("detectIssues — 잘못된 입력 포착", () => {
     const issues = detectIssues([{ ...base, agency: "", monthlyRent: 0 }], today);
     expect(issues.filter((i) => i.level === "high").length).toBeGreaterThanOrEqual(2);
   });
-  it("월세를 만원 단위로 적으면 잡는다", () => {
-    expect(msgs([{ ...base, monthlyRent: 60, deposit: 1000 }])).toContain("만원 단위");
+  // 만원 단위는 파서가 자동 보정하므로, 보정 후에도 남은 이상값만 여기서 잡는다.
+  it("보정 후에도 월세가 1만원 미만이면 심각으로 잡는다", () => {
+    const issues = detectIssues([{ ...base, monthlyRent: 60, deposit: 1000 }], today);
+    expect(issues.some((i) => i.level === "high" && i.message.includes("값을 확인"))).toBe(true);
   });
   it("보증금이 월세에 비해 비정상적으로 크면 잡는다", () => {
     expect(msgs([{ ...base, deposit: 600_000 * 300 }])).toContain("단위를 확인");
@@ -134,32 +136,83 @@ describe("summarize", () => {
   });
 });
 
-describe("calcSettlement — 정산", () => {
+describe("calcSettlement — 실무 정산 방식", () => {
   const today = new Date("2026-09-02T00:00:00Z");
   const s = summarize([base], [{ period: "2026-08", charged: 1_000_000, paid: 600_000, unpaid: 400_000 }], [], today);
 
-  it("입금액 기준이 기본 — 못 받은 돈을 수익으로 잡지 않는다", () => {
-    const r = calcSettlement(s, { feeRatePercent: 40, basis: "paid" });
-    expect(r.base).toBe(600_000);
-    expect(r.fee).toBe(240_000);
-    expect(r.ownerShare).toBe(360_000);
+  it("수입에서 지출을 빼고 배분한다", () => {
+    const r = calcSettlement(s, { profitSharePercent: 50, basis: "paid", expenses: 200_000 });
+    expect(r.income).toBe(600_000);
+    expect(r.netProfit).toBe(400_000);
+    expect(r.ourProfit).toBe(200_000);
+    expect(r.ownerProfit).toBe(200_000);
   });
-  it("청구액 기준은 미수까지 포함한다", () => {
-    expect(calcSettlement(s, { feeRatePercent: 40, basis: "charged" }).base).toBe(1_000_000);
+
+  it("보증금도 배분율만큼 우리 보유분으로 더한다", () => {
+    const r = calcSettlement(s, { profitSharePercent: 50, depositSharePercent: 50, basis: "paid" });
+    expect(r.ourDeposit).toBe(5_000_000);
+    expect(r.total).toBe(300_000 + 5_000_000);
   });
+
+  it("실제 사례를 그대로 재현한다 (월세입금 487만 / 지출 187만 / 보증금 610만, 반씩)", () => {
+    const real = summarize(
+      [{ ...base, deposit: 6_100_000 }],
+      [{ period: "2026-08", charged: 4_870_000, paid: 4_870_000, unpaid: 0 }],
+      [], today,
+    );
+    const r = calcSettlement(real, {
+      profitSharePercent: 50, depositSharePercent: 50, basis: "paid", expenses: 1_870_000,
+    });
+    expect(r.netProfit).toBe(3_000_000);
+    expect(r.ourProfit).toBe(1_500_000);
+    expect(r.ourDeposit).toBe(3_050_000);
+    expect(r.total).toBe(4_550_000);
+  });
+
   it("투입비는 우리 몫에서 먼저 회수한다", () => {
-    const r = calcSettlement(s, { feeRatePercent: 40, basis: "paid", costToRecover: 100_000 });
+    const r = calcSettlement(s, { profitSharePercent: 50, basis: "paid", costToRecover: 100_000 });
     expect(r.costRecovered).toBe(100_000);
-    expect(r.netToUs).toBe(140_000);
-    expect(r.remainingCost).toBe(0);
+    expect(r.total).toBe(200_000);
   });
-  it("투입비가 우리 몫보다 크면 남은 금액을 알려준다", () => {
-    const r = calcSettlement(s, { feeRatePercent: 40, basis: "paid", costToRecover: 500_000 });
-    expect(r.netToUs).toBe(0);
-    expect(r.remainingCost).toBe(260_000);
+
+  it("지출이 수입보다 크면 적자를 그대로 보여준다", () => {
+    const r = calcSettlement(s, { profitSharePercent: 50, basis: "paid", expenses: 1_000_000 });
+    expect(r.netProfit).toBe(-400_000);
+    expect(r.ourProfit).toBeLessThan(0);
   });
-  it("수익률은 0~100%로 묶는다", () => {
-    expect(calcSettlement(s, { feeRatePercent: 999, basis: "paid" }).fee).toBe(600_000);
-    expect(calcSettlement(s, { feeRatePercent: -5, basis: "paid" }).fee).toBe(0);
+
+  it("배분율은 0~100%로 묶는다", () => {
+    expect(calcSettlement(s, { profitSharePercent: 999, basis: "paid" }).ourProfit).toBe(600_000);
+    expect(calcSettlement(s, { profitSharePercent: -5, basis: "paid" }).ourProfit).toBe(0);
+  });
+});
+
+describe("만원 단위 보정 · 자동연장 기간 추정", () => {
+  it("월세 70 은 70만원으로 본다", () => {
+    const { contracts, warnings } = parseContracts([row({ 7: 70, 6: 0 })]);
+    expect(contracts[0].monthlyRent).toBe(700_000);
+    expect(warnings.join(" ")).toContain("만원 단위");
+  });
+
+  it("월세도 만원 단위인 행에서만 보증금을 보정한다", () => {
+    // 월세 45(만) + 보증금 500(만) → 둘 다 만원 단위
+    expect(parseContracts([row({ 6: 500, 7: 45 })]).contracts[0].deposit).toBe(5_000_000);
+  });
+
+  it("월세가 원 단위면 보증금 70만원을 건드리지 않는다 (70억 되던 버그)", () => {
+    const c = parseContracts([row({ 6: 700_000, 7: 700_000 })]).contracts[0];
+    expect(c.deposit).toBe(700_000);
+    expect(c.monthlyRent).toBe(700_000);
+  });
+
+  it("계약조건에 '6개월 만료후 자동연장' 이면 종료일을 계산한다", () => {
+    const { contracts } = parseContracts([row({ 5: "6개월 만료후 자동연장", 9: "" })]);
+    expect(contracts[0].leaseEnd).toBe("2026-06-30");
+    expect(contracts[0].autoRenew).toBe(true);
+  });
+
+  it("자동연장 계약은 종료일이 지나도 공실로 보지 않는다", () => {
+    const c = { ...base, leaseEnd: "2026-06-30", autoRenew: true };
+    expect(contractStatus(c, new Date("2026-09-02T00:00:00Z")).status).toBe("자동연장");
   });
 });
