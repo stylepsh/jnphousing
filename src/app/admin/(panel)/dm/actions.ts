@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -24,7 +24,7 @@ const unitSchema = z.object({
 
 export async function upsertDmUnit(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const parsed = unitSchema.safeParse(raw);
@@ -46,7 +46,7 @@ export async function upsertDmUnit(id: string | null, formData: FormData) {
 
 export async function deleteDmUnit(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("dm_units").delete().eq("id", id);
@@ -80,7 +80,7 @@ const settlementSchema = z.object({
 
 export async function upsertDmSettlement(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const parsed = settlementSchema.safeParse(raw);
@@ -101,7 +101,7 @@ export async function upsertDmSettlement(id: string | null, formData: FormData) 
 
 export async function deleteDmSettlement(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("dm_monthly_settlement").delete().eq("id", id);

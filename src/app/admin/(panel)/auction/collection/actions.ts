@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin, requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -75,7 +75,7 @@ export async function importAuctionText(input: {
   };
 
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
 
     const parsed = importSchema.safeParse(input);
     if (!parsed.success) {
@@ -306,7 +306,7 @@ export async function rejectAuctionProperties(
   ids: string[],
 ): Promise<{ ok: boolean; rejected?: number; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const idsValid = z.array(z.string().uuid()).min(1).safeParse(ids);
     if (!idsValid.success) return { ok: false, error: "선택된 항목이 없습니다" };
 
@@ -373,7 +373,7 @@ export async function blockOwner(
   reason?: string,
 ): Promise<{ ok: boolean; removed?: number; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = z
       .object({ ownerName: z.string().trim().min(1, "임대인명이 비어있습니다").max(200), reason: z.string().max(300).optional() })
       .safeParse({ ownerName, reason });
@@ -450,7 +450,7 @@ export async function unblockOwner(
   ownerKey: string,
 ): Promise<{ ok: boolean; restored?: number; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const key = z.string().trim().min(1).safeParse(ownerKey);
     if (!key.success) return { ok: false, error: "잘못된 요청입니다" };
 

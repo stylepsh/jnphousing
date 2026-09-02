@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -17,7 +17,7 @@ const rowSchema = z.object({
 
 export async function bulkImportTenants(rows: Record<string, string>[]) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const valid: z.infer<typeof rowSchema>[] = [];
     for (const r of rows) {
       const parsed = rowSchema.safeParse(r);

@@ -1,11 +1,11 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin, requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { dueDateOf } from "@/lib/auction/revenue";
+import { dueDateOf, isBillable } from "@/lib/auction/revenue";
 
 export interface RevenueProperty {
   id: string;
@@ -142,16 +142,24 @@ export async function generateReceipts(
   period: string,
 ): Promise<{ ok: boolean; created?: number; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const p = z.string().regex(/^\d{4}-\d{2}$/).safeParse(period);
     if (!p.success) return { ok: false, error: "기간 형식이 올바르지 않습니다 (YYYY-MM)" };
 
     const supabase = createServiceClient();
-    const { data: props } = await supabase
+    // 실제 임대 중인 물건만 청구 대상. 퇴거·회수된 물건은 monthly_rent 값이
+    // 남아 있어도 pipeline_state 가 Leased 가 아니므로 여기서 걸러진다.
+    const { data: props, error: propErr } = await supabase
       .from("auction_property")
-      .select("id, monthly_rent, rent_due_day, lease_start, lease_end")
+      .select("id, monthly_rent, rent_due_day, lease_start, lease_end, pipeline_state")
+      .eq("pipeline_state", "Leased")
       .not("monthly_rent", "is", null)
+      .gt("monthly_rent", 0)
       .limit(2000);
+    if (propErr) {
+      console.error("[generateReceipts] 물건 조회 실패", propErr);
+      return { ok: false, error: "물건 목록을 불러오지 못했습니다. 다시 시도해 주세요." };
+    }
 
     const rows = (props ?? []) as {
       id: string;
@@ -159,21 +167,34 @@ export async function generateReceipts(
       rent_due_day: number | null;
       lease_start: string | null;
       lease_end: string | null;
+      pipeline_state: string | null;
     }[];
-    // 계약 기간에 걸치는 물건만
-    const first = `${p.data}-01`;
-    const target = rows.filter((r) => {
-      if (r.lease_start && r.lease_start > `${p.data}-31`) return false;
-      if (r.lease_end && r.lease_end < first) return false;
-      return true;
-    });
+
+    // 계약 기간이 해당 월과 겹치는 임대중 물건만 (판정은 lib/auction/revenue 의 순수 함수).
+    const target = rows.filter((r) =>
+      isBillable(
+        {
+          pipelineState: r.pipeline_state,
+          monthlyRent: r.monthly_rent,
+          leaseStart: r.lease_start,
+          leaseEnd: r.lease_end,
+        },
+        p.data,
+      ),
+    );
     if (target.length === 0) return { ok: true, created: 0 };
 
-    const { data: existing } = await supabase
+    // 같은 달 중복 청구 방지 — DB 에도 unique(auction_property_id, period) 가 있어
+    // 동시 실행 시에도 중복 행이 생기지 않는다(038).
+    const { data: existing, error: exErr } = await supabase
       .from("auction_rent_receipt")
       .select("auction_property_id")
       .eq("period", p.data)
       .limit(2000);
+    if (exErr) {
+      console.error("[generateReceipts] 기존 청구 조회 실패", exErr);
+      return { ok: false, error: "기존 청구 내역을 확인하지 못했습니다. 다시 시도해 주세요." };
+    }
     const have = new Set(
       ((existing ?? []) as { auction_property_id: string }[]).map((r) => r.auction_property_id),
     );
@@ -194,6 +215,9 @@ export async function generateReceipts(
         .from("auction_rent_receipt")
         .insert(toInsert.slice(i, i + 300));
       if (error) {
+        // 23505 = unique 위반. 동시에 두 번 눌린 경우이므로 실패로 보지 않는다.
+        if ((error as { code?: string }).code === "23505") continue;
+        console.error("[generateReceipts] 청구 생성 실패", error);
         return {
           ok: false,
           error: /relation .* does not exist|schema cache/i.test(error.message)
@@ -220,7 +244,7 @@ export async function saveReceipt(input: {
   memo?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = z
       .object({
         propertyId: z.string().uuid(),
@@ -266,7 +290,7 @@ export async function saveLeaseTerms(input: {
   monthlyRent?: number | null;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = z
       .object({
         propertyId: z.string().uuid(),
@@ -320,7 +344,7 @@ export async function addWorkCost(input: {
   memo?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = z
       .object({
         propertyId: z.string().uuid(),

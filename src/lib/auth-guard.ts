@@ -18,9 +18,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 
+/** 관리자 역할. readonly 는 조회만 가능 — 생성·수정·삭제·상태전이 불가. */
+export type AdminRole = "super" | "staff" | "readonly";
+
 export interface AdminContext {
   user: { id: string; email: string | null };
-  admin: { id: string; name: string; role: "super" | "staff" };
+  admin: { id: string; name: string; role: AdminRole };
 }
 
 export interface ApprovedAgencyContext {
@@ -46,7 +49,7 @@ export async function requireAdmin(): Promise<AdminContext> {
     .select("id, name, role")
     .eq("user_id", user.id)
     .limit(1);
-  const admin = (adminRows as { id: string; name: string; role: "super" | "staff" }[] | null)?.[0];
+  const admin = (adminRows as { id: string; name: string; role: AdminRole }[] | null)?.[0];
   if (!admin) {
     throw new AppError("FORBIDDEN", "관리자 권한이 필요합니다.");
   }
@@ -55,6 +58,18 @@ export async function requireAdmin(): Promise<AdminContext> {
     user: { id: user.id, email: user.email ?? null },
     admin,
   };
+}
+
+/**
+ * 쓰기 작업 권한 강제 (생성·수정·삭제·상태전이).
+ * readonly 계정은 여기서 막힌다. 조회 전용 화면은 requireAdmin 을 그대로 쓴다.
+ */
+export async function requireMutableAdmin(): Promise<AdminContext> {
+  const ctx = await requireAdmin();
+  if (ctx.admin.role === "readonly") {
+    throw new AppError("FORBIDDEN", "조회 전용 계정은 변경 작업을 할 수 없습니다.");
+  }
+  return ctx;
 }
 
 /** Super admin 권한 강제 (관리자 추가/삭제 등 민감 작업). */

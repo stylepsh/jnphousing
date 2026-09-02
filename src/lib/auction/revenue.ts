@@ -132,3 +132,40 @@ export function overdueDays(dueDate: string | null, received: number, today = ne
   const d = daysUntil(dueDate, today);
   return d !== null && d < 0 ? -d : 0;
 }
+
+
+/* =========================================================================
+ * 월 청구 대상 판정
+ * ========================================================================= */
+
+export interface BillableInput {
+  /** 파이프라인 상태. 실제 임대 중(Leased)이 아니면 청구하지 않는다. */
+  pipelineState: string | null;
+  monthlyRent: number | null;
+  leaseStart: string | null; // YYYY-MM-DD
+  leaseEnd: string | null;   // YYYY-MM-DD
+}
+
+/** 해당 월(YYYY-MM)의 마지막 날짜 문자열. 2월·30일 달을 정확히 처리한다. */
+export function lastDayOf(period: string): string {
+  const [yy, mm] = period.split("-").map(Number);
+  const day = new Date(yy, mm, 0).getDate();
+  return `${period}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * 그 달에 청구를 만들어야 하는 물건인지.
+ *
+ * 퇴거·회수된 물건은 monthly_rent 값이 남아 있어도 청구하지 않는다
+ * (pipeline_state 가 Leased 가 아니면 제외).
+ */
+export function isBillable(input: BillableInput, period: string): boolean {
+  if (input.pipelineState !== "Leased") return false;
+  if (!input.monthlyRent || input.monthlyRent <= 0) return false;
+
+  const first = `${period}-01`;
+  const last = lastDayOf(period);
+  if (input.leaseStart && input.leaseStart > last) return false; // 아직 시작 전
+  if (input.leaseEnd && input.leaseEnd < first) return false;    // 이미 만료
+  return true;
+}

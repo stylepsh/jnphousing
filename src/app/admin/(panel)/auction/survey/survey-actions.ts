@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin, type AdminContext } from "@/lib/auth-guard";
+import { requireAdmin, requireMutableAdmin, type AdminContext } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -92,7 +92,7 @@ export async function updateSurveyResult(input: {
   survey_memo?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = surveySchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -154,7 +154,7 @@ export async function bulkSurveyByNumber(input: {
   survey_date?: string;
 }): Promise<BulkSurveyResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     const parsed = bulkSchema.safeParse(input);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };
@@ -260,7 +260,7 @@ export async function setBatchStatus(
   status: "created" | "assigned" | "in_progress" | "completed",
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const parsed = batchStatusSchema.safeParse({ batchId, status });
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "입력값 오류" };

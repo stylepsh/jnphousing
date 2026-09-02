@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin, requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -74,7 +74,7 @@ export async function listSheetItems(sheetId: string): Promise<SheetItemRow[]> {
 /** 발급 이력 삭제 (기록만 지움 — 물건은 그대로). */
 export async function deleteSheetLog(sheetId: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const id = z.string().uuid().safeParse(sheetId);
     if (!id.success) return { ok: false, error: "잘못된 요청입니다" };
     const supabase = createServiceClient();
@@ -94,7 +94,7 @@ export async function setSheetReturned(
   returned: boolean,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const id = z.string().uuid().safeParse(sheetId);
     if (!id.success) return { ok: false, error: "잘못된 요청입니다" };
     const supabase = createServiceClient();

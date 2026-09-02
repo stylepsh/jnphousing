@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -19,7 +19,7 @@ const schema = z.object({
 
 export async function upsertBanner(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const raw = Object.fromEntries(formData.entries());
     const parsed = schema.safeParse({

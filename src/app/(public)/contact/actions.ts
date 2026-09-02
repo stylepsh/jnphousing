@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/lib/auth-guard";
 
 const schema = z.object({
@@ -27,6 +27,13 @@ export async function submitContact(formData: FormData): Promise<ContactResult> 
 
   const parsed = schema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { ok: false, error: "입력값을 확인해 주세요." };
+
+  // Supabase 미설정(로컬/프리뷰)에서는 mock 클라이언트가 error:null 을 돌려주기 때문에
+  // 저장이 안 됐는데도 "접수 완료"가 표시된다. 저장 경로가 없으면 성공으로 응답하지 않는다.
+  if (!isSupabaseConfigured()) {
+    console.error("[submitContact] Supabase 미설정 — 접수 저장 불가");
+    return { ok: false, error: "접수 시스템이 일시적으로 연결되지 않았습니다. 전화로 문의해 주세요." };
+  }
 
   try {
     const supabase = createServiceClient();

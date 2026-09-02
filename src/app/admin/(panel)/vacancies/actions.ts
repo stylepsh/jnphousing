@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -25,7 +25,7 @@ const vacancySchema = z.object({
 
 export async function createVacancy(formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const raw = Object.fromEntries(formData.entries());
     const parsed = vacancySchema.safeParse({
       ...raw,
@@ -50,7 +50,7 @@ export async function createVacancy(formData: FormData) {
 
 export async function updateVacancyStatus(id: string, status: "available" | "reserved" | "contracted") {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     if (!z.enum(["available", "reserved", "contracted"]).safeParse(status).success) {
       return { ok: false as const, error: "잘못된 상태 값" };
@@ -71,7 +71,7 @@ export async function updateVacancyStatus(id: string, status: "available" | "res
 
 export async function deleteVacancy(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const { error } = await supabase.from("vacancies").delete().eq("id", id);

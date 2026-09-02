@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 
 const baseSchema = z.object({
@@ -34,7 +34,7 @@ const baseSchema = z.object({
 
 export async function upsertLease(id: string | null, formData: FormData) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) {
       return { ok: false as const, error: "잘못된 ID" };
     }
@@ -176,7 +176,7 @@ export async function upsertLease(id: string | null, formData: FormData) {
 
 export async function deleteLease(id: string) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     // 안전: status=draft 만 삭제 허용

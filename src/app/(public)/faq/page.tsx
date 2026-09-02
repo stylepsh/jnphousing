@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HelpCircle, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { COMPANY } from "@/lib/company";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FAQPageJsonLd } from "@/components/shared/JsonLd";
+import { PageHero, SUPPORT_TABS } from "@/components/layout/PageHero";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문",
@@ -47,13 +48,13 @@ const DEFAULT_FAQ: FaqItem[] = [
     answer: "기본 1년 단위이며, 양 당사자 협의로 연장합니다. 중도 해지 조항은 계약서에 명시합니다." },
   { id: "d5", category: "dispute", display_order: 1,
     question: "HUG 대위변제가 발생했는데 도움을 받을 수 있나요?",
-    answer: "네. HUG 대위변제 통보를 받은 임대인을 위한 후속 절차 동행 전문 서비스를 운영합니다. 자산 정리·임차인 정리·법적 절차까지 풍부한 경험으로 함께합니다. 010-9893-6882 로 연락 주세요." },
+    answer: `네. HUG 대위변제 통보를 받은 임대인을 위한 후속 절차 동행 서비스를 운영합니다. 자산·임차인 현황을 검토하고 필요한 절차를 안내합니다. ${COMPANY.contact.phone}으로 연락 주세요.` },
   { id: "d6", category: "dispute", display_order: 2,
     question: "세입자와 분쟁이 있는데 중재가 가능한가요?",
     answer: "현장 중재·법무 자문 연결까지 동행합니다. 변호사 비용 부담을 줄일 수 있도록 자문 네트워크를 활용합니다." },
   { id: "d7", category: "housing", display_order: 1,
     question: "부실 건물도 정상화가 가능한가요?",
-    answer: "수익이 안 나오는 빈 건물이나 반쪽 건물도 단계적 수선과 임차인 매칭으로 정상화한 사례가 많습니다. 사례별 진단 후 가능한 시나리오를 알려드립니다." },
+    answer: "빈 건물이나 일부만 운영되는 건물도 현장 상태와 계약 관계를 먼저 확인합니다. 점검 결과를 바탕으로 수선·임차인 모집 등 가능한 운영 시나리오를 안내합니다." },
   { id: "d8", category: "contract", display_order: 1,
     question: "임차인 입장에서 어떻게 계약이 진행되나요?",
     answer: "JNP가 위탁관리하는 건물의 경우, 임차인은 부동산 회원사를 통해 매물을 보고 → 임대인 또는 JNP와 직접 계약을 체결합니다. 계약 후 임대료 수금·민원·AS 등은 JNP가 응대합니다." },
@@ -93,20 +94,13 @@ export default async function FaqPage() {
   return (
     <>
       <FAQPageJsonLd items={items.map(i => ({ question: i.question, answer: i.answer }))} />
-      <section className="bg-primary text-white py-16 md:py-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
-            <HelpCircle className="h-3.5 w-3.5" /> FAQ
-          </div>
-          <h1 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-            자주 묻는 질문
-          </h1>
-          <p className="mt-3 text-blue-100 max-w-2xl">
-            위탁임대·주택관리·HUG 대응에 대해 가장 많이 받는 질문들입니다.
-            더 궁금한 점은 카톡 또는 전화로 문의해 주세요.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="FAQ"
+        title="자주 묻는 질문"
+        description="위탁임대·주택관리·HUG 대응에 대해 가장 많이 받는 질문들입니다. 더 궁금한 점은 전화나 카카오톡으로 문의해 주세요."
+        tabs={SUPPORT_TABS}
+        activeHref="/faq"
+      />
 
       <section className="bg-background py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">

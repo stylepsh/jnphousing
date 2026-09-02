@@ -26,15 +26,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "답사 대상 물건이 없습니다." }, { status: 404 });
     }
 
+    // 파일을 먼저 만들고 성공한 뒤에 발급 이력을 남긴다.
+    // (기록이 앞서면 생성 실패한 답사지가 "발급됨"으로 남는다.)
+    const today = new Date().toISOString().slice(0, 10);
+    const buf = await buildSurveySheetXlsx(todoRows, regionLabel);
+
     await recordSheetIssue({
       propertyIds: todoRows.map((it) => it.id),
       regionLabel,
       teamName: typeof body.team === "string" ? body.team : undefined,
       kind: "xlsx",
     });
-
-    const today = new Date().toISOString().slice(0, 10);
-    const buf = await buildSurveySheetXlsx(todoRows, regionLabel);
     const filename = `survey_${today}_${todoRows.length}.xlsx`;
     return new NextResponse(new Uint8Array(buf) as unknown as BodyInit, {
       headers: {

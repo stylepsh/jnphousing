@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, Wrench, BadgeCheck, CheckCircle2, Sparkles, ShieldCheck, ClipboardCheck, Receipt, Users, KeyRound } from "lucide-react";
+import { PageHero, SERVICE_TABS } from "@/components/layout/PageHero";
 
 export const metadata: Metadata = {
   title: "서비스",
@@ -11,15 +12,13 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <>
-      <section className="bg-primary text-white py-20 md:py-28">
-        <div className="mx-auto max-w-5xl px-6">
-          <p className="text-blue-300 text-sm font-semibold uppercase tracking-wide">Our Services</p>
-          <h1 className="mt-2 heading-section">서비스</h1>
-          <p className="mt-6 text-lg text-blue-100 max-w-2xl leading-relaxed">
-            JNP주택관리는 두 가지 축으로 운영됩니다. 건물 운영의 모든 단계를 한 회사가 책임집니다.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Our Services"
+        title="서비스"
+        description="건물 운영의 모든 단계를 한 회사가 책임집니다. 위탁임대와 주택관리 두 축으로 운영합니다."
+        tabs={SERVICE_TABS}
+        activeHref="/services"
+      />
 
       <section className="bg-background py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-6">

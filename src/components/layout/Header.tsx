@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { COMPANY } from "@/lib/company";
 
 type NavLeaf = { href: string; label: string; desc?: string; badge?: string };
 type NavGroup = { label: string; href?: string; items?: NavLeaf[] };
@@ -104,8 +105,16 @@ export function Header() {
                 className="relative"
                 onMouseEnter={() => openWithDelay(g.label)}
                 onMouseLeave={closeWithDelay}
+                onFocus={() => setOpenGroup(g.label)}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setOpenGroup(null);
+                }}
               >
                 <button
+                  type="button"
+                  onClick={() => setOpenGroup(isOpen ? null : g.label)}
+                  aria-expanded={isOpen}
+                  aria-controls={`desktop-nav-${g.label}`}
                   className={cn(
                     "flex items-center gap-1 px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors",
                     transparent ? "text-white/90 hover:bg-white/10" : "text-foreground/80 hover:text-primary hover:bg-muted",
@@ -118,7 +127,7 @@ export function Header() {
 
                 {/* 드롭다운 패널 */}
                 {isOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 animate-slide-down">
+                  <div id={`desktop-nav-${g.label}`} className="absolute top-full left-1/2 -translate-x-1/2 pt-2 animate-slide-down">
                     <div className="w-72 rounded-2xl bg-white border border-border shadow-xl shadow-black/5 p-2 overflow-hidden">
                       {g.items!.map((item) => (
                         <Link
@@ -150,14 +159,14 @@ export function Header() {
         <div className="hidden lg:flex items-center gap-3 shrink-0">
           {/* 전화번호 — 항상 노출 */}
           <a
-            href="tel:01098936882"
+            href={COMPANY.contact.phoneHref}
             className={cn(
               "flex items-center gap-1.5 text-sm font-bold transition-colors",
               transparent ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80",
             )}
           >
             <Phone className="h-4 w-4" />
-            010-9893-6882
+            {COMPANY.contact.phone}
           </a>
           <div className={cn("h-4 w-px", transparent ? "bg-white/30" : "bg-border")} />
           <Link href="/login" className={cn("text-sm transition-colors", transparent ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
@@ -174,14 +183,16 @@ export function Header() {
 
         {/* 모바일 토글 */}
         <div className="lg:hidden flex items-center gap-0.5">
-          <a href="tel:01098936882" className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
+          <a href={COMPANY.contact.phoneHref} className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
             <Phone className="h-5 w-5" />
           </a>
           <ThemeToggle />
           <button
             className={cn("p-2 -mr-2", transparent ? "text-white" : "text-foreground")}
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="메뉴 열기"
+            aria-label={mobileOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-public-navigation"
           >
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -190,7 +201,7 @@ export function Header() {
 
       {/* 모바일 메뉴 (아코디언) */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-border bg-white max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div id="mobile-public-navigation" className="lg:hidden border-t border-border bg-white max-h-[calc(100vh-4rem)] overflow-y-auto">
           <nav className="px-4 py-3 flex flex-col gap-0.5">
             {NAV_GROUPS.map((g) => {
               if (g.href) {
@@ -209,7 +220,9 @@ export function Header() {
               return (
                 <div key={g.label} className="border-b border-border/40 last:border-0">
                   <button
+                    type="button"
                     onClick={() => setMobileGroup(isOpen ? null : g.label)}
+                    aria-expanded={isOpen}
                     className="w-full flex items-center justify-between py-3 px-2 text-base font-semibold text-foreground/90"
                   >
                     {g.label}

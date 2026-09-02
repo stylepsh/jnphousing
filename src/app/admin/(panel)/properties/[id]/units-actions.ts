@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireAdmin, getClientIp } from "@/lib/auth-guard";
+import { requireMutableAdmin, getClientIp } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { audit } from "@/lib/audit";
 
@@ -26,7 +26,7 @@ const schema = z.object({
 
 export async function upsertUnit(id: string | null, formData: FormData) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     if (id && !z.string().uuid().safeParse(id).success) {
       return { ok: false as const, error: "잘못된 ID" };
     }
@@ -114,7 +114,7 @@ export type BulkResult =
 
 export async function bulkCreateUnits(formData: FormData): Promise<BulkResult> {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
 
     const raw = Object.fromEntries(formData.entries());
     if (raw.area_pyeong && !raw.area_m2) {
@@ -219,7 +219,7 @@ export async function bulkCreateUnits(formData: FormData): Promise<BulkResult> {
 
 export async function deleteUnit(id: string) {
   try {
-    const ctx = await requireAdmin();
+    const ctx = await requireMutableAdmin();
     if (!z.string().uuid().safeParse(id).success) return { ok: false as const, error: "잘못된 ID" };
     const supabase = createServiceClient();
     const before = (await supabase.from("properties_units").select("*").eq("id", id).maybeSingle()).data as { property_id?: string } | null;

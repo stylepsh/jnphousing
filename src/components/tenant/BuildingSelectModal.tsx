@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QrCode, Building2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { COMPANY } from "@/lib/company";
 
 interface Property {
   id: string;
@@ -111,7 +112,7 @@ export function BuildingSelectModal({ properties, forceShow }: BuildingSelectMod
             모든 건물 보기
           </button>
           <Button asChild size="sm" variant="outline">
-            <a href="tel:01098936882">전화 문의</a>
+            <a href={COMPANY.contact.phoneHref}>전화 문의</a>
           </Button>
         </div>
       </div>

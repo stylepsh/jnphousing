@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, Calculator, ClipboardList, FileSignature, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "부동산 서식 다운로드",
@@ -208,7 +209,7 @@ export default async function AgencyFormsPage() {
         <p className="font-semibold mb-1">📌 안내</p>
         <ul className="text-xs space-y-1 ml-4 list-disc">
           <li>JNP주택관리가 제공하는 표준 양식입니다. 임차인 측 사정에 따라 조항을 조정해 사용하세요.</li>
-          <li>자료가 보이지 않는다면 관리자(010-9893-6882)에게 문의해 주세요.</li>
+          <li>자료가 보이지 않는다면 관리자({COMPANY.contact.phone})에게 문의해 주세요.</li>
         </ul>
       </div>
     </div>

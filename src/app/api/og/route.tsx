@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import { COMPANY } from "@/lib/company";
 
 export const runtime = "edge";
 
@@ -117,7 +118,7 @@ export async function GET(req: NextRequest) {
             letterSpacing: "0.05em",
           }}
         >
-          jnphousing.co.kr · 010-9893-6882
+          {`jnphousing.co.kr · ${COMPANY.contact.phone}`}
         </div>
       </div>
     ),
