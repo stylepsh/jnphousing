@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { trackLead } from "@/lib/track";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,7 @@ export function ContactForm() {
       return;
     }
 
+    trackLead("contact");   // 광고 전환 — 저장 성공이 확인된 뒤에만 보낸다
     toast.success("문의가 접수되었습니다.", {
       description: "영업일 기준 24시간 이내 담당자가 연락드립니다.",
     });

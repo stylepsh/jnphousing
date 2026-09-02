@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { trackLead } from "@/lib/track";
 import { Loader2, Send, CheckCircle2 } from "lucide-react";
 import { submitAuctionLead } from "./actions";
 import { COMPANY } from "@/lib/company";
@@ -16,6 +17,7 @@ export function LeadForm() {
     startTransition(async () => {
       const r = await submitAuctionLead(fd);
       if (r.ok) {
+        trackLead("auction");   // 광고 전환 — 저장 성공이 확인된 뒤에만 보낸다
         setDone(true);
         toast.success("접수되었습니다. 검토 후 연락드리겠습니다.");
       } else {
