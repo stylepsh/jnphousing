@@ -64,7 +64,7 @@ function Card({ s, active }: { s: Svc; active: boolean }) {
         <span className={cn("h-12 w-12 rounded-2xl flex items-center justify-center", active ? "bg-white/15" : "bg-[#F4F6FA]")}>
           <Icon className={cn("h-6 w-6", active ? "text-white" : "text-primary")} />
         </span>
-        <span className={cn("text-[11px] font-bold tracking-wide rounded-full px-3 py-1", active ? "bg-white/15 text-white" : "bg-[#F4F6FA] text-foreground/50")}>{s.badge}</span>
+        <span className={cn("text-[11px] font-bold tracking-wide rounded-full px-3 py-1", active ? "bg-white/15 text-white" : "bg-[#F4F6FA] text-slate-700")}>{s.badge}</span>
       </div>
       <h3 className={cn("text-2xl font-bold tracking-tight", active ? "text-white" : "text-foreground")}>{s.title}</h3>
       <p className={cn("mt-2.5 text-sm leading-relaxed", active ? "text-white/70" : "text-muted-foreground")}>{s.desc}</p>
@@ -114,7 +114,7 @@ export function CoreServicesCarousel() {
               style={{
                 transform: `translate(calc(-50% + ${dx}px), -50%) scale(${scale})`,
                 zIndex: isCenter ? 30 : 10,
-                opacity: isCenter ? 1 : 0.5,
+                opacity: 1,
               }}
             >
               <Card s={s} active={isCenter} />
@@ -136,8 +136,17 @@ export function CoreServicesCarousel() {
             type="button"
             onClick={() => setActive(idx)}
             aria-label={`${s.title}`}
-            className={cn("h-2 rounded-full transition-all", idx === active ? "w-7 bg-primary" : "w-2 bg-[#D9DEE8] hover:bg-[#C3CAD6]")}
-          />
+            aria-current={idx === active ? "true" : undefined}
+            className="group inline-flex h-8 min-w-8 items-center justify-center rounded-full"
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "h-2 rounded-full transition-all",
+                idx === active ? "w-7 bg-primary" : "w-2 bg-[#A7B1C1] group-hover:bg-[#8491A5]",
+              )}
+            />
+          </button>
         ))}
       </div>
     </>

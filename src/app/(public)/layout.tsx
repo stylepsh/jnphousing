@@ -27,11 +27,11 @@ export default function PublicLayout({
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-center gap-2 px-4 py-3">
-          <a href={COMPANY.contact.phoneHref} className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">
+          <a href={COMPANY.contact.phoneHref} aria-label={`전화 상담 ${COMPANY.contact.phone}`} className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-white rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">
             <Phone className="h-4 w-4" /> 전화 상담
           </a>
           <a href={COMPANY.contact.kakaoOpenChat} target="_blank" rel="noopener noreferrer" className="flex-1 inline-flex items-center justify-center gap-2 bg-[#FEE500] text-[#3C1E1E] rounded-xl h-12 text-sm font-semibold transition-all active:scale-[0.98]">
-            <MessageCircle className="h-4 w-4" /> 카카오톡 상담
+            <MessageCircle className="h-4 w-4" /> 카카오톡 상담<span className="sr-only">(새 창)</span>
           </a>
         </div>
       </div>

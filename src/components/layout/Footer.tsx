@@ -18,6 +18,7 @@ const COLS: FooterCol[] = [
       { href: "/about",      label: "회사소개" },
       { href: "/services",   label: "서비스" },
       { href: "/properties", label: "관리현장" },
+      { href: "/reviews",    label: "고객 후기" },
       { href: "/contact",    label: "관리문의" },
     ],
   },
@@ -51,7 +52,7 @@ export function Footer() {
                 <span className="text-primary text-[10px] font-extrabold tracking-tighter">JNP</span>
               </span>
               <span className="font-bold text-lg text-white">{COMPANY.brand}</span>
-              <span className="text-xs text-slate-500 ml-1">({COMPANY.legalName})</span>
+              <span className="text-xs text-slate-300 ml-1">({COMPANY.legalName})</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
               {COMPANY.business.summary}
@@ -66,7 +67,7 @@ export function Footer() {
                   <div>
                     <div className="text-xs font-semibold text-slate-300 mb-0.5">{b.label}</div>
                     <div>{b.address}</div>
-                    <div className="text-xs text-slate-500">{b.detail}</div>
+                    <div className="text-xs text-slate-400">{b.detail}</div>
                   </div>
                 </div>
               ))}
@@ -89,7 +90,7 @@ export function Footer() {
                   카카오톡 1:1 상담
                   <span className="absolute -right-2 top-0 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft"></span>
                 </span>
-                <Users className="h-2.5 w-2.5 text-slate-500" />
+                <Users className="h-2.5 w-2.5 text-slate-400" />
               </a>
             </div>
           </div>
@@ -119,7 +120,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-800">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-400">
             <div className="space-y-1">
               <p>© {new Date().getFullYear()} {COMPANY.brand} ({COMPANY.legalName}). All rights reserved.</p>
               <p className="flex items-center gap-1.5">

@@ -1,10 +1,26 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Building2, Check, ClipboardCheck, FileText, KeyRound, MapPin, MessageCircle, Phone, ShieldCheck, Wrench } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Building2,
+  Check,
+  ClipboardCheck,
+  FileCheck2,
+  FileText,
+  KeyRound,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ReceiptText,
+  ShieldCheck,
+  Wrench,
+} from "lucide-react";
 import { CoreServicesCarousel } from "@/components/shared/CoreServicesCarousel";
 import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY } from "@/lib/company";
+import { PUBLIC_REVIEWS } from "@/lib/data/reviews";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물 운영 전문",
@@ -26,9 +42,40 @@ const PROCESS = [
   { icon: FileText, number: "04", title: "정산·보고", body: "진행 내역과 정산 자료를 확인하기 쉽게 공유합니다." },
 ];
 
+const TRUST_PROOFS = [
+  {
+    icon: Building2,
+    title: "관리현장 공개",
+    body: "공개에 동의한 운영 현장은 건물 정보와 함께 확인할 수 있습니다.",
+    href: "/properties",
+    linkLabel: "관리현장 보기",
+  },
+  {
+    icon: FileCheck2,
+    title: "범위·비용 사전 안내",
+    body: "계약 전에 필요한 업무, 일정과 비용 범위를 먼저 설명합니다.",
+    href: "/services",
+    linkLabel: "서비스 범위 보기",
+  },
+  {
+    icon: ReceiptText,
+    title: "진행·정산 기록",
+    body: "운영 중 처리 내역과 정산 자료를 확인하기 쉽게 공유합니다.",
+    href: "/about",
+    linkLabel: "운영 원칙 보기",
+  },
+  {
+    icon: BadgeCheck,
+    title: "확인된 후기만 공개",
+    body: "원문 확인과 게재 동의를 마친 고객 의견만 게시합니다.",
+    href: "/reviews",
+    linkLabel: "고객 후기 보기",
+  },
+];
+
 export default function HomePage() {
   return (
-    <main className="bg-white text-foreground">
+    <main id="main-content" className="bg-white text-foreground">
       <LocalBusinessJsonLd />
       <section className="relative isolate overflow-hidden border-b border-[#E5EAF1] bg-white">
         <div className="mx-auto grid min-h-[680px] max-w-7xl lg:grid-cols-[0.92fr_1.08fr]">
@@ -54,6 +101,21 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section aria-label="상담과 운영 안내" className="border-b border-[#E5EAF1] bg-white">
+        <div className="mx-auto grid max-w-6xl divide-y divide-[#E5EAF1] px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {[
+            "무료 상담 · 상담 후 계약 의무 없음",
+            "업무 범위와 비용을 계약 전에 안내",
+            "진행 내역과 정산 자료를 체계적으로 공유",
+          ].map((item) => (
+            <p key={item} className="flex min-h-14 items-center gap-2.5 py-3 text-sm font-medium text-[#35445C] sm:px-5 first:sm:pl-0 last:sm:pr-0">
+              <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              {item}
+            </p>
+          ))}
+        </div>
+      </section>
+
       <section className="border-b border-[#E8ECF2] bg-[#F7F9FC] py-18 sm:py-24">
         <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
           <div><p className="text-sm font-semibold text-primary">관리의 시작</p><h2 className="mt-3 text-3xl font-bold leading-tight tracking-[-0.035em] text-[#16233A] sm:text-4xl">건물마다 문제는 달라도,<br />운영의 빈틈에서 시작됩니다.</h2></div>
@@ -72,7 +134,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-12 max-w-2xl"><p className="text-sm font-semibold text-primary">운영 절차</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-[#16233A] sm:text-4xl">상담부터 월간 보고까지,<br />과정을 분명하게 만듭니다.</h2></div>
           <ol className="grid gap-px overflow-hidden rounded-2xl border border-[#DDE3EC] bg-[#DDE3EC] sm:grid-cols-2 lg:grid-cols-4">
-            {PROCESS.map(({ icon: Icon, number, title, body }) => <li key={number} className="bg-white p-6 sm:p-7"><div className="flex items-center justify-between"><Icon className="h-6 w-6 text-primary" /><span className="text-xs font-bold tracking-[0.15em] text-slate-400">{number}</span></div><h3 className="mt-8 text-lg font-bold text-[#16233A]">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{body}</p></li>)}
+            {PROCESS.map(({ icon: Icon, number, title, body }) => <li key={number} className="bg-white p-6 sm:p-7"><div className="flex items-center justify-between"><Icon className="h-6 w-6 text-primary" /><span className="text-xs font-bold tracking-[0.15em] text-slate-600">{number}</span></div><h3 className="mt-8 text-lg font-bold text-[#16233A]">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{body}</p></li>)}
           </ol>
         </div>
       </section>
@@ -84,6 +146,85 @@ export default function HomePage() {
             <div className="mt-7 space-y-4">{["현장 상태를 기준으로 한 관리 범위", "진행 내역과 정산 자료의 체계적 공유", "담당 창구를 통한 일관된 소통"].map((item) => <p key={item} className="flex items-center gap-3 font-medium text-[#26364F]"><ShieldCheck className="h-5 w-5 text-primary" /> {item}</p>)}</div>
             <Link href="/about" className="mt-8 inline-flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3">회사와 운영 원칙 보기 <ArrowRight className="h-4 w-4" /></Link>
           </div>
+        </div>
+      </section>
+
+      <section className="border-y border-[#E8ECF2] bg-[#F7F9FC] py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <p className="text-sm font-semibold text-primary">운영 근거</p>
+              <h2 className="mt-3 text-3xl font-bold leading-tight tracking-[-0.035em] text-[#16233A] sm:text-4xl">
+                맡기기 전에<br />확인할 수 있어야 합니다.
+              </h2>
+              <p className="mt-5 max-w-md leading-7 text-slate-600">
+                큰 숫자나 막연한 약속보다, 실제 운영에서 무엇을 보고받는지 먼저 확인하세요.
+              </p>
+            </div>
+
+            <div className="grid gap-px overflow-hidden rounded-2xl border border-[#DDE3EC] bg-[#DDE3EC] sm:grid-cols-2">
+              {TRUST_PROOFS.map(({ icon: Icon, title, body, href, linkLabel }) => (
+                <article key={title} className="flex min-h-[245px] flex-col bg-white p-6 sm:p-7">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EEF3FA] text-primary">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-7 text-lg font-bold text-[#16233A]">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+                  <Link href={href} className="mt-auto inline-flex min-h-11 items-center gap-2 pt-5 text-sm font-semibold text-primary">
+                    {linkLabel} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reviews" className="scroll-mt-20 bg-white py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-primary">고객 후기</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-[#16233A] sm:text-4xl">
+                고객의 목소리도<br className="sm:hidden" /> 확인된 내용만 전합니다.
+              </h2>
+              <p className="mt-4 leading-7 text-slate-600">
+                원문과 게재 동의를 확인한 후기만 공개하고, 이름과 상세 주소는 안전하게 가립니다.
+              </p>
+            </div>
+            <Link href="/reviews" className="inline-flex min-h-11 items-center gap-2 self-start font-semibold text-primary sm:self-auto">
+              후기 전체 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          {PUBLIC_REVIEWS.length > 0 ? (
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              {PUBLIC_REVIEWS.slice(0, 3).map((review) => (
+                <article key={review.id} className="rounded-2xl border border-[#DDE3EC] bg-white p-6 shadow-sm">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                    <BadgeCheck className="h-4 w-4" aria-hidden="true" /> 원문·동의 확인
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold leading-snug text-[#16233A]">{review.title}</h3>
+                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-600">{review.body}</p>
+                  <p className="mt-5 border-t border-[#E8ECF2] pt-4 text-xs text-slate-500">
+                    <span className="font-semibold text-slate-700">{review.authorAlias}</span> · {review.authorRoleLabel}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-10 grid overflow-hidden rounded-2xl border border-[#DDE3EC] bg-[#F7F9FC] lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="p-6 sm:p-8">
+                <p className="font-bold text-[#16233A]">실제 후기 자료를 확인하고 있습니다.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  기존 화면의 예시 후기는 공개에서 제외했습니다. 확인이 끝난 카카오톡·문자·서면 후기부터 순차적으로 게시합니다.
+                </p>
+              </div>
+              <Link href="/reviews" className="m-6 mt-0 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-semibold text-white hover:bg-[#13213D] lg:mt-6">
+                후기 공개 기준 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

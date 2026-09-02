@@ -28,6 +28,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "고객지원",
     items: [
       { href: "/news", label: "공지사항", desc: "최신 소식·보도자료" },
+      { href: "/reviews", label: "고객 후기", desc: "원문·게재 동의를 확인한 후기" },
       { href: "/faq", label: "자주 묻는 질문", desc: "FAQ" },
       { href: "/contact", label: "관리문의", desc: "신규 위탁·상담 접수" },
       { href: "/tenant/complaint", label: "민원·AS 접수", desc: "전화 없이 온라인 접수" },
@@ -183,12 +184,12 @@ export function Header() {
 
         {/* 모바일 토글 */}
         <div className="lg:hidden flex items-center gap-0.5">
-          <a href={COMPANY.contact.phoneHref} className={cn("p-2", transparent ? "text-white" : "text-primary")} aria-label="전화 상담">
+          <a href={COMPANY.contact.phoneHref} className={cn("inline-flex h-11 w-11 items-center justify-center rounded-lg", transparent ? "text-white" : "text-primary")} aria-label={`전화 상담 ${COMPANY.contact.phone}`}>
             <Phone className="h-5 w-5" />
           </a>
           <ThemeToggle />
           <button
-            className={cn("p-2 -mr-2", transparent ? "text-white" : "text-foreground")}
+            className={cn("-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-lg", transparent ? "text-white" : "text-foreground")}
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? "메뉴 닫기" : "메뉴 열기"}
             aria-expanded={mobileOpen}

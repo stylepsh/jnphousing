@@ -1,38 +1,41 @@
 import type { Metadata } from "next";
-import { Star, BadgeCheck } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BadgeCheck,
+  FileCheck2,
+  MessageCircle,
+  ShieldCheck,
+  Star,
+  UserRoundCheck,
+} from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { REVIEWS, averageRating } from "@/lib/data/reviews";
-import { cn } from "@/lib/utils";
-
-const ROLE_PROFILE: Record<string, { emoji: string; bg: string }> = {
-  landlord: { emoji: "🏢", bg: "bg-blue-100" },
-  tenant:   { emoji: "🏠", bg: "bg-emerald-100" },
-  agency:   { emoji: "🤝", bg: "bg-amber-100" },
-};
-
-function formatKakaoDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-}
+import { PUBLIC_REVIEWS, averageRating } from "@/lib/data/reviews";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "고객 후기",
-  description: "JNP주택관리 임차인·임대인·부동산 회원의 실제 후기",
+  description: "원문 확인과 게재 동의를 마친 JNP주택관리 고객 후기를 공개합니다.",
   openGraph: {
     title: "JNP 고객 후기",
-    description: "위탁임대의 신뢰",
-    images: [`/api/og?title=${encodeURIComponent("고객 후기")}&subtitle=${encodeURIComponent("위탁임대의 신뢰")}`],
+    description: "확인된 고객의 목소리만 투명하게 공개합니다.",
+    images: [`/api/og?title=${encodeURIComponent("고객 후기")}&subtitle=${encodeURIComponent("확인된 고객의 목소리")}`],
   },
   alternates: { canonical: "/reviews" },
 };
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(i => (
+    <div className="flex gap-0.5" aria-label={`평점 ${rating}점`}>
+      {[1, 2, 3, 4, 5].map((score) => (
         <Star
-          key={i}
-          className={i <= rating ? "h-4 w-4 fill-amber-400 text-amber-400" : "h-4 w-4 text-muted-foreground/30"}
+          key={score}
+          aria-hidden="true"
+          className={
+            score <= rating
+              ? "h-4 w-4 fill-amber-400 text-amber-400"
+              : "h-4 w-4 text-slate-300"
+          }
         />
       ))}
     </div>
@@ -40,104 +43,121 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function ReviewsPage() {
-  const avg = averageRating();
+  const average = averageRating();
+  const hasReviews = PUBLIC_REVIEWS.length > 0;
 
   return (
-    <>
-      <section className="bg-primary text-white py-16 md:py-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <Breadcrumbs items={[{ name: "고객 후기" }]} className="text-white/70 mb-5" />
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold">
-            <Star className="h-3.5 w-3.5" /> Reviews
-          </div>
-          <h1 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">고객 후기</h1>
-          <p className="mt-3 text-blue-100">실제 임차인·임대인·부동산 회원의 경험.</p>
-          <div className="mt-6 inline-flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur px-5 py-3 border border-white/20">
-            <Stars rating={Math.round(avg)} />
-            <div>
-              <div className="text-2xl font-bold">{avg.toFixed(1)}/5.0</div>
-              <div className="text-[11px] text-blue-200">{REVIEWS.length}건의 검증된 후기</div>
+    <main id="main-content" className="bg-white">
+      <section className="border-b border-[#E5EAF1] bg-[#14233F] py-16 text-white md:py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <Breadcrumbs items={[{ name: "고객 후기" }]} className="mb-5 text-white/70" />
+          <p className="text-sm font-semibold text-blue-300">CUSTOMER VOICE</p>
+          <h1 className="mt-3 text-4xl font-bold tracking-[-0.04em] md:text-5xl">고객 후기</h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-blue-100 md:text-lg">
+            보기 좋은 문장을 만들기보다, 원문 확인과 게재 동의를 마친 고객의 경험만 공개합니다.
+          </p>
+
+          {hasReviews && (
+            <div className="mt-7 inline-flex items-center gap-4 rounded-xl border border-white/15 bg-white/10 px-5 py-3">
+              <Stars rating={Math.round(average)} />
+              <div>
+                <p className="text-xl font-bold">{average.toFixed(1)} / 5.0</p>
+                <p className="text-xs text-blue-200">확인 완료 후기 {PUBLIC_REVIEWS.length}건</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
-      {/* 카톡 단톡방 형식 후기 */}
-      <main id="main-content" className="bg-[#b2c7d9] py-12 md:py-16">
-        <div className="mx-auto max-w-2xl px-4">
-          {/* 단톡방 안내 바 */}
-          <div className="text-center mb-7">
-            <div className="inline-flex items-center gap-1.5 bg-black/10 rounded-full px-4 py-1.5 text-xs text-slate-700 font-medium">
-              💬 JNP주택관리 고객 후기방 · 참여자 {REVIEWS.length}명
-            </div>
-          </div>
-
-          <div className="space-y-5 stagger-children">
-            {REVIEWS.map(r => {
-              const profile = ROLE_PROFILE[r.authorRole] ?? ROLE_PROFILE.tenant;
-              return (
-                <div key={r.id} className="flex gap-2.5 animate-fade-in">
-                  {/* 프로필 */}
-                  <div className={cn("h-11 w-11 rounded-2xl shrink-0 flex items-center justify-center text-xl shadow-sm", profile.bg)}>
-                    {profile.emoji}
+      <section className="py-16 md:py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          {hasReviews ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              {PUBLIC_REVIEWS.map((review) => (
+                <article key={review.id} className="rounded-2xl border border-[#DDE3EC] bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <Stars rating={review.rating} />
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                      <BadgeCheck className="h-4 w-4" aria-hidden="true" /> 원문·동의 확인
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-700 mb-1 ml-1 font-medium">
-                      {r.authorAlias}
-                      <span className="ml-1.5 text-slate-500 font-normal">· {r.authorRoleLabel}</span>
-                    </p>
-                    <div className="flex items-end gap-1.5">
-                      {/* 말풍선 */}
-                      <div className="bg-white rounded-2xl rounded-tl-md px-4 py-3 max-w-[88%] shadow-sm">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Stars rating={r.rating} />
-                          {r.isVerified && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 font-semibold">
-                              <BadgeCheck className="h-3.5 w-3.5" /> 검증
-                            </span>
-                          )}
-                        </div>
-                        <p className="font-bold text-sm text-slate-900 leading-snug">{r.title}</p>
-                        <p className="text-sm text-slate-700 leading-relaxed mt-1.5">{r.body}</p>
-                        {r.buildingHint && (
-                          <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-100">
-                            📍 {r.buildingHint}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-600/80 shrink-0 mb-1 whitespace-nowrap">
-                        {formatKakaoDate(r.createdAt)}
-                      </span>
-                    </div>
+                  <h2 className="mt-5 text-xl font-bold leading-snug text-[#16233A]">{review.title}</h2>
+                  <p className="mt-3 text-[15px] leading-7 text-slate-600">{review.body}</p>
+                  <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#E8ECF2] pt-4 text-xs text-slate-500">
+                    <span className="font-semibold text-slate-700">{review.authorAlias}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{review.authorRoleLabel}</span>
+                    {review.buildingHint && <span>· {review.buildingHint}</span>}
+                    <time className="ml-auto" dateTime={review.createdAt}>{review.createdAt}</time>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-3xl border border-[#DDE3EC] bg-[#F7F9FC]">
+              <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="p-7 sm:p-10 lg:p-12">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+                    <MessageCircle className="h-6 w-6" aria-hidden="true" />
+                  </span>
+                  <p className="mt-7 text-sm font-semibold text-primary">후기 자료 확인 중</p>
+                  <h2 className="mt-2 text-2xl font-bold leading-tight tracking-[-0.03em] text-[#16233A] sm:text-3xl">
+                    확인되지 않은 후기를<br className="hidden sm:block" /> 먼저 보여드리지 않겠습니다.
+                  </h2>
+                  <p className="mt-4 max-w-xl leading-7 text-slate-600">
+                    현재 보유 자료의 원문과 게재 동의를 정리하고 있습니다. 확인이 끝난 후기부터 개인정보를 가려 순차적으로 공개하겠습니다.
+                  </p>
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                    <Link href="/properties" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-semibold text-white hover:bg-[#13213D]">
+                      관리현장 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                    <Link href="/contact" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#CCD5E2] bg-white px-5 font-semibold text-[#16233A] hover:bg-slate-50">
+                      관리 상담하기
+                    </Link>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* JNP 답변 말풍선 (오른쪽, 노란색) */}
-          <div className="flex justify-end mt-5">
-            <div className="flex items-end gap-1.5 max-w-[88%]">
-              <span className="text-[10px] text-slate-600/80 shrink-0 mb-1">방금</span>
-              <div className="bg-[#fee500] rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
-                <p className="text-sm text-slate-900 leading-relaxed">
-                  소중한 후기 감사합니다 🙏 앞으로도 주거의 가치를 끝까지 책임지겠습니다.
-                </p>
-                <p className="text-[11px] text-slate-700/70 mt-1.5 font-semibold">— JNP주택관리</p>
+                <div className="border-t border-[#DDE3EC] bg-white p-7 sm:p-10 lg:border-l lg:border-t-0 lg:p-12">
+                  <p className="text-sm font-semibold text-[#16233A]">공개 전 확인 절차</p>
+                  <ol className="mt-6 space-y-5">
+                    {[
+                      { icon: FileCheck2, title: "원문 확인", body: "카카오톡·문자·서면 원문과 공개 문구를 대조합니다." },
+                      { icon: UserRoundCheck, title: "게재 동의", body: "작성자에게 공개 범위와 익명 처리 내용을 확인합니다." },
+                      { icon: ShieldCheck, title: "개인정보 보호", body: "이름·연락처·상세 주소 등 식별 정보를 가립니다." },
+                    ].map(({ icon: Icon, title, body }, index) => (
+                      <li key={title} className="flex gap-4">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF3FA] text-primary">
+                          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+                        </span>
+                        <div>
+                          <p className="font-bold text-[#16233A]">{index + 1}. {title}</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">{body}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* 안내 */}
-          <div className="mt-10 rounded-xl bg-white/70 backdrop-blur border border-white/40 p-4 text-xs text-slate-600">
-            <p className="font-semibold text-slate-800 mb-1">후기 안내</p>
-            <p className="leading-relaxed">
-              개인정보 보호를 위해 이름·건물명은 가명·일부 처리되었습니다.
-              실제 후기는 임차인·임대인·부동산 회원 동의를 받아 게재됩니다.
-            </p>
+          <div className="mt-8 flex flex-col justify-between gap-4 rounded-2xl border border-[#DDE3EC] px-6 py-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="font-bold text-[#16233A]">JNP 서비스를 이용하셨나요?</p>
+              <p className="mt-1 text-sm text-slate-600">후기 공개 여부와 익명 범위는 작성자와 협의합니다.</p>
+            </div>
+            <a
+              href={COMPANY.contact.kakaoOpenChat}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-5 text-sm font-bold text-[#3C1E1E] hover:bg-[#F4D900]"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden="true" /> 후기 전달하기
+              <span className="sr-only">(새 창)</span>
+            </a>
           </div>
         </div>
-      </main>
-    </>
+      </section>
+    </main>
   );
 }
