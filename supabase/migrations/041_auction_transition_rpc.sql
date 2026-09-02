@@ -32,7 +32,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $fn_auction_transition$
+as $$
 declare
   v_from text;
   v_exists boolean;
@@ -111,7 +111,7 @@ begin
   end if;
 
   return jsonb_build_object('ok', true, 'from', v_from, 'to', p_to);
-end $fn_auction_transition$;
+end $$;
 
 comment on function public.auction_apply_transition is
   '경매 파이프라인 전이 — 행 잠금·조건부 전이·이벤트 기록·답사 갱신을 한 트랜잭션으로 묶는다.';
