@@ -38,12 +38,12 @@ language sql
 stable
 security definer
 set search_path = public
-as $$
+as $fn_is_admin_mutable$
   select exists (
     select 1 from public.admin_users
     where user_id = auth.uid() and role in ('super', 'staff')
   );
-$$;
+$fn_is_admin_mutable$;
 
 comment on function public.is_admin_mutable() is
   '쓰기 가능한 관리자(super/staff)인지. readonly 는 false.';
@@ -58,7 +58,7 @@ drop policy if exists "inquiries_public_insert" on public.inquiries;
 -- ---------------------------------------------------------------------------
 -- 3) 팝업 배너 오픈채팅 URL 을 1:1 상담방으로 교체 (구 주소가 남아있는 행만)
 -- ---------------------------------------------------------------------------
-do $$
+do $do_banner$
 begin
   if to_regclass('public.site_popup_banner') is not null then
     update public.site_popup_banner
@@ -68,4 +68,4 @@ begin
        'https://open.kakao.com/o/gtMOCALi'    -- 중간에 쓰던 그룹 오픈채팅
      );
   end if;
-end $$;
+end $do_banner$;

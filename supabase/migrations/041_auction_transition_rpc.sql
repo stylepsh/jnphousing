@@ -32,7 +32,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn_auction_transition$
 declare
   v_from text;
   v_exists boolean;
@@ -49,8 +49,7 @@ begin
 
   -- 2) 조건부 전이 — 클라이언트가 본 상태와 실제가 다르면 거부(경합 감지)
   if p_expected_from is not null and v_from is distinct from p_expected_from then
-    return jsonb_build_object(
-      'ok', false, 'error', 'state_conflict', 'from', v_from, 'expected', p_expected_from);
+    return jsonb_build_object('ok', false, 'error', 'state_conflict', 'from', v_from, 'expected', p_expected_from);
   end if;
 
   -- 3) 상태 + 화이트리스트 컬럼 갱신.
@@ -89,8 +88,7 @@ begin
     ) into v_exists;
 
     if not v_exists then
-      raise exception 'inspection_mismatch: % does not belong to property %',
-        p_inspection_id, p_property_id;
+      raise exception 'inspection_mismatch: % does not belong to property %', p_inspection_id, p_property_id;
     end if;
 
     if p_inspection_patch is not null then
@@ -113,7 +111,7 @@ begin
   end if;
 
   return jsonb_build_object('ok', true, 'from', v_from, 'to', p_to);
-end $$;
+end $fn_auction_transition$;
 
 comment on function public.auction_apply_transition is
   '경매 파이프라인 전이 — 행 잠금·조건부 전이·이벤트 기록·답사 갱신을 한 트랜잭션으로 묶는다.';

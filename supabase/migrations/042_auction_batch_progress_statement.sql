@@ -28,7 +28,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn_batch_progress$
 begin
   -- 전이 테이블은 컬럼 목록(update of ...)과 함께 쓸 수 없어(PG 제약 0A000)
   -- 트리거를 전체 UPDATE 에 걸고, survey_status 가 실제로 바뀐 행만 여기서 고른다.
@@ -59,7 +59,7 @@ begin
        or (a.pend > 0 and a.pend < a.tot and b.status in ('created', 'assigned'))
      );
   return null;
-end $$;
+end $fn_batch_progress$;
 
 comment on function public.auction_batch_progress_autoclose_stmt() is
   '배치 진행률 자동 전이 — 구문 단위. 영향받은 배치마다 한 번만 집계한다.';
