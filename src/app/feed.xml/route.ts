@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { BLOG_POSTS } from "@/lib/data/blog-posts";
+import { PUBLIC_SITE_URL } from "@/lib/site-url";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.co.kr";
+const BASE = PUBLIC_SITE_URL;
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");

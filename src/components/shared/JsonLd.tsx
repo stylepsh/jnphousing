@@ -4,6 +4,7 @@
  */
 
 import { COMPANY } from "@/lib/company";
+import { PUBLIC_SITE_URL } from "@/lib/site-url";
 
 export function OrganizationJsonLd() {
   const data = {
@@ -12,7 +13,7 @@ export function OrganizationJsonLd() {
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
     description: `${COMPANY.serviceArea} 부동산 관리 전문기업`,
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
+    url: PUBLIC_SITE_URL,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
     address: COMPANY.branches.map((b) => ({
@@ -26,7 +27,6 @@ export function OrganizationJsonLd() {
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
@@ -36,14 +36,14 @@ export function LocalBusinessJsonLd() {
   const data = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com") + "/#business",
+    "@id": PUBLIC_SITE_URL + "/#business",
     name: COMPANY.brand,
     legalName: COMPANY.legalName,
     description: "HUG 대위변제·부실 건물·세입자 분쟁까지 축적된 현장 노하우로 해결하는 위탁임대 전문기업",
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com",
+    url: PUBLIC_SITE_URL,
     telephone: COMPANY.contact.phone,
     email: COMPANY.contact.email,
-    image: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com") + "/og-default.png",
+    image: PUBLIC_SITE_URL + "/og-default.png",
     priceRange: "₩₩",
     address: {
       "@type": "PostalAddress",
@@ -83,7 +83,7 @@ export function LocalBusinessJsonLd() {
 }
 
 export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string }[] }) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+  const base = PUBLIC_SITE_URL;
   const data = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -138,7 +138,7 @@ export function ArticleJsonLd({
   imageUrl?: string;
   authorName?: string;
 }) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+  const base = PUBLIC_SITE_URL;
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -195,7 +195,6 @@ export function PropertyJsonLd({
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );

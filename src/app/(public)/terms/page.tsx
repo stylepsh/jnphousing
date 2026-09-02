@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { COMPANY } from "@/lib/company";
+import { PUBLIC_SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "이용약관",
@@ -21,7 +22,7 @@ export default function TermsPage() {
         <h2 className="text-xl font-bold mt-2 mb-3">제1조 (목적)</h2>
         <p>
           본 약관은 {COMPANY.legalName}(이하 &ldquo;회사&rdquo;)이 운영하는 웹사이트
-          ({process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com"}, 이하 &ldquo;사이트&rdquo;)에서
+          ({PUBLIC_SITE_URL}, 이하 &ldquo;사이트&rdquo;)에서
           제공하는 주택관리·위탁임대관리 관련 서비스(이하 &ldquo;서비스&rdquo;)의 이용 조건을 정합니다.
         </p>
 

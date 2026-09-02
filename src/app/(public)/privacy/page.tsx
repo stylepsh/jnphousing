@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { COMPANY } from "@/lib/company";
+import { PUBLIC_SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
@@ -21,7 +22,7 @@ export default function PrivacyPage() {
         <p>
           {COMPANY.legalName}(이하 &ldquo;회사&rdquo;)은 정보주체의 개인정보를 중요시하며,
           「개인정보 보호법」 및 관계 법령을 준수합니다. 본 방침은 회사가 운영하는
-          웹사이트({process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com"})에서 수집·이용되는
+          웹사이트({PUBLIC_SITE_URL})에서 수집·이용되는
           개인정보의 항목과 그 처리 방법을 안내합니다.
         </p>
 

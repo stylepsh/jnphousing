@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { SERVICE_AREAS } from "@/lib/data/services";
 import { BLOG_POSTS } from "@/lib/data/blog-posts";
 import { PUBLIC_SHOWCASE_PROPERTIES } from "@/lib/data/public-showcase";
+import { PUBLIC_SITE_URL } from "@/lib/site-url";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.co.kr";
+const BASE = PUBLIC_SITE_URL;
 
 const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${BASE}/`,           changeFrequency: "weekly",  priority: 1.0 },

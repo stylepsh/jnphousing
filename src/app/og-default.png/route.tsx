@@ -85,7 +85,7 @@ export async function GET() {
             letterSpacing: "0.05em",
           }}
         >
-          JNP주택관리 · jnphousing.com
+          JNP주택관리 · jnphousing.co.kr
         </div>
       </div>
     ),

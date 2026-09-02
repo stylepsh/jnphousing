@@ -115,7 +115,7 @@ function enrich(payload: Record<string, unknown>): Record<string, string> {
       out[k] = String(v);
     }
   }
-  if (!out.site_url) out.site_url = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jnphousing.com";
+  if (!out.site_url) out.site_url = "https://jnphousing.co.kr";
   return out;
 }
 
