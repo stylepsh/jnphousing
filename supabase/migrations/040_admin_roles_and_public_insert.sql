@@ -5,7 +5,7 @@
 --   2. inquiries 에 `with check (true)` INSERT 정책이 있어 anon 키만 있으면
 --      서버 액션(검증·rate limit)을 우회해 무제한 적재가 가능했다.
 --      공개 문의 저장은 전부 service_role 서버 액션을 통하므로 정책이 필요 없다.
---   3. 009 에서 시드한 팝업 배너의 오픈채팅 URL 이 구 주소로 남아 있다.
+--   3. 팝업 배너의 오픈채팅 URL 을 현재 1:1 상담방으로 통일한다.
 --
 -- 롤백
 --   -- 1. 역할 되돌리기 (readonly 계정이 있으면 먼저 staff 로 바꿀 것)
@@ -17,9 +17,7 @@
 --   -- 2. 공개 insert 정책 복원
 --   create policy "inquiries_public_insert" on public.inquiries
 --     for insert with check (true);
---   -- 3. 배너 URL 복원
---   update public.site_popup_banner set link_url='https://open.kakao.com/o/scZWs5vi'
---     where link_url='https://open.kakao.com/o/s69LUALi';
+--   -- 3. 배너 URL 은 필요 시 관리자 화면에서 변경
 
 -- ---------------------------------------------------------------------------
 -- 1. 역할 3단계: super / staff / readonly
@@ -56,16 +54,14 @@ comment on function public.is_admin_mutable() is
 drop policy if exists "inquiries_public_insert" on public.inquiries;
 
 -- ---------------------------------------------------------------------------
--- 3. 팝업 배너 오픈채팅 URL 을 1:1 상담방으로 교체 (구 주소가 남아있는 행만)
+-- 3. 팝업 배너 오픈채팅 URL 을 현재 1:1 상담방으로 통일
 -- ---------------------------------------------------------------------------
 do $$
 begin
   if to_regclass('public.site_popup_banner') is not null then
     update public.site_popup_banner
-       set link_url = 'https://open.kakao.com/o/s69LUALi', updated_at = now()
-     where link_url in (
-       'https://open.kakao.com/o/scZWs5vi',   -- 최초 그룹 오픈채팅
-       'https://open.kakao.com/o/gtMOCALi'    -- 중간에 쓰던 그룹 오픈채팅
-     );
+       set link_url = 'https://open.kakao.com/o/sy898MLi', updated_at = now()
+     where link_url like 'https://open.kakao.com/%'
+       and link_url <> 'https://open.kakao.com/o/sy898MLi';
   end if;
 end $$;

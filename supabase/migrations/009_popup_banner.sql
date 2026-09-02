@@ -45,7 +45,7 @@ insert into public.site_popup_banner (title, body, link_url, link_label, theme, 
 values (
   '설 연휴 휴무 안내',
   '2/9(월)~2/12(목) 휴무합니다. 긴급 민원은 카카오톡 오픈채팅으로 접수해 주세요.',
-  'https://open.kakao.com/o/s69LUALi',
+  'https://open.kakao.com/o/sy898MLi',
   '카톡 문의하기',
   'holiday',
   false

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { COMPANY } from "@/lib/company";
 
 interface Banner {
   id: string;
@@ -61,6 +62,11 @@ export function PopupBanner() {
   if (!open || !banner) return null;
 
   const style = THEME_STYLE[banner.theme] ?? THEME_STYLE.info;
+  // 기존 DB 배너에 구 오픈채팅 주소가 남아 있어도 공개 화면에서는
+  // 회사 단일 진실 원천의 현재 1:1 상담방으로 연결한다.
+  const publicLinkUrl = banner.link_url?.includes("open.kakao.com")
+    ? COMPANY.contact.kakaoOpenChat
+    : banner.link_url;
 
   function close() {
     setOpen(false);
@@ -92,9 +98,9 @@ export function PopupBanner() {
           {banner.body && (
             <p className="mt-2.5 text-sm text-slate-600 leading-relaxed whitespace-pre-line">{banner.body}</p>
           )}
-          {banner.link_url && banner.link_label && (
+          {publicLinkUrl && banner.link_label && (
             <a
-              href={banner.link_url}
+              href={publicLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-block rounded-lg bg-primary text-white text-sm font-semibold px-5 py-2.5 hover:bg-primary/90 transition-colors"
