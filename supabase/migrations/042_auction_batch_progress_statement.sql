@@ -6,6 +6,10 @@
 --   O(N²) 가 된다. 구문 단위 트리거 + 전이 테이블(new_rows)로 바꾸면
 --   영향받은 배치만 한 번씩 집계한다.
 --
+-- 주의: PostgreSQL 은 전이 테이블과 컬럼 목록(update of survey_status)을 함께 허용하지
+--       않는다(0A000). 그래서 트리거는 전체 UPDATE 에 걸고, 함수 안에서
+--       survey_status 가 실제로 바뀐 행만 골라 같은 동작을 유지한다.
+--
 -- 동작은 030 과 동일하다.
 --   - 배치에 pending 이 하나도 없으면 completed (+ closed_at 최초 1회 기록)
 --   - 일부만 처리됐고 배치가 created/assigned 면 in_progress
@@ -26,10 +30,14 @@ security definer
 set search_path = public
 as $$
 begin
+  -- 전이 테이블은 컬럼 목록(update of ...)과 함께 쓸 수 없어(PG 제약 0A000)
+  -- 트리거를 전체 UPDATE 에 걸고, survey_status 가 실제로 바뀐 행만 여기서 고른다.
   with touched as (
-    select distinct batch_id
-      from new_rows
-     where batch_id is not null
+    select distinct n.batch_id
+      from new_rows n
+      join old_rows o on o.id = n.id
+     where n.batch_id is not null
+       and n.survey_status is distinct from o.survey_status
   ),
   agg as (
     select p.batch_id,
@@ -60,7 +68,7 @@ comment on function public.auction_batch_progress_autoclose_stmt() is
 drop trigger if exists trg_auction_batch_progress on public.auction_property;
 drop trigger if exists trg_auction_batch_progress_stmt on public.auction_property;
 create trigger trg_auction_batch_progress_stmt
-  after update of survey_status on public.auction_property
-  referencing new table as new_rows
+  after update on public.auction_property
+  referencing old table as old_rows new table as new_rows
   for each statement
   execute function public.auction_batch_progress_autoclose_stmt();
