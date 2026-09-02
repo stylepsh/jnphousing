@@ -35,6 +35,73 @@ function revalidateAll() {
   }
 }
 
+/** 마이그레이션 미적용으로 RPC 가 없는 상태인지. PostgREST 는 함수를 못 찾으면 PGRST202. */
+function isMissingFunction(e: { code?: string; message?: string }): boolean {
+  return e.code === "PGRST202" || /Could not find the function|does not exist/i.test(e.message ?? "");
+}
+
+/**
+ * 041 미적용 환경용 폴백 — 예전의 다단계 경로.
+ * 원자성이 없어 동시 처리 시 로그가 어긋날 수 있다. 041 을 적용하면 쓰이지 않는다.
+ */
+async function legacyTransition(
+  supabase: ReturnType<typeof createServiceClient>,
+  ctx: AdminContext,
+  propertyId: string,
+  from: PipelineState,
+  to: PipelineState,
+  action: PipelineAction,
+  opts: {
+    patch?: Record<string, unknown>;
+    detail?: string;
+    metadata?: Record<string, unknown>;
+    inspectionId?: string;
+    inspectionPatch?: Record<string, unknown>;
+  },
+): Promise<{ ok: boolean; from?: PipelineState; to?: PipelineState; error?: string }> {
+  // 답사 소속 검증은 폴백에서도 유지한다(보안 조치라 빠지면 안 된다).
+  if (opts.inspectionId) {
+    const { data: owned } = await supabase
+      .from("auction_inspection")
+      .select("id")
+      .eq("id", opts.inspectionId)
+      .eq("auction_property_id", propertyId)
+      .maybeSingle();
+    if (!owned) return { ok: false, error: "답사 정보가 이 물건에 속하지 않습니다." };
+  }
+
+  const { error: updErr } = await supabase
+    .from("auction_property")
+    .update({
+      pipeline_state: to,
+      pipeline_entered_at: new Date().toISOString(),
+      ...(opts.patch ?? {}),
+    })
+    .eq("id", propertyId)
+    .eq("pipeline_state", from); // 조건부 — 그 사이 바뀌었으면 갱신되지 않는다
+  if (updErr) return { ok: false, error: updErr.message };
+
+  await supabase.from("auction_pipeline_event").insert({
+    auction_property_id: propertyId,
+    from_state: from,
+    to_state: to,
+    action,
+    performed_by_id: ctx.user.id,
+    performed_by: ctx.admin.name,
+    detail: opts.detail ?? null,
+    metadata: opts.metadata ?? null,
+  });
+
+  if (opts.inspectionId && opts.inspectionPatch) {
+    await supabase
+      .from("auction_inspection")
+      .update(opts.inspectionPatch)
+      .eq("id", opts.inspectionId);
+  }
+
+  return { ok: true, from, to };
+}
+
 /**
  * 단일 물건 상태전이 코어.
  *
@@ -90,6 +157,13 @@ async function doTransition(
     if (/inspection_mismatch/.test(rpcErr.message)) {
       console.error("[doTransition] 답사-물건 불일치", { propertyId, inspectionId: opts.inspectionId });
       return { ok: false, error: "답사 정보가 이 물건에 속하지 않습니다." };
+    }
+    // 마이그레이션 041 미적용 환경 — 함수가 아직 없다.
+    // 전이를 실패시키면 업무가 멈추므로 예전 경로로 처리한다.
+    // (트랜잭션 보장이 없으니 041 을 적용하면 자동으로 RPC 경로로 돌아온다.)
+    if (isMissingFunction(rpcErr)) {
+      console.warn("[doTransition] auction_apply_transition 없음 — 마이그레이션 041 미적용. 폴백 경로 사용");
+      return legacyTransition(supabase, ctx, propertyId, from, next.nextState, action, opts);
     }
     console.error("[doTransition]", rpcErr);
     return { ok: false, error: "상태 전이에 실패했습니다." };
