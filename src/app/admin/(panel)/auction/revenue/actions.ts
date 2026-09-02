@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { requireAdmin, requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
@@ -57,14 +58,19 @@ export async function listRevenueProperties(): Promise<RevenueProperty[]> {
     await requireAdmin();
     const supabase = createServiceClient();
 
-    const { data: props, error } = await supabase
-      .from("auction_property")
-      .select(
-        "id, case_number, address, owner_name, tenant_name, monthly_rent, deposit, management_fee_rate, profit_share_rate, lease_start, lease_end, rent_due_day",
-      )
-      .not("monthly_rent", "is", null)
-      .order("lease_end", { ascending: true, nullsFirst: false })
-      .limit(2000);
+    const { rows: props, error } = await fetchAllRows<Omit<
+      RevenueProperty,
+      "fieldTeamCost" | "otherCost" | "receivedTotal" | "paidMonths"
+    >>("listRevenueProperties", (from, to) =>
+      supabase
+        .from("auction_property")
+        .select(
+          "id, case_number, address, owner_name, tenant_name, monthly_rent, deposit, management_fee_rate, profit_share_rate, lease_start, lease_end, rent_due_day",
+        )
+        .not("monthly_rent", "is", null)
+        .order("lease_end", { ascending: true, nullsFirst: false })
+        .range(from, to),
+    );
     if (error) return [];
     const rows = (props ?? []) as Omit<
       RevenueProperty,
@@ -122,13 +128,15 @@ export async function listReceipts(period: string): Promise<ReceiptRow[]> {
     const p = z.string().regex(/^\d{4}-\d{2}$/).safeParse(period);
     if (!p.success) return [];
     const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("auction_rent_receipt")
-      .select("id, auction_property_id, period, due_date, expected, received, received_at, memo")
-      .eq("period", p.data)
-      .limit(2000);
+    const { rows, error } = await fetchAllRows<ReceiptRow>("listReceipts", (from, to) =>
+      supabase
+        .from("auction_rent_receipt")
+        .select("id, auction_property_id, period, due_date, expected, received, received_at, memo")
+        .eq("period", p.data)
+        .range(from, to),
+    );
     if (error) return [];
-    return (data ?? []) as ReceiptRow[];
+    return rows;
   } catch {
     return [];
   }
@@ -149,13 +157,22 @@ export async function generateReceipts(
     const supabase = createServiceClient();
     // 실제 임대 중인 물건만 청구 대상. 퇴거·회수된 물건은 monthly_rent 값이
     // 남아 있어도 pipeline_state 가 Leased 가 아니므로 여기서 걸러진다.
-    const { data: props, error: propErr } = await supabase
-      .from("auction_property")
-      .select("id, monthly_rent, rent_due_day, lease_start, lease_end, pipeline_state")
-      .eq("pipeline_state", "Leased")
-      .not("monthly_rent", "is", null)
-      .gt("monthly_rent", 0)
-      .limit(2000);
+    const { rows: props, error: propErr } = await fetchAllRows<{
+      id: string;
+      monthly_rent: number | null;
+      rent_due_day: number | null;
+      lease_start: string | null;
+      lease_end: string | null;
+      pipeline_state: string | null;
+    }>("generateReceipts.props", (from, to) =>
+      supabase
+        .from("auction_property")
+        .select("id, monthly_rent, rent_due_day, lease_start, lease_end, pipeline_state")
+        .eq("pipeline_state", "Leased")
+        .not("monthly_rent", "is", null)
+        .gt("monthly_rent", 0)
+        .range(from, to),
+    );
     if (propErr) {
       console.error("[generateReceipts] 물건 조회 실패", propErr);
       return { ok: false, error: "물건 목록을 불러오지 못했습니다. 다시 시도해 주세요." };
@@ -186,11 +203,15 @@ export async function generateReceipts(
 
     // 같은 달 중복 청구 방지 — DB 에도 unique(auction_property_id, period) 가 있어
     // 동시 실행 시에도 중복 행이 생기지 않는다(038).
-    const { data: existing, error: exErr } = await supabase
-      .from("auction_rent_receipt")
-      .select("auction_property_id")
-      .eq("period", p.data)
-      .limit(2000);
+    const { rows: existing, error: exErr } = await fetchAllRows<{ auction_property_id: string }>(
+      "generateReceipts.existing",
+      (from, to) =>
+        supabase
+          .from("auction_rent_receipt")
+          .select("auction_property_id")
+          .eq("period", p.data)
+          .range(from, to),
+    );
     if (exErr) {
       console.error("[generateReceipts] 기존 청구 조회 실패", exErr);
       return { ok: false, error: "기존 청구 내역을 확인하지 못했습니다. 다시 시도해 주세요." };
@@ -413,11 +434,17 @@ export async function monthlyTrend(): Promise<
   try {
     await requireAdmin();
     const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("auction_rent_receipt")
-      .select("period, expected, received")
-      .order("period", { ascending: false })
-      .limit(5000);
+    const { rows: data, error } = await fetchAllRows<{
+      period: string;
+      expected: number | null;
+      received: number | null;
+    }>("monthlyTrend", (from, to) =>
+      supabase
+        .from("auction_rent_receipt")
+        .select("period, expected, received")
+        .order("period", { ascending: false })
+        .range(from, to),
+    );
     if (error) return [];
     const m = new Map<
       string,
