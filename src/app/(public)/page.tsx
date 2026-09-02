@@ -22,6 +22,7 @@ import { LocalBusinessJsonLd } from "@/components/shared/JsonLd";
 import { COMPANY } from "@/lib/company";
 import { PUBLIC_REVIEWS } from "@/lib/data/reviews";
 import { OperationsHeroVisual } from "@/components/shared/OperationsHeroVisual";
+import { ConversationShowcase } from "@/components/shared/ConversationShowcase";
 
 export const metadata: Metadata = {
   title: "JNP주택관리 — 위탁임대·건물 운영 전문",
@@ -72,12 +73,6 @@ const TRUST_PROOFS = [
     href: "/reviews",
     linkLabel: "운영사례·후기 보기",
   },
-];
-
-const OPERATING_SCENARIOS = [
-  { label: "공실 대응", before: "문의가 흩어지고 공실 기간을 놓침", after: "현장 점검 → 상품화 → 중개 채널 진행" },
-  { label: "미수금 관리", before: "납부 확인과 연락 기록이 제각각", after: "납부일 확인 → 안내 → 정산 기록" },
-  { label: "민원·시설", before: "누가 무엇을 처리하는지 알기 어려움", after: "접수 → 담당 배정 → 완료 보고" },
 ];
 
 export default function HomePage() {
@@ -185,16 +180,18 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold text-primary">운영사례 · 고객 후기</p>
+              <p className="text-sm font-semibold text-primary">{PUBLIC_REVIEWS.length > 0 ? "운영사례 · 고객 후기" : "상담·운영 대화 예시"}</p>
               <h2 className="mt-3 text-3xl font-bold tracking-[-0.035em] text-[#16233A] sm:text-4xl">
-                꾸며낸 칭찬보다<br className="sm:hidden" /> 처리 흐름을 먼저 보여드립니다.
+                {PUBLIC_REVIEWS.length > 0 ? <>꾸며낸 칭찬보다<br className="sm:hidden" /> 확인된 경험을 보여드립니다.</> : <>상황을 보내면,<br className="sm:hidden" /> 다음 행동으로 답합니다.</>}
               </h2>
               <p className="mt-4 leading-7 text-slate-600">
-                운영사례는 상담 이해를 위한 예시로 표시하고, 고객 후기는 원문과 게재 동의를 확인한 내용만 공개합니다.
+                {PUBLIC_REVIEWS.length > 0
+                  ? "고객 후기는 원문과 게재 동의를 확인한 내용만 공개합니다."
+                  : "건물주와 입주민이 자주 묻는 상황을 대화 형식으로 재구성했습니다. 실제 고객 대화가 아닌 업무 흐름 예시입니다."}
               </p>
             </div>
             <Link href="/reviews" className="inline-flex min-h-11 items-center gap-2 self-start font-semibold text-primary sm:self-auto">
-              운영사례·후기 보기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              {PUBLIC_REVIEWS.length > 0 ? "고객 후기 보기" : "후기 공개 기준 보기"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
 
@@ -214,24 +211,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {OPERATING_SCENARIOS.map((scenario, index) => (
-                <article key={scenario.label} className="group rounded-2xl border border-[#DDE3EC] bg-white p-6 transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-slate-900/5">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">운영 시나리오 예시</span>
-                    <span className="text-xs font-bold text-slate-400">0{index + 1}</span>
-                  </div>
-                  <h3 className="mt-5 text-lg font-bold text-[#16233A]">{scenario.label}</h3>
-                  <p className="mt-4 text-sm leading-6 text-slate-500">{scenario.before}</p>
-                  <div className="my-3 h-px bg-gradient-to-r from-blue-500 to-transparent" />
-                  <p className="text-sm font-semibold leading-6 text-[#253A5B]">{scenario.after}</p>
-                </article>
-              ))}
-              <div className="md:col-span-3 flex flex-col items-start justify-between gap-4 rounded-2xl bg-[#13233F] p-6 text-white sm:flex-row sm:items-center">
-                <div><p className="font-bold">실제 고객 후기는 확인이 끝난 자료만 게시합니다.</p><p className="mt-1 text-sm text-white/65">가명·상세주소 보호와 게재 동의 절차를 지킵니다.</p></div>
-                <Link href="/reviews" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-[#13233F] hover:bg-blue-50">공개 기준 확인 <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
-              </div>
-            </div>
+            <ConversationShowcase />
           )}
         </div>
       </section>
