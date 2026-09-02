@@ -1,7 +1,7 @@
 -- 041: 경매 파이프라인 상태 전이를 단일 트랜잭션 RPC 로 통합
 --
 -- 배경
---   기존 코드는 (1) 현재 상태 read → (2) update → (3) 이벤트 insert → (4) 답사 update
+--   기존 코드는 [1. 현재 상태 read → [2. update → [3. 이벤트 insert → [4. 답사 update
 --   를 네 번의 왕복으로 처리했다. 동시에 두 명이 같은 물건을 처리하면
 --   - 마지막 쓰기가 이기고 (lost update)
 --   - 이벤트 로그의 from_state 가 실제와 어긋나며
@@ -10,8 +10,8 @@
 --   행 잠금(for update)으로 동시 요청은 직렬화되고, 기대 상태와 다르면 전이를 거부한다.
 --
 -- 롤백
---   drop function if exists public.auction_apply_transition(
---     uuid, text, text, text, text, text, text, jsonb, jsonb, uuid, jsonb);
+--   drop function if exists public.auction_apply_transition[
+--     uuid, text, text, text, text, text, text, jsonb, jsonb, uuid, jsonb];
 --   → 애플리케이션 코드도 함께 이전 버전으로 되돌려야 한다(코드가 RPC 를 호출하므로).
 --     RPC 가 없으면 전이 액션이 실패로 응답한다(데이터 손상은 없음).
 
@@ -37,7 +37,7 @@ declare
   v_from text;
   v_exists boolean;
 begin
-  -- 1) 대상 행 잠금 + 현재 상태 확인 (동시 전이 직렬화)
+  -- 1. 대상 행 잠금 + 현재 상태 확인 (동시 전이 직렬화)
   select coalesce(pipeline_state, 'Collected') into v_from
     from public.auction_property
    where id = p_property_id
@@ -47,12 +47,12 @@ begin
     return jsonb_build_object('ok', false, 'error', 'not_found');
   end if;
 
-  -- 2) 조건부 전이 — 클라이언트가 본 상태와 실제가 다르면 거부(경합 감지)
+  -- 2. 조건부 전이 — 클라이언트가 본 상태와 실제가 다르면 거부(경합 감지)
   if p_expected_from is not null and v_from is distinct from p_expected_from then
     return jsonb_build_object('ok', false, 'error', 'state_conflict', 'from', v_from, 'expected', p_expected_from);
   end if;
 
-  -- 3) 상태 + 화이트리스트 컬럼 갱신.
+  -- 3. 상태 + 화이트리스트 컬럼 갱신.
   --    p_patch 에 없는 키는 coalesce 로 기존 값을 유지한다.
   update public.auction_property ap
      set pipeline_state       = p_to,
@@ -71,7 +71,7 @@ begin
          updated_at           = now()
    where ap.id = p_property_id;
 
-  -- 4) 이벤트·감사 로그 (같은 트랜잭션 — 상태만 바뀌고 로그가 빠지는 일이 없다)
+  -- 4. 이벤트·감사 로그 (같은 트랜잭션 — 상태만 바뀌고 로그가 빠지는 일이 없다)
   insert into public.auction_pipeline_event (
     auction_property_id, from_state, to_state, action,
     performed_by_id, performed_by, detail, metadata)
@@ -79,7 +79,7 @@ begin
     p_property_id, v_from, p_to, p_action,
     p_performed_by_id, p_performed_by, p_detail, p_metadata);
 
-  -- 5) 관련 답사 상태 갱신 — 소속 검증 포함.
+  -- 5. 관련 답사 상태 갱신 — 소속 검증 포함.
   --    다른 물건의 답사 id 가 넘어오면 전이 전체를 롤백한다.
   if p_inspection_id is not null then
     select exists (
