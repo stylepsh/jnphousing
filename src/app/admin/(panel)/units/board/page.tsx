@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { PropertyFilter } from "@/components/admin/PropertyFilter";
 

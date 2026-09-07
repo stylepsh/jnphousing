@@ -90,7 +90,7 @@ export function AuctionInspectorPdf({ data }: { data: InspectorPdfData }) {
             </View>
             {u.qrDataUrl && (
               <View style={styles.qrWrap}>
-                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                { }
                 <Image src={u.qrDataUrl} style={styles.qr} />
                 <Text style={styles.qrCaption}>모바일 입력</Text>
               </View>

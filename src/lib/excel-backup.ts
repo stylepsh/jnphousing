@@ -20,7 +20,7 @@ import ExcelJS from "exceljs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { decryptPII } from "@/lib/crypto-pii";
 
-interface SheetSpec<TRow> {
+interface _SheetSpec<TRow> {
   title: string;
   columns: { header: string; key: keyof TRow & string; width?: number }[];
   fetchAll: () => Promise<TRow[]>;

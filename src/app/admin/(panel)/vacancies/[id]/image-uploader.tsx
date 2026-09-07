@@ -12,7 +12,7 @@ const MAX_FILES_PER_UPLOAD = 30;
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
-export function ImageUploader({ vacancyId, currentCount }: { vacancyId: string; currentCount: number }) {
+export function ImageUploader({ vacancyId }: { vacancyId: string; currentCount: number }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [, startTransition] = useTransition();

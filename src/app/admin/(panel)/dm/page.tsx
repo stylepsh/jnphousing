@@ -70,7 +70,6 @@ export default async function DmDashboardPage() {
   const totalCompanyShare = settlements.reduce((s, r) => s + r.company_share, 0);
   const pendingCount = settlements.filter(s => s.payment_status === "pending").length;
 
-  const lbMap = new Map(landlords.map(l => [l.id, l]));
 
   // 비율별 호실 분포
   const ratioStats: Record<string, number> = {};

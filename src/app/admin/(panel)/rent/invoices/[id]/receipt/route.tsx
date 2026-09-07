@@ -9,7 +9,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { requireAdmin } from "@/lib/auth-guard";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ReceiptPdf } from "@/lib/pdf/receipt";
-import { formatKoreanDate } from "@/lib/dates";
+import { } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import type { RentInvoice, RentSchedule, Lease, Tenant, PropertyUnit } from "@/types/lease";
 

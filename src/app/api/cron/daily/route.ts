@@ -17,7 +17,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { buildSchedules } from "@/lib/billing/schedule-builder";
 import { computeOverdue } from "@/lib/billing/overdue-calc";
 import { toIsoDate } from "@/lib/dates";
-import type { RentInvoice, RentSchedule, Lease, InvoiceStatus } from "@/types/lease";
+import type { RentInvoice, RentSchedule, InvoiceStatus } from "@/types/lease";
 
 function authorize(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;

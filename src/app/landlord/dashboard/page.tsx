@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Wallet, Building2, AlertTriangle, CheckCircle2, ArrowRight, FileText, Phone } from "lucide-react";
+import { Wallet, AlertTriangle, CheckCircle2, ArrowRight, FileText, Phone } from "lucide-react";
 import { requireLandlord } from "@/lib/auth-guard";
 import { createServiceClient } from "@/lib/supabase/server";
 import { formatWonSuffix, formatWonMan } from "@/lib/money";

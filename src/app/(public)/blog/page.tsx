@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, Clock, ArrowRight, Tag as TagIcon } from "lucide-react";
+import { BookOpen, Calendar, Clock, Tag as TagIcon } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { BLOG_POSTS, BLOG_CATEGORIES } from "@/lib/data/blog-posts";
 

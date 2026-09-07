@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, LogOut } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getTenantSession } from "@/lib/tenant-session";
 import { LogoutButton } from "./logout-button";

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calculator, TrendingUp, Building2 } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { SimulationCalculator } from "./calculator";
 import { createClient } from "@/lib/supabase/server";
 

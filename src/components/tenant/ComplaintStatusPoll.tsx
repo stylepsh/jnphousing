@@ -18,7 +18,8 @@ interface ComplaintStatusPollProps {
 export function ComplaintStatusPoll({ intervalMs = 8000 }: ComplaintStatusPollProps) {
   const router = useRouter();
   const [active, setActive] = React.useState(true);
-  const [lastRefresh, setLastRefresh] = React.useState(new Date());
+  // 폴링 때마다 화면을 다시 그리기 위한 신호 — 값 자체는 쓰지 않는다
+  const [, setLastRefresh] = React.useState(new Date());
 
   React.useEffect(() => {
     if (!active) return;
@@ -31,7 +32,6 @@ export function ComplaintStatusPoll({ intervalMs = 8000 }: ComplaintStatusPollPr
     return () => clearInterval(id);
   }, [active, intervalMs, router]);
 
-  const minutes = Math.floor((Date.now() - lastRefresh.getTime()) / 60000);
 
   return (
     <div className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">

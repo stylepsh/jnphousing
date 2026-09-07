@@ -386,8 +386,9 @@ async function OwnerGate({ min }: { min: number }) {
           <Users className="w-4 h-4 text-blue-600" /> 임대인별 보기
         </p>
         <p className="text-xs text-muted-foreground">
-          보유 <strong>공실 후보가 많은(운용 안 하는) 임대인</strong>을 발굴합니다. 미답사 보유 건수가 많을수록 위로
-          정렬됩니다. 임대인을 누르면 전 지역에 흩어진 그 임대인의 <strong>모든 물건</strong>으로 들어갑니다.
+          <strong>미답사 물건을 많이 보유한 임대인</strong>부터 위로 정렬됩니다. 임대인을 누르면 전 지역에 흩어진 그
+          임대인의 <strong>모든 물건</strong>으로 들어갑니다. 공실인지 거주중인지는 <strong>현장팀 답사에서</strong>{" "}
+          가려지므로, 여기서는 점유 여부를 따지지 않고 전부 보여줍니다.
           <br />기본은 <strong>1건 이상(수집된 전체)</strong>이며, 아래에서 최소 보유 건수를 직접 올려 좁힐 수 있습니다.
         </p>
         <div className="mt-3 flex items-center gap-1.5">

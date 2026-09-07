@@ -66,7 +66,6 @@ async function getDashboardData() {
   const startIso = start.toISOString().slice(0, 10);
   const endIso = end.toISOString().slice(0, 10);
   const exp60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const todayIso = now.toISOString().slice(0, 10);
 
   const sixMonthsAgo = startOfMonth(subMonths(now, 5));
   const trendStartIso = sixMonthsAgo.toISOString().slice(0, 10);

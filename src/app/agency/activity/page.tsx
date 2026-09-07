@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { } from "@/components/ui/badge";
 import { Activity, Eye, Heart, X, Send, Handshake } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";

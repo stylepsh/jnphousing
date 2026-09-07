@@ -98,7 +98,7 @@ export default async function BuildingsManagedPage() {
       )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-        {(showSeed ? seedRows : properties).map((b, idx) => {
+        {(showSeed ? seedRows : properties).map((b) => {
           const isSeed = '_seedIdx' in b;
           const rowId = isSeed ? `seed-${b._seedIdx}` : b.id;
           const landlord = !isSeed && b.landlord_business_id ? lbMap.get(b.landlord_business_id) : null;

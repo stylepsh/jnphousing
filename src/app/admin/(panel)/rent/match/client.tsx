@@ -5,7 +5,7 @@ import Papa from "papaparse";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, AlertCircle, Download, Banknote } from "lucide-react";
+import { Upload, AlertCircle, Download, Banknote } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 

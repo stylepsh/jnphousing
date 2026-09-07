@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, Building2, MapPin, FileText, Plus, Edit3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Icons } from "@/lib/icons";
-import { VENDOR_CATEGORIES, getCategoryMeta, type VendorCategory } from "@/lib/data/vendor-categories";
+import { VENDOR_CATEGORIES } from "@/lib/data/vendor-categories";
 
 export const metadata: Metadata = { title: "건물 시설관리" };
 export const dynamic = "force-dynamic";

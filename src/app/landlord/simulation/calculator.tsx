@@ -20,7 +20,6 @@ export function SimulationCalculator({ vacantUnits, avgRent, currentMonthlyRent 
 
   const additionalRent = fillCount * rent;
   const newMonthlyTotal = currentMonthlyRent + additionalRent;
-  const commission = Math.round(newMonthlyTotal * commissionPct / 100);
   const netIncrease = additionalRent - Math.round(additionalRent * commissionPct / 100);
   const yearlyNet = netIncrease * 12;
 

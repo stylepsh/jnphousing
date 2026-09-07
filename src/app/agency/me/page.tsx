@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Building2, Phone, Mail, MapPin } from "lucide-react";
+import { UserCircle, Phone, Mail, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "../vacancies/logout-button";
