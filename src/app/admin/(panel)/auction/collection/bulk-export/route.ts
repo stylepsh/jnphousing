@@ -16,14 +16,34 @@ const COLUMNS: { header: string; width: number }[] = [
   { header: "입주일", width: 12 },
   { header: "만기일", width: 12 },
   { header: "사건번호", width: 16 },
+  { header: "답사상태", width: 10 },
 ];
+
+const SURVEY_LABEL: Record<string, string> = {
+  pending: "미답사",
+  vacant: "공실",
+  occupied: "거주중",
+  revisit: "재방문",
+  skip: "제외",
+  rejected: "거부",
+  blocked: "차단",
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { names?: unknown; partial?: unknown; mode?: unknown };
+    const body = (await req.json()) as {
+      names?: unknown;
+      partial?: unknown;
+      mode?: unknown;
+      includeSurveyed?: unknown;
+    };
     const names = Array.isArray(body.names) ? body.names.map(String) : [];
     const mode = body.mode === "address" ? "address" : "name";
-    const res = await bulkNameSearch(names, { partial: body.partial === true, mode });
+    const res = await bulkNameSearch(names, {
+      partial: body.partial === true,
+      mode,
+      includeSurveyed: body.includeSurveyed === true,
+    });
     if (!res.ok || !res.groups) {
       return NextResponse.json({ error: res.error ?? "검색 실패" }, { status: 400 });
     }
@@ -48,6 +68,7 @@ export async function POST(req: NextRequest) {
           r.move_in_date ?? "",
           r.lease_end ?? "",
           r.case_number,
+          SURVEY_LABEL[r.survey_status] ?? r.survey_status,
         ]);
         count++;
       }

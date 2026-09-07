@@ -25,7 +25,8 @@ type SortKey =
   | "monthly_rent"
   | "move_in_date"
   | "lease_end"
-  | "case_number";
+  | "case_number"
+  | "survey_status";
 
 const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "owner_name", label: "소유주" },
@@ -37,7 +38,18 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "move_in_date", label: "입주일" },
   { key: "lease_end", label: "만기일" },
   { key: "case_number", label: "사건번호" },
+  { key: "survey_status", label: "답사상태" },
 ];
+
+const SURVEY_LABEL: Record<string, string> = {
+  pending: "미답사",
+  vacant: "공실",
+  occupied: "거주중",
+  revisit: "재방문",
+  skip: "제외",
+  rejected: "거부",
+  blocked: "차단",
+};
 
 const FIELD_LABEL: Record<string, string> = { owner: "소유주", tenant: "임차인", address: "주소" };
 const FIELD_STYLE: Record<string, string> = {
@@ -50,6 +62,7 @@ function cell(r: BulkSearchRow, key: SortKey): string {
   const v = r[key];
   if (v === null || v === "") return "—";
   if (key === "deposit" || key === "monthly_rent") return formatWonMan(Number(v));
+  if (key === "survey_status") return SURVEY_LABEL[String(v)] ?? String(v);
   return String(v);
 }
 
@@ -69,6 +82,7 @@ export function BulkNameSearch() {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"name" | "address">("name");
   const [partial, setPartial] = useState(false);
+  const [includeSurveyed, setIncludeSurveyed] = useState(false);
   const [pending, startTransition] = useTransition();
   const [sort, setSort] = useState<{ key: SortKey | null; asc: boolean }>({ key: null, asc: true });
   const [result, setResult] = useState<{
@@ -89,12 +103,15 @@ export function BulkNameSearch() {
       total: all.length,
       rent: all.reduce((s, r) => s + (r.monthly_rent ?? 0), 0),
       deposit: all.reduce((s, r) => s + (r.deposit ?? 0), 0),
-      items: all.map((r) => ({
-        id: r.id,
-        owner_name: r.owner_name,
-        address: r.address,
-        case_number: r.case_number,
-      })),
+      // 답사지 발급 대상은 미답사뿐 — 이미 답사한 건 바구니에 담지 않는다.
+      items: all
+        .filter((r) => r.survey_status === "pending")
+        .map((r) => ({
+          id: r.id,
+          owner_name: r.owner_name,
+          address: r.address,
+          case_number: r.case_number,
+        })),
     };
   }, [result]);
 
@@ -104,14 +121,19 @@ export function BulkNameSearch() {
       return;
     }
     startTransition(async () => {
-      const res = await bulkNameSearch(names, { partial, mode });
+      const res = await bulkNameSearch(names, { partial, mode, includeSurveyed });
       if (!res.ok || !res.groups) {
         toast.error(res.error ?? "검색 실패");
         return;
       }
       setResult({ groups: res.groups, notFound: res.notFound ?? [] });
       const found = res.groups.reduce((s, g) => s + g.rows.length, 0);
-      if (found === 0) toast.error("명단에서 찾은 미답사 물건이 없습니다");
+      if (found === 0)
+        toast.error(
+          includeSurveyed
+            ? "수집 이력에 없습니다 (한 번도 습득한 적 없는 물건)"
+            : "미답사 물건이 없습니다 — 이미 답사했을 수 있습니다(‘이미 답사한 것도’ 체크)",
+        );
       else
         toast.success(
           `${res.groups.length}${mode === "address" ? "곳" : "명"} · ${found}건 찾았습니다`,
@@ -144,7 +166,7 @@ export function BulkNameSearch() {
     const res = await fetch("/admin/auction/collection/bulk-export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ names, partial, mode }),
+      body: JSON.stringify({ names, partial, mode, includeSurveyed }),
     });
     if (!res.ok) {
       toast.error("엑셀 생성 실패");
@@ -238,6 +260,15 @@ export function BulkNameSearch() {
             부분 일치 포함
           </label>
         )}
+        <label className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={includeSurveyed}
+            onChange={(e) => setIncludeSurveyed(e.target.checked)}
+            className="w-4 h-4"
+          />
+          이미 답사한 것도 (습득 이력 전체)
+        </label>
         {text && (
           <button
             onClick={() => {
@@ -272,10 +303,10 @@ export function BulkNameSearch() {
             <span className="flex-1" />
             <button
               onClick={addAll}
-              disabled={summary.total === 0}
+              disabled={summary.items.length === 0}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-emerald-600 text-white font-bold disabled:opacity-40"
             >
-              <ListPlus className="w-3.5 h-3.5" /> 전부 바구니에 담기
+              <ListPlus className="w-3.5 h-3.5" /> 미답사 {summary.items.length}건 바구니에 담기
             </button>
             <button
               onClick={copyTsv}

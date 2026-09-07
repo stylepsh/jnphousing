@@ -609,7 +609,9 @@ export interface BulkSearchRow {
   monthly_rent: number | null;
   move_in_date: string | null;
   lease_end: string | null;
-  /** 이 행이 소유주 칸에서 걸렸는지 임차인 칸에서 걸렸는지 */
+  /** pending(미답사) / vacant(공실) / occupied(거주중) / rejected(거부) / blocked(차단) 등 */
+  survey_status: string;
+  /** 이 행이 소유주 칸에서 걸렸는지, 임차인 칸인지, 주소로 걸렸는지 */
   field: MatchField;
 }
 
@@ -620,7 +622,7 @@ export interface BulkSearchGroup {
 }
 
 const BULK_SELECT =
-  "id, case_number, address, owner_name, tenant_name, category, deposit, monthly_rent, move_in_date, lease_end";
+  "id, case_number, address, owner_name, tenant_name, category, deposit, monthly_rent, move_in_date, lease_end, survey_status";
 
 interface PendingRow {
   id: string;
@@ -633,6 +635,7 @@ interface PendingRow {
   monthly_rent: number | null;
   move_in_date: string | null;
   lease_end: string | null;
+  survey_status: string | null;
 }
 
 /** 차단 임대인 제외 — 매칭 전에 후보에서 빼 둔다. */
@@ -668,6 +671,7 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
     monthly_rent: r.monthly_rent,
     move_in_date: r.move_in_date,
     lease_end: r.lease_end,
+    survey_status: r.survey_status ?? "pending",
     field,
   };
 }
@@ -682,7 +686,7 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
  */
 export async function bulkNameSearch(
   names: string[],
-  opts: { partial?: boolean; mode?: "name" | "address" } = {},
+  opts: { partial?: boolean; mode?: "name" | "address"; includeSurveyed?: boolean } = {},
   limit = 10000,
 ): Promise<{
   ok: boolean;
@@ -703,15 +707,15 @@ export async function bulkNameSearch(
       return { ok: false, error: `검색할 ${address ? "주소" : "이름"}가 없습니다 (최대 300개)` };
     const wanted = Array.from(new Set(parsed.data));
 
+    // "우리가 습득한 적 있나" 를 물을 땐 답사·거부·차단까지 다 봐야 한다.
+    // 답사지 발급용으로 쓸 땐 미답사만 본다(기본).
+    const all = opts.includeSurveyed === true;
     const supabase = createServiceClient();
+    let query = supabase.from("auction_property").select(BULK_SELECT);
+    if (!all) query = query.eq("survey_status", "pending");
     const [pending, blockedKeys] = await Promise.all([
-      supabase
-        .from("auction_property")
-        .select(BULK_SELECT)
-        .eq("survey_status", "pending")
-        .order("address", { ascending: true })
-        .limit(limit),
-      fetchBlockedOwnerKeys(supabase),
+      query.order("address", { ascending: true }).limit(limit),
+      all ? Promise.resolve(new Set<string>()) : fetchBlockedOwnerKeys(supabase),
     ]);
     if (pending.error) return { ok: false, error: pending.error.message };
 
@@ -722,7 +726,10 @@ export async function bulkNameSearch(
 
     const groups: BulkSearchGroup[] = matched.byName.map((g) => ({
       name: g.name,
-      rows: dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field))),
+      // 이력 조회(all)에선 접지 않는다 — 같은 주소가 미답사·공실로 여러 번 잡히는 게 곧 이력이다.
+      rows: all
+        ? g.matches.map((m) => toBulkRow(m.row, m.field))
+        : dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field))),
     }));
 
     // 못 찾은 입력의 추천 후보 — 이름 모드면 소유주·임차인 명단, 주소 모드면 주소 명단에서 뽑는다.
@@ -752,7 +759,7 @@ export async function cartItemsForOwnerNames(
   items?: { id: string; owner_name: string; address: string; case_number: string }[];
   error?: string;
 }> {
-  const res = await bulkNameSearch(names, opts);
+  const res = await bulkNameSearch(names, { ...opts, includeSurveyed: false });
   if (!res.ok || !res.groups) return { ok: false, error: res.error };
   const seen = new Set<string>();
   const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];
