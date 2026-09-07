@@ -8,11 +8,11 @@
  * 그래서 비교는 전부 normalizeOwnerName 키로 하고, 검색 대상은 소유주·임차인 두 칸이다.
  */
 
-import { normalizeOwnerName } from "./court-auction";
+import { normalizeAuctionAddress, normalizeOwnerName } from "./court-auction";
 import { parseOwnerNames } from "./search";
 
 /** 검색 대상 칸 */
-export type MatchField = "owner" | "tenant";
+export type MatchField = "owner" | "tenant" | "address";
 
 export interface NameMatchable {
   owner_name: string | null;
@@ -117,4 +117,81 @@ export function suggestSimilar(name: string, pool: string[], max = 3): string[] 
     }
   }
   return out;
+}
+
+/**
+ * 붙여넣은 주소 명단 → 검색할 주소 배열.
+ * 주소에는 쉼표·괄호가 그대로 들어가므로(",", "(주)" 가 아니라 "222-2, 스위트홈") 줄바꿈으로만 나눈다.
+ * 앞 번호("1.", "- ")만 떼고 나머지는 손대지 않는다.
+ */
+export function parseSearchAddresses(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of (text ?? "").split(/\r?\n/)) {
+    const s = raw
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .replace(/^[-•*]\s*/, "")
+      .replace(/^\d+\s*[.)]\s*/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!s) continue;
+    const key = normalizeAuctionAddress(s);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out;
+}
+
+/**
+ * 주소 비교 키 — 공백·기호를 지운 뒤(normalizeAuctionAddress) 표기 흔들림을 더 흡수한다.
+ *   "인천광역시" = "인천",  "제204호" = "204호"
+ * ponytail: 지번은 기호를 지우므로 "222-2" 와 "22-22" 가 같은 키가 된다.
+ * 답사 명단 규모에선 부딪힐 일이 없지만, 오탐이 보이면 지번을 따로 파싱해야 한다.
+ */
+function addressKey(address: string | null | undefined): string {
+  return normalizeAuctionAddress(address)
+    .replace(/광역시|특별자치시|특별자치도|특별시/g, "")
+    .replace(/제(?=\d)/g, "");
+}
+
+/**
+ * 못 찾은 주소의 "혹시 이건가?" 후보 — 호수를 뗀 나머지(같은 건물)가 겹치는 주소를 준다.
+ * 실제로는 호수 오타이거나, 같은 건물의 다른 호실만 수집돼 있는 경우가 대부분이다.
+ */
+export function suggestSimilarAddresses(address: string, pool: string[], max = 3): string[] {
+  const building = addressKey(address).replace(/\d+호$/, "");
+  if (building.length < 4) return [];
+  const out: string[] = [];
+  for (const cand of pool) {
+    if (addressKey(cand).startsWith(building)) {
+      out.push(cand);
+      if (out.length >= max) break;
+    }
+  }
+  return out;
+}
+
+/**
+ * 주소로 맞춰본다. 이름과 달리 표기가 길고 흔들려서(시/도 생략, "제201호" vs "201호")
+ * 완전 일치를 기대할 수 없다 — 공백·기호를 지운 키가 한쪽이 다른 쪽을 품으면 같은 물건으로 본다.
+ */
+export function matchAddressRows<T extends { address: string | null }>(
+  addresses: string[],
+  rows: T[],
+): MatchResult<T> {
+  const keyed = rows.map((row) => ({ row, key: addressKey(row.address) }));
+  const byName: MatchResult<T>["byName"] = [];
+  const notFound: string[] = [];
+  for (const addr of addresses) {
+    const needle = addressKey(addr);
+    if (!needle) continue;
+    const matches = keyed
+      .filter((k) => k.key && (k.key.includes(needle) || needle.includes(k.key)))
+      .map((k) => ({ row: k.row, field: "address" as MatchField }));
+    if (matches.length === 0) notFound.push(addr);
+    else byName.push({ name: addr, matches });
+  }
+  return { byName, notFound };
 }

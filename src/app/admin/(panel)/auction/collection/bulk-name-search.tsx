@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Users2, ListPlus, AlertTriangle, Copy, FileSpreadsheet, ArrowUpDown } from "lucide-react";
-import { parseSearchNames } from "@/lib/auction/bulk-name-match";
+import { parseSearchNames, parseSearchAddresses } from "@/lib/auction/bulk-name-match";
 import { mergeCart } from "@/lib/auction/selection-cart";
 import { useCart } from "@/lib/auction/use-cart";
 import { displayOwnerName } from "@/lib/auction/court-auction";
@@ -39,6 +39,13 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "case_number", label: "사건번호" },
 ];
 
+const FIELD_LABEL: Record<string, string> = { owner: "소유주", tenant: "임차인", address: "주소" };
+const FIELD_STYLE: Record<string, string> = {
+  owner: "bg-slate-200 text-slate-700",
+  tenant: "bg-violet-100 text-violet-800",
+  address: "bg-sky-100 text-sky-800",
+};
+
 function cell(r: BulkSearchRow, key: SortKey): string {
   const v = r[key];
   if (v === null || v === "") return "—";
@@ -60,6 +67,7 @@ function sortRows(rows: BulkSearchRow[], key: SortKey | null, asc: boolean): Bul
 export function BulkNameSearch() {
   const { setCart } = useCart();
   const [text, setText] = useState("");
+  const [mode, setMode] = useState<"name" | "address">("name");
   const [partial, setPartial] = useState(false);
   const [pending, startTransition] = useTransition();
   const [sort, setSort] = useState<{ key: SortKey | null; asc: boolean }>({ key: null, asc: true });
@@ -68,7 +76,10 @@ export function BulkNameSearch() {
     notFound: { name: string; similar: string[] }[];
   } | null>(null);
 
-  const names = useMemo(() => parseSearchNames(text), [text]);
+  const names = useMemo(
+    () => (mode === "address" ? parseSearchAddresses(text) : parseSearchNames(text)),
+    [text, mode],
+  );
 
   const summary = useMemo(() => {
     const rows = (result?.groups ?? []).flatMap((g) => g.rows);
@@ -89,11 +100,11 @@ export function BulkNameSearch() {
 
   function run() {
     if (names.length === 0) {
-      toast.error("검색할 이름이 없습니다. 명단을 붙여넣어 주세요.");
+      toast.error(`검색할 ${mode === "address" ? "주소" : "이름"}가 없습니다. 명단을 붙여넣어 주세요.`);
       return;
     }
     startTransition(async () => {
-      const res = await bulkNameSearch(names, { partial });
+      const res = await bulkNameSearch(names, { partial, mode });
       if (!res.ok || !res.groups) {
         toast.error(res.error ?? "검색 실패");
         return;
@@ -101,7 +112,10 @@ export function BulkNameSearch() {
       setResult({ groups: res.groups, notFound: res.notFound ?? [] });
       const found = res.groups.reduce((s, g) => s + g.rows.length, 0);
       if (found === 0) toast.error("명단에서 찾은 미답사 물건이 없습니다");
-      else toast.success(`${res.groups.length}명 · ${found}건 찾았습니다`);
+      else
+        toast.success(
+          `${res.groups.length}${mode === "address" ? "곳" : "명"} · ${found}건 찾았습니다`,
+        );
     });
   }
 
@@ -112,12 +126,12 @@ export function BulkNameSearch() {
   }
 
   function copyTsv() {
-    const head = ["검색이름", "매칭칸", ...COLUMNS.map((c) => c.label)].join("\t");
+    const head = [mode === "address" ? "검색주소" : "검색이름", "매칭칸", ...COLUMNS.map((c) => c.label)].join("\t");
     const body = (result?.groups ?? []).flatMap((g) =>
       g.rows.map((r) =>
         [
           g.name,
-          r.field === "owner" ? "소유주" : "임차인",
+          FIELD_LABEL[r.field],
           ...COLUMNS.map((c) => cell(r, c.key)),
         ].join("\t"),
       ),
@@ -130,7 +144,7 @@ export function BulkNameSearch() {
     const res = await fetch("/admin/auction/collection/bulk-export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ names, partial }),
+      body: JSON.stringify({ names, partial, mode }),
     });
     if (!res.ok) {
       toast.error("엑셀 생성 실패");
@@ -140,7 +154,7 @@ export function BulkNameSearch() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `이름일괄검색_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `${mode === "address" ? "주소" : "이름"}일괄검색_${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -151,19 +165,57 @@ export function BulkNameSearch() {
 
   return (
     <div className="rounded-xl border bg-card p-4">
-      <p className="text-sm font-bold flex items-center gap-1.5">
-        <Users2 className="w-4 h-4 text-blue-600" /> 이름 일괄 검색
-      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-sm font-bold flex items-center gap-1.5">
+          <Users2 className="w-4 h-4 text-blue-600" /> 일괄 검색
+        </p>
+        <div className="inline-flex rounded-lg border overflow-hidden text-xs font-bold">
+          {(
+            [
+              { v: "name", l: "이름으로" },
+              { v: "address", l: "주소로" },
+            ] as const
+          ).map((m) => (
+            <button
+              key={m.v}
+              onClick={() => {
+                setMode(m.v);
+                setResult(null);
+              }}
+              className={`px-2.5 py-1.5 ${
+                mode === m.v ? "bg-blue-600 text-white" : "bg-background hover:bg-muted"
+              }`}
+            >
+              {m.l}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="text-xs text-muted-foreground mt-1">
-        이름을 <strong>줄바꿈이나 쉼표로 여러 개</strong> 붙여넣으면 미답사 물건을 한 번에 찾습니다.
-        소유주·임차인 칸을 모두 보고, 공백과 ㈜·(주) 표기는 무시합니다. 번호(1.)·&quot;외 2명&quot;
-        꼬리표는 떼고, <strong>괄호 안 이름도 따로 찾습니다</strong>.
+        {mode === "name" ? (
+          <>
+            이름을 <strong>줄바꿈이나 쉼표로 여러 개</strong> 붙여넣으면 미답사 물건을 한 번에
+            찾습니다. 소유주·임차인 칸을 모두 보고, 공백과 ㈜·(주) 표기는 무시합니다.
+            번호(1.)·&quot;외 2명&quot; 꼬리표는 떼고, <strong>괄호 안 이름도 따로 찾습니다</strong>.
+          </>
+        ) : (
+          <>
+            주소를 <strong>한 줄에 하나씩</strong> 붙여넣으면 해당 물건을 찾습니다.
+            시/도·&quot;제&quot; 표기와 띄어쓰기 차이는 무시합니다(&quot;부평동 222-2 스위트홈
+            204호&quot; = &quot;인천광역시 부평구 부평동 222-2 스위트홈 제204호&quot;).{" "}
+            <strong>건물까지만 치면 그 건물 물건이 전부</strong> 나옵니다.
+          </>
+        )}
       </p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={4}
-        placeholder={"김철수\n박영희, 이민수\n최효준(이승연)\n1. ㈜파크앤시티"}
+        placeholder={
+          mode === "name"
+            ? "김철수\n박영희, 이민수\n최효준(이승연)\n1. ㈜파크앤시티"
+            : "인천광역시 부평구 부평동 222-2 스위트홈 204호\n인천광역시 부평구 부평동 222-2 스위트홈 802호\n인천광역시 부평구 부평동 12-13 한강캐슬 201호"
+        }
         className="mt-2 w-full rounded-lg border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -173,17 +225,19 @@ export function BulkNameSearch() {
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-black disabled:opacity-40 min-h-11"
         >
           <ListPlus className="w-4 h-4" />
-          {pending ? "찾는 중…" : `이름 ${names.length}개 검색`}
+          {pending ? "찾는 중…" : `${mode === "address" ? "주소" : "이름"} ${names.length}개 검색`}
         </button>
-        <label className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground cursor-pointer">
-          <input
-            type="checkbox"
-            checked={partial}
-            onChange={(e) => setPartial(e.target.checked)}
-            className="w-4 h-4"
-          />
-          부분 일치 포함
-        </label>
+        {mode === "name" && (
+          <label className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={partial}
+              onChange={(e) => setPartial(e.target.checked)}
+              className="w-4 h-4"
+            />
+            부분 일치 포함
+          </label>
+        )}
         {text && (
           <button
             onClick={() => {
@@ -197,7 +251,8 @@ export function BulkNameSearch() {
         )}
         {names.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            인식된 이름 {names.length}개: {names.slice(0, 5).join(" · ")}
+            인식된 {mode === "address" ? "주소" : "이름"} {names.length}개:{" "}
+            {names.slice(0, 5).join(" · ")}
             {names.length > 5 ? ` 외 ${names.length - 5}개` : ""}
           </span>
         )}
@@ -208,7 +263,8 @@ export function BulkNameSearch() {
           {/* 요약 + 결과 활용 */}
           <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/40 p-2">
             <span className="font-black text-emerald-800">
-              임대인 {result.groups.length}명 · {summary.total.toLocaleString()}건
+              {mode === "address" ? "주소" : "임대인"} {result.groups.length}
+              {mode === "address" ? "곳" : "명"} · {summary.total.toLocaleString()}건
             </span>
             <span className="text-muted-foreground">
               월세 합계 {formatWonMan(summary.rent)} · 보증금 합계 {formatWonMan(summary.deposit)}
@@ -264,7 +320,7 @@ export function BulkNameSearch() {
                 </thead>
                 <tbody>
                   {result.groups.map((g) => (
-                    <GroupRows key={g.name} group={g} sort={sort} />
+                    <GroupRows key={g.name} group={{ ...g, field: g.rows[0]?.field }} sort={sort} />
                   ))}
                 </tbody>
               </table>
@@ -303,7 +359,7 @@ function GroupRows({
   group,
   sort,
 }: {
-  group: BulkSearchGroup;
+  group: BulkSearchGroup & { field?: string };
   sort: { key: SortKey | null; asc: boolean };
 }) {
   const rows = sortRows(group.rows, sort.key, sort.asc);
@@ -311,20 +367,15 @@ function GroupRows({
     <>
       <tr className="bg-blue-50/70 border-t">
         <td colSpan={COLUMNS.length + 1} className="px-2 py-1 font-black text-blue-900">
-          {displayOwnerName(group.name)} ({group.rows.length}건)
+          {group.field === "address" ? group.name : displayOwnerName(group.name)} (
+          {group.rows.length}건)
         </td>
       </tr>
       {rows.map((r) => (
         <tr key={`${group.name}:${r.id}`} className="border-t hover:bg-muted/40">
           <td className="px-2 py-1.5">
-            <span
-              className={`px-1.5 py-0.5 rounded font-bold ${
-                r.field === "owner"
-                  ? "bg-slate-200 text-slate-700"
-                  : "bg-violet-100 text-violet-800"
-              }`}
-            >
-              {r.field === "owner" ? "소유주" : "임차인"}
+            <span className={`px-1.5 py-0.5 rounded font-bold ${FIELD_STYLE[r.field]}`}>
+              {FIELD_LABEL[r.field]}
             </span>
           </td>
           {COLUMNS.map((c) => (

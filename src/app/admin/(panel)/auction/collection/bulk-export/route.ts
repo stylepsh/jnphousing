@@ -5,7 +5,7 @@ import { AppError } from "@/lib/errors";
 import { bulkNameSearch } from "../actions";
 
 const COLUMNS: { header: string; width: number }[] = [
-  { header: "검색이름", width: 12 },
+  { header: "검색어", width: 16 },
   { header: "매칭칸", width: 8 },
   { header: "소유주", width: 16 },
   { header: "임차인", width: 14 },
@@ -20,9 +20,10 @@ const COLUMNS: { header: string; width: number }[] = [
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { names?: unknown; partial?: unknown };
+    const body = (await req.json()) as { names?: unknown; partial?: unknown; mode?: unknown };
     const names = Array.isArray(body.names) ? body.names.map(String) : [];
-    const res = await bulkNameSearch(names, { partial: body.partial === true });
+    const mode = body.mode === "address" ? "address" : "name";
+    const res = await bulkNameSearch(names, { partial: body.partial === true, mode });
     if (!res.ok || !res.groups) {
       return NextResponse.json({ error: res.error ?? "검색 실패" }, { status: 400 });
     }
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       for (const r of g.rows) {
         ws.addRow([
           g.name,
-          r.field === "owner" ? "소유주" : "임차인",
+          r.field === "owner" ? "소유주" : r.field === "tenant" ? "임차인" : "주소",
           r.owner_name,
           r.tenant_name,
           r.address,
@@ -53,12 +54,12 @@ export async function POST(req: NextRequest) {
     }
     if (res.notFound?.length) {
       ws.addRow([]);
-      ws.addRow(["못 찾은 이름", ...res.notFound.map((n) => n.name)]);
+      ws.addRow([mode === "address" ? "못 찾은 주소" : "못 찾은 이름", ...res.notFound.map((n) => n.name)]);
     }
 
     const buffer = Buffer.from(await wb.xlsx.writeBuffer());
     const today = new Date().toISOString().slice(0, 10);
-    const filename = `이름일괄검색_${today}_${count}건.xlsx`;
+    const filename = `${mode === "address" ? "주소" : "이름"}일괄검색_${today}_${count}건.xlsx`;
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { parseSearchNames, matchRows, suggestSimilar } from "./bulk-name-match";
+import {
+  parseSearchNames,
+  parseSearchAddresses,
+  matchRows,
+  matchAddressRows,
+  suggestSimilar,
+} from "./bulk-name-match";
 
 describe("parseSearchNames", () => {
   it("괄호 안팎 이름을 둘 다 꺼낸다", () => {
@@ -51,5 +57,30 @@ describe("suggestSimilar", () => {
   });
   it("꼬리표가 붙은 이름도 추천한다", () => {
     expect(suggestSimilar("김철수", ["김철수 외 2명"])).toEqual(["김철수 외 2명"]);
+  });
+});
+
+describe("주소 모드", () => {
+  const addrRows = [
+    { id: "a", address: "인천광역시 부평구 부평동 222-2 스위트홈 제204호" },
+    { id: "b", address: "인천광역시 부평구 부평동 222-2 스위트홈 제802호" },
+    { id: "c", address: "인천광역시 부평구 부평동 12-13 한강캐슬 201호" },
+  ];
+  it("줄바꿈으로만 나누고 앞 번호를 뗀다 (주소 속 쉼표는 살린다)", () => {
+    expect(parseSearchAddresses("1. 부평동 222-2, 스위트홈 204호\n부평동 12-13 한강캐슬 201호")).toEqual([
+      "부평동 222-2, 스위트홈 204호",
+      "부평동 12-13 한강캐슬 201호",
+    ]);
+  });
+  it("시/도·'제' 표기가 달라도 같은 물건으로 잡는다", () => {
+    const r = matchAddressRows(["부평동 222-2 스위트홈 204호"], addrRows);
+    expect(r.byName[0].matches.map((m) => m.row.id)).toEqual(["a"]);
+    expect(r.byName[0].matches[0].field).toBe("address");
+  });
+  it("호수가 다르면 안 잡는다", () => {
+    expect(matchAddressRows(["부평동 222-2 스위트홈 999호"], addrRows).notFound).toHaveLength(1);
+  });
+  it("건물까지만 치면 그 건물 물건을 전부 준다", () => {
+    expect(matchAddressRows(["부평동 222-2 스위트홈"], addrRows).byName[0].matches).toHaveLength(2);
   });
 });

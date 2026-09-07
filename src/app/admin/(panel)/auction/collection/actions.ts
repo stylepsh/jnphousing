@@ -7,7 +7,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   matchRows,
+  matchAddressRows,
   suggestSimilar,
+  suggestSimilarAddresses,
   type MatchField,
 } from "@/lib/auction/bulk-name-match";
 import {
@@ -671,16 +673,16 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
 }
 
 /**
- * 이름 일괄 검색 — 명단을 통째로 받아 이름별로 미답사 물건을 돌려준다.
+ * 일괄 검색 — 명단을 통째로 받아 입력 한 줄마다 미답사 물건을 돌려준다.
  *
- * 매칭 규칙은 bulk-name-match 그대로: 공백·법인표기를 지운 키로 비교하고 소유주·임차인
- * 두 칸을 다 본다. 기본은 완전 일치, partial 이면 포함까지.
- * 이름마다 쿼리를 날리면 30개면 30번 왕복이라, 미답사 전체를 한 번 읽고 메모리에서 맞춘다.
+ * mode="name"    소유주·임차인 이름. 공백·법인표기를 지운 키로 비교, 기본 완전 일치(partial 이면 포함).
+ * mode="address" 주소. 표기가 길고 흔들려 완전 일치가 무의미하므로 항상 포함으로 본다.
+ * 입력마다 쿼리를 날리면 30개면 30번 왕복이라, 미답사 전체를 한 번 읽고 메모리에서 맞춘다.
  * ponytail: 미답사가 만 건을 넘기면 페이지네이션이 필요하다.
  */
 export async function bulkNameSearch(
   names: string[],
-  opts: { partial?: boolean } = {},
+  opts: { partial?: boolean; mode?: "name" | "address" } = {},
   limit = 10000,
 ): Promise<{
   ok: boolean;
@@ -691,12 +693,14 @@ export async function bulkNameSearch(
 }> {
   try {
     await requireAdmin();
+    const address = opts.mode === "address";
     const parsed = z
-      .array(z.string().trim().min(1).max(120))
+      .array(z.string().trim().min(1).max(address ? 200 : 120))
       .min(1)
       .max(300)
       .safeParse(names.map((n) => n.trim()).filter(Boolean));
-    if (!parsed.success) return { ok: false, error: "검색할 이름이 없습니다 (최대 300개)" };
+    if (!parsed.success)
+      return { ok: false, error: `검색할 ${address ? "주소" : "이름"}가 없습니다 (최대 300개)` };
     const wanted = Array.from(new Set(parsed.data));
 
     const supabase = createServiceClient();
@@ -712,20 +716,24 @@ export async function bulkNameSearch(
     if (pending.error) return { ok: false, error: pending.error.message };
 
     const alive = aliveRows((pending.data ?? []) as PendingRow[], blockedKeys);
-    const matched = matchRows(wanted, alive, opts.partial === true);
+    const matched = address
+      ? matchAddressRows(wanted, alive)
+      : matchRows(wanted, alive, opts.partial === true);
 
     const groups: BulkSearchGroup[] = matched.byName.map((g) => ({
       name: g.name,
       rows: dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field))),
     }));
 
-    // 오타 추천 후보는 미답사 명단의 소유주·임차인 이름 전체에서 뽑는다.
-    const pool = Array.from(
-      new Set(alive.flatMap((r) => [r.owner_name ?? "", r.tenant_name ?? ""]).filter(Boolean)),
-    );
+    // 못 찾은 입력의 추천 후보 — 이름 모드면 소유주·임차인 명단, 주소 모드면 주소 명단에서 뽑는다.
+    const pool = address
+      ? Array.from(new Set(alive.map((r) => r.address ?? "").filter(Boolean)))
+      : Array.from(
+          new Set(alive.flatMap((r) => [r.owner_name ?? "", r.tenant_name ?? ""]).filter(Boolean)),
+        );
     const notFound = matched.notFound.map((name) => ({
       name,
-      similar: suggestSimilar(name, pool),
+      similar: address ? suggestSimilarAddresses(name, pool) : suggestSimilar(name, pool),
     }));
 
     return { ok: true, groups, notFound, scanned: alive.length };
