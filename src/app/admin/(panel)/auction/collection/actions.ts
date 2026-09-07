@@ -6,6 +6,11 @@ import { AppError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
+  matchRows,
+  suggestSimilar,
+  type MatchField,
+} from "@/lib/auction/bulk-name-match";
+import {
   parseAuctionPasteText,
   isTargetAuctionCase,
   classifyAuctionCase,
@@ -580,49 +585,108 @@ export async function idsForRegions(
   }
 }
 
-/**
- * 임대인 한 명의 미답사 물건을 취합 바구니에 담을 형태로 돌려준다.
- * (임대인 명단에서 카드를 눌러 들어가지 않고 바로 담기 위한 경로)
- *
- * 일괄 검색의 특수 케이스 — 매칭·제외 규칙이 갈라지지 않게 한 곳으로 모은다.
- */
+/** 임대인 한 명을 바로 담기 — 일괄 검색의 1건짜리 특수 케이스. */
 export async function cartItemsForOwner(
   ownerName: string,
-  limit = 1000,
 ): Promise<{
   ok: boolean;
   items?: { id: string; owner_name: string; address: string; case_number: string }[];
   error?: string;
 }> {
-  const res = await cartItemsForOwnerNames([ownerName], limit);
-  return res.ok ? { ok: true, items: res.items } : { ok: false, error: res.error };
+  return cartItemsForOwnerNames([ownerName]);
 }
 
-export interface BulkNameHit {
+export interface BulkSearchRow {
+  id: string;
+  case_number: string;
+  address: string;
+  owner_name: string;
+  tenant_name: string;
+  category: string;
+  deposit: number | null;
+  monthly_rent: number | null;
+  move_in_date: string | null;
+  lease_end: string | null;
+  /** 이 행이 소유주 칸에서 걸렸는지 임차인 칸에서 걸렸는지 */
+  field: MatchField;
+}
+
+export interface BulkSearchGroup {
   /** 붙여넣은 원본 이름 */
   name: string;
-  /** 실제로 걸린 소유자명들 — 2개 이상이면 동명이인·공동소유일 수 있다 */
-  owners: string[];
-  count: number;
+  rows: BulkSearchRow[];
+}
+
+const BULK_SELECT =
+  "id, case_number, address, owner_name, tenant_name, category, deposit, monthly_rent, move_in_date, lease_end";
+
+interface PendingRow {
+  id: string;
+  case_number: string | null;
+  address: string | null;
+  owner_name: string | null;
+  tenant_name: string | null;
+  category: string | null;
+  deposit: number | null;
+  monthly_rent: number | null;
+  move_in_date: string | null;
+  lease_end: string | null;
+}
+
+/** 차단 임대인 제외 — 매칭 전에 후보에서 빼 둔다. */
+function aliveRows(rows: PendingRow[], blockedKeys: Set<string>): PendingRow[] {
+  if (blockedKeys.size === 0) return rows;
+  return rows.filter((r) => !blockedKeys.has(normalizeOwnerName(r.owner_name)));
 }
 
 /**
- * 이름 여러 개를 한 번에 찾아 취합 바구니에 담을 형태로 돌려준다.
- *
- * 매칭 규칙 — DB 의 owner_name 은 "김철수 외 2명" 처럼 꼬리가 붙기도 한다.
- *   1) 정확히 같은 이름을 먼저 찾고,
- *   2) 못 찾은 이름만 부분일치로 한 번 더 찾는다.
- * 부분일치는 동명이인을 같이 잡을 수 있어, 걸린 소유자명을 그대로 돌려주고
- * 화면에서 "여러 명 일치"로 표시한다(바구니에서 임대인 단위로 뺄 수 있다).
+ * 완전히 같은 주소는 1건으로 (목록 화면과 동일 규칙).
+ * 검색 결과 안에서만 접는다 — 전체 후보에 먼저 걸면 검색과 무관한 물건 때문에
+ * 정작 찾던 물건이 사라진다.
  */
-export async function cartItemsForOwnerNames(
+function dedupeByAddress(rows: BulkSearchRow[]): BulkSearchRow[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    if (!r.address) return true;
+    if (seen.has(r.address)) return false;
+    seen.add(r.address);
+    return true;
+  });
+}
+
+function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
+  return {
+    id: r.id,
+    case_number: r.case_number ?? "",
+    address: (r.address ?? "").trim(),
+    owner_name: r.owner_name ?? "",
+    tenant_name: r.tenant_name ?? "",
+    category: r.category ?? "",
+    deposit: r.deposit,
+    monthly_rent: r.monthly_rent,
+    move_in_date: r.move_in_date,
+    lease_end: r.lease_end,
+    field,
+  };
+}
+
+/**
+ * 이름 일괄 검색 — 명단을 통째로 받아 이름별로 미답사 물건을 돌려준다.
+ *
+ * 매칭 규칙은 bulk-name-match 그대로: 공백·법인표기를 지운 키로 비교하고 소유주·임차인
+ * 두 칸을 다 본다. 기본은 완전 일치, partial 이면 포함까지.
+ * 이름마다 쿼리를 날리면 30개면 30번 왕복이라, 미답사 전체를 한 번 읽고 메모리에서 맞춘다.
+ * ponytail: 미답사가 만 건을 넘기면 페이지네이션이 필요하다.
+ */
+export async function bulkNameSearch(
   names: string[],
-  limit = 3000,
+  opts: { partial?: boolean } = {},
+  limit = 10000,
 ): Promise<{
   ok: boolean;
-  items?: { id: string; owner_name: string; address: string; case_number: string }[];
-  hits?: BulkNameHit[];
-  notFound?: string[];
+  groups?: BulkSearchGroup[];
+  notFound?: { name: string; similar: string[] }[];
+  scanned?: number;
   error?: string;
 }> {
   try {
@@ -636,87 +700,65 @@ export async function cartItemsForOwnerNames(
     const wanted = Array.from(new Set(parsed.data));
 
     const supabase = createServiceClient();
-    const SELECT = "id, address, owner_name, case_number";
-    type Row = {
-      id: string;
-      address: string | null;
-      owner_name: string | null;
-      case_number: string | null;
-    };
-
-    // 1) 정확히 일치
-    const exact = await supabase
-      .from("auction_property")
-      .select(SELECT)
-      .eq("survey_status", "pending")
-      .in("owner_name", wanted)
-      .order("address", { ascending: true })
-      .limit(limit);
-    if (exact.error) return { ok: false, error: exact.error.message };
-    const rows: Row[] = [...((exact.data ?? []) as Row[])];
-
-    // 2) 못 찾은 이름만 부분일치로 (PostgREST or 필터를 깨는 문자는 제거)
-    const foundExact = new Set(rows.map((r) => (r.owner_name ?? "").trim()));
-    const missing = wanted.filter((n) => !foundExact.has(n));
-    const CHUNK = 40;
-    for (let i = 0; i < missing.length; i += CHUNK) {
-      const chunk = missing
-        .slice(i, i + CHUNK)
-        .map((n) => n.replace(/[,()*%\\]/g, "").trim())
-        .filter(Boolean);
-      if (chunk.length === 0) continue;
-      const or = chunk.map((n) => `owner_name.ilike.%${n}%`).join(",");
-      const partial = await supabase
+    const [pending, blockedKeys] = await Promise.all([
+      supabase
         .from("auction_property")
-        .select(SELECT)
+        .select(BULK_SELECT)
         .eq("survey_status", "pending")
-        .or(or)
         .order("address", { ascending: true })
-        .limit(limit);
-      if (partial.error) return { ok: false, error: partial.error.message };
-      rows.push(...((partial.data ?? []) as Row[]));
-    }
+        .limit(limit),
+      fetchBlockedOwnerKeys(supabase),
+    ]);
+    if (pending.error) return { ok: false, error: pending.error.message };
 
-    // 차단 임대인 제외 + 같은 주소는 1건으로 (목록 화면과 동일 규칙)
-    const blockedKeys = await fetchBlockedOwnerKeys(supabase);
-    const seenId = new Set<string>();
-    const seenAddr = new Set<string>();
-    const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];
-    for (const r of rows) {
-      if (seenId.has(r.id)) continue;
-      seenId.add(r.id);
-      if (blockedKeys.size && blockedKeys.has(normalizeOwnerName(r.owner_name))) continue;
-      const addr = (r.address ?? "").trim();
-      if (addr && seenAddr.has(addr)) continue;
-      if (addr) seenAddr.add(addr);
-      items.push({
-        id: r.id,
-        owner_name: r.owner_name ?? "",
-        address: addr,
-        case_number: r.case_number ?? "",
-      });
-    }
+    const alive = aliveRows((pending.data ?? []) as PendingRow[], blockedKeys);
+    const matched = matchRows(wanted, alive, opts.partial === true);
 
-    // 입력 이름별 결과 집계 — 어떤 이름이 몇 건 걸렸는지, 무엇이 안 걸렸는지
-    const hits: BulkNameHit[] = [];
-    const notFound: string[] = [];
-    for (const name of wanted) {
-      const needle = name.toLowerCase();
-      const mine = items.filter((it) => it.owner_name.toLowerCase().includes(needle));
-      if (mine.length === 0) {
-        notFound.push(name);
-        continue;
-      }
-      hits.push({
-        name,
-        owners: Array.from(new Set(mine.map((m) => m.owner_name))),
-        count: mine.length,
-      });
-    }
+    const groups: BulkSearchGroup[] = matched.byName.map((g) => ({
+      name: g.name,
+      rows: dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field))),
+    }));
 
-    return { ok: true, items, hits, notFound };
+    // 오타 추천 후보는 미답사 명단의 소유주·임차인 이름 전체에서 뽑는다.
+    const pool = Array.from(
+      new Set(alive.flatMap((r) => [r.owner_name ?? "", r.tenant_name ?? ""]).filter(Boolean)),
+    );
+    const notFound = matched.notFound.map((name) => ({
+      name,
+      similar: suggestSimilar(name, pool),
+    }));
+
+    return { ok: true, groups, notFound, scanned: alive.length };
   } catch (e) {
     if (e instanceof AppError) return { ok: false, error: e.message };
     return { ok: false, error: "이름 일괄 검색 중 오류가 발생했습니다." };
   }
+}
+
+/** 일괄 검색 결과를 취합 바구니에 담을 형태로 — 검색 규칙은 bulkNameSearch 와 동일. */
+export async function cartItemsForOwnerNames(
+  names: string[],
+  opts: { partial?: boolean } = {},
+): Promise<{
+  ok: boolean;
+  items?: { id: string; owner_name: string; address: string; case_number: string }[];
+  error?: string;
+}> {
+  const res = await bulkNameSearch(names, opts);
+  if (!res.ok || !res.groups) return { ok: false, error: res.error };
+  const seen = new Set<string>();
+  const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];
+  for (const g of res.groups) {
+    for (const r of g.rows) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      items.push({
+        id: r.id,
+        owner_name: r.owner_name,
+        address: r.address,
+        case_number: r.case_number,
+      });
+    }
+  }
+  return { ok: true, items };
 }
