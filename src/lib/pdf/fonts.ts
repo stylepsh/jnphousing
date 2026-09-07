@@ -1,43 +1,32 @@
 /**
  * @react-pdf/renderer 한글 폰트 등록.
  *
- * Pretendard TTF (또는 NotoSansKR) 을 `public/fonts/` 에 두고 절대 URL 로 register.
- *
- * TODO(성혁): 운영 배포 시 폰트 파일 확보 필요.
- *   - public/fonts/Pretendard-Regular.ttf
- *   - public/fonts/Pretendard-Bold.ttf
- *   - 또는 jsdelivr 같은 CDN URL 사용 가능 (Font.register({ src: 'https://...' })).
- *
- * 폰트 미등록 상태에서도 PDF 생성은 동작 (라틴만 표시). 한글은 □ 로 렌더링.
+ * OFL 라이선스의 Noto Sans KR variable TTF를 배포물에 포함해 사용한다.
+ * PDF 생성이 CDN 상태에 영향을 받지 않도록 http(s) 폰트 URL은 받지 않는다.
  */
 
 import { Font } from "@react-pdf/renderer";
+import fs from "node:fs";
+import path from "node:path";
 
 let registered = false;
 
 export function ensureKoreanFonts() {
   if (registered) return;
-  registered = true;
 
-  try {
-    Font.register({
-      family: "Pretendard",
-      fonts: [
-        {
-          src: process.env.NEXT_PUBLIC_PRETENDARD_REGULAR_URL
-            ?? "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.otf",
-          fontWeight: "normal",
-        },
-        {
-          src: process.env.NEXT_PUBLIC_PRETENDARD_BOLD_URL
-            ?? "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.otf",
-          fontWeight: "bold",
-        },
-      ],
-    });
-    // Hyphenation 방지 (한국어는 단어 단위 끊기지 않음)
-    Font.registerHyphenationCallback((word) => [word]);
-  } catch (e) {
-    console.warn("[pdf/fonts] 한글 폰트 등록 실패 — fallback 사용", e);
+  const bundledFont = path.join(process.cwd(), "public", "fonts", "NotoSansKR-Variable.ttf");
+  if (!fs.existsSync(bundledFont)) {
+    throw new Error(`[pdf/fonts] bundled Korean font not found: ${bundledFont}`);
   }
+
+  Font.register({
+    family: "Pretendard",
+    fonts: [
+      { src: bundledFont, fontWeight: "normal" },
+      { src: bundledFont, fontWeight: "bold" },
+    ],
+  });
+  // 한국어를 임의 음절 단위로 쪼개지 않는다.
+  Font.registerHyphenationCallback((word) => [word]);
+  registered = true;
 }

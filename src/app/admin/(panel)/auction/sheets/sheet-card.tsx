@@ -20,6 +20,7 @@ import {
   type SheetItemRow,
 } from "./actions";
 import { displayOwnerName } from "@/lib/auction/court-auction";
+import { getDownloadItemCount, readValidatedDownload, sanitizeDownloadFilenamePart } from "@/lib/download-response";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "미답사",
@@ -53,6 +54,11 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
   }
 
   async function redownload() {
+    const teamName = sheet.team_name?.trim();
+    if (!teamName) {
+      toast.error("팀명이 없는 과거 발급 이력입니다. 답사지 발급 화면에서 받는 팀을 입력해 새로 발급해 주세요.");
+      return;
+    }
     const rows = items ?? (await listSheetItems(sheet.id));
     setItems(rows);
     if (rows.length === 0) {
@@ -63,25 +69,27 @@ export function SheetCard({ sheet }: { sheet: SheetLog }) {
       const res = await fetch("/admin/auction/pipeline/survey-xlsx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: rows.map((r) => r.id), team: sheet.team_name ?? "" }),
+        body: JSON.stringify({ ids: rows.map((r) => r.id), team: teamName }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         toast.error(j.error ?? "엑셀 생성 실패");
         return;
       }
-      const blob = await res.blob();
+      const fileCount = getDownloadItemCount(res, rows.length);
+      const blob = await readValidatedDownload(res, "xlsx");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `답사지_${sheet.printed_at.slice(0, 10)}_${sheet.team_name ?? "팀미기재"}.xlsx`;
+      const safeTeam = sanitizeDownloadFilenamePart(teamName, "답사팀");
+      a.download = `답사지_${sheet.printed_at.slice(0, 10)}_${safeTeam}_${fileCount}건.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       toast.success("같은 명단으로 엑셀 재발급");
-    } catch {
-      toast.error("재발급 실패");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "재발급 실패");
     }
   }
 

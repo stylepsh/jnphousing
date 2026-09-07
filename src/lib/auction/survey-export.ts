@@ -18,6 +18,29 @@ interface PoolRow {
   batch_id: string | null;
 }
 
+const DONE_SURVEY_STATUSES = new Set(["vacant", "occupied", "skip"]);
+const DONE_LABEL: Record<string, string> = { vacant: "공실", occupied: "거주", skip: "제외" };
+
+export interface SurveySheetMeta {
+  label?: string;
+  teamName?: string;
+  printedAt?: string;
+  todoCount?: number;
+  referenceCount?: number;
+}
+
+function applyPrintSetup(ws: ExcelJS.Worksheet, lastColumn: string) {
+  ws.pageSetup.orientation = "landscape";
+  ws.pageSetup.paperSize = 9;
+  ws.pageSetup.fitToPage = true;
+  ws.pageSetup.fitToWidth = 1;
+  ws.pageSetup.fitToHeight = 0;
+  ws.pageSetup.horizontalCentered = true;
+  ws.pageSetup.margins = { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 };
+  ws.pageSetup.printTitlesRow = "1:2";
+  ws.pageSetup.printArea = `A1:${lastColumn}${ws.rowCount}`;
+}
+
 export async function buildSurveyTemplate(opts: {
   region?: string;
   states?: string[];
@@ -53,8 +76,6 @@ export async function buildSurveyTemplate(opts: {
   wb.creator = "전국한마음자산관리";
   wb.created = new Date();
   const ws = wb.addWorksheet("답사용지");
-  ws.properties.outlineLevelRow = 1;
-  ws.properties.outlineProperties = { summaryBelow: false, summaryRight: false };
 
   const COLS = [
     { header: "방문순번", key: "no", width: 8, fill: true },
@@ -79,7 +100,7 @@ export async function buildSurveyTemplate(opts: {
   // 1행 안내
   ws.mergeCells(1, 1, 1, NCOL);
   const title = ws.getCell(1, 1);
-  title.value = `전국한마음자산관리 · 경매 단기임대 답사 용지 (${rows.length}건)  ·  회색칸=그대로 / 흰칸만 입력  ·  점유: O=점유 X=공실 △=재방문  ·  지역 [−]로 접기`;
+  title.value = `전국한마음자산관리 · 경매 단기임대 답사 용지 (${rows.length}건) · 회색칸=그대로 / 흰칸만 입력 · 점유: O=점유 X=공실 △=재방문`;
   title.font = { bold: true, size: 11, color: { argb: "FF1C2B4A" } };
   ws.getRow(1).height = 24;
 
@@ -110,7 +131,7 @@ export async function buildSurveyTemplate(opts: {
     rowIdx += 1;
     ws.mergeCells(rowIdx, 1, rowIdx, NCOL);
     const band = ws.getCell(rowIdx, 1);
-    band.value = `📍 ${rg}   ·   ${list.length}건   ·   임대인 ${owners}명`;
+    band.value = `${rg}   ·   ${list.length}건   ·   임대인 ${owners}명`;
     band.font = { bold: true, size: 11, color: { argb: "FF0B3D2E" } };
     band.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
     ws.getRow(rowIdx).height = 20;
@@ -131,7 +152,7 @@ export async function buildSurveyTemplate(opts: {
         cat: r.category ?? "",
         creditor: r.creditor ?? "",
       } as Record<string, string | number>;
-      row.outlineLevel = 1;
+      row.height = 34;
       row.alignment = { vertical: "top", wrapText: true };
       if (!sameOwner) row.getCell("owner").font = { bold: true };
       // 식별칸(회색) 살짝 음영
@@ -144,6 +165,8 @@ export async function buildSurveyTemplate(opts: {
     }
   }
 
+  applyPrintSetup(ws, "N");
+
   const out = await wb.xlsx.writeBuffer();
   return { buffer: Buffer.from(out), region };
 }
@@ -151,16 +174,19 @@ export async function buildSurveyTemplate(opts: {
 /**
  * 선택분 답사지 엑셀 — PDF(survey-pdf)와 동일 번호(property_no)·순서로, 답사자가 채워서
  * 돌려주면 '답사결과 입력'에 그대로 업로드되도록 매칭 헤더(사건번호 등)를 맞춘다.
- * 부작용 없음: rows = computeSurveySheetRows().todoRows.
+ * 부작용 없음: rows = computeSurveySheetRows().ordered (신규 + 기존 완료 참고행).
  */
-export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Promise<Buffer> {
+export async function buildSurveySheetXlsx(rows: SurveyRow[], meta: string | SurveySheetMeta): Promise<Buffer> {
   const groups = groupByRegion(rows);
+  const options: SurveySheetMeta = typeof meta === "string" ? { label: meta } : meta;
+  const derivedReferenceCount = rows.filter((row) => !!row.survey_status && DONE_SURVEY_STATUSES.has(row.survey_status)).length;
+  const todoCount = options.todoCount ?? rows.length - derivedReferenceCount;
+  const referenceCount = options.referenceCount ?? derivedReferenceCount;
+  const printedAt = options.printedAt ?? new Date().toISOString().slice(0, 10);
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "전국한마음자산관리";
   const ws = wb.addWorksheet("답사용지");
-  ws.properties.outlineLevelRow = 1;
-  ws.properties.outlineProperties = { summaryBelow: false, summaryRight: false };
 
   const COLS = [
     { header: "번호", key: "no", width: 7, fill: true },
@@ -182,12 +208,12 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
   const NCOL = COLS.length;
   const OCC_COL = 7, OPEN_COL = 8, MERCH_COL = 9, METER_COL = 11;
 
-  const total = rows.length;
   ws.mergeCells(1, 1, 1, NCOL);
   const title = ws.getCell(1, 1);
-  title.value = `전국한마음자산관리 · 경매 답사 용지${label ? ` (${label})` : ""} · ${total}건  ·  회색칸=그대로 두기 / 흰칸만 입력  ·  점유: O=거주 X=공실 △=재방문  ·  번호=답사지(PDF)와 동일`;
+  title.value = `전국한마음자산관리 · 경매 답사 용지 · 지역 ${options.label || "전지역"} · 받는 팀 ${options.teamName || "미기재"} · 발급일 ${printedAt} · 신규 ${todoCount}건 · 기존완료 참고 ${referenceCount}건 · 회색 완료행은 입력하지 마세요`;
   title.font = { bold: true, size: 11, color: { argb: "FF1C2B4A" } };
-  ws.getRow(1).height = 24;
+  title.alignment = { vertical: "middle", wrapText: true };
+  ws.getRow(1).height = 32;
 
   const hr = ws.getRow(2);
   hr.values = COLS.map((c) => c.header);
@@ -206,7 +232,7 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
     rowIdx += 1;
     ws.mergeCells(rowIdx, 1, rowIdx, NCOL);
     const band = ws.getCell(rowIdx, 1);
-    band.value = `📍 ${region}   ·   ${list.length}건   ·   임대인 ${owners}명`;
+    band.value = `${region}   ·   ${list.length}건   ·   임대인 ${owners}명`;
     band.font = { bold: true, size: 11, color: { argb: "FF0B3D2E" } };
     band.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
     ws.getRow(rowIdx).height = 20;
@@ -218,6 +244,8 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
       const sameOwner = owner === prevOwner;
       prevOwner = owner;
       const row = ws.getRow(rowIdx);
+      const done = !!r.survey_status && DONE_SURVEY_STATUSES.has(r.survey_status);
+      const doneLabel = done ? DONE_LABEL[r.survey_status!] ?? r.survey_status : "";
       row.values = {
         no: r.property_no,
         owner: sameOwner ? "" : owner,
@@ -225,17 +253,27 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], label: string): Pr
         case: r.case_number === "(미상)" ? "" : r.case_number,
         cat: r.category ?? "",
         creditor: r.creditor ?? "",
+        memo: done ? `기존 답사완료(${doneLabel}) · 입력하지 마세요` : "",
       } as Record<string, string | number>;
-      row.outlineLevel = 1;
+      row.height = 36;
       row.alignment = { vertical: "top", wrapText: true };
       if (!sameOwner) row.getCell("owner").font = { bold: true };
-      for (let c = 1; c <= 6; c++) row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
-      ws.getCell(rowIdx, OCC_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"O,X,△"'] };
-      ws.getCell(rowIdx, OPEN_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,불가,확인"'] };
-      ws.getCell(rowIdx, MERCH_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,보류,불가"'] };
-      ws.getCell(rowIdx, METER_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"유,무"'] };
+      if (done) {
+        for (let c = 1; c <= NCOL; c++) {
+          row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+          row.getCell(c).font = { color: { argb: "FF64748B" }, bold: c === NCOL };
+        }
+      } else {
+        for (let c = 1; c <= 6; c++) row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+        ws.getCell(rowIdx, OCC_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"O,X,△"'] };
+        ws.getCell(rowIdx, OPEN_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,불가,확인"'] };
+        ws.getCell(rowIdx, MERCH_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"가능,보류,불가"'] };
+        ws.getCell(rowIdx, METER_COL).dataValidation = { type: "list", allowBlank: true, formulae: ['"유,무"'] };
+      }
     }
   }
+
+  applyPrintSetup(ws, "N");
 
   const out = await wb.xlsx.writeBuffer();
   return Buffer.from(out);

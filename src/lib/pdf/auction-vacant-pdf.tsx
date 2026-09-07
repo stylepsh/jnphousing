@@ -45,9 +45,22 @@ const styles = StyleSheet.create({
   cOwner: { width: 70 },
   cMemo: { width: 200 },
   cWork: { flex: 1 },
+  workList: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 5 },
+  checkItem: { flexDirection: "row", alignItems: "center" },
+  checkBox: { width: 7, height: 7, borderWidth: 0.8, borderColor: "#334155", marginRight: 2 },
+  checkLabel: { fontSize: 6.5 },
   caseMono: { fontSize: 7, color: "#1d4ed8" },
   footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
 });
+
+function WorkCheck({ label }: { label: string }) {
+  return (
+    <View style={styles.checkItem}>
+      <View style={styles.checkBox} />
+      <Text style={styles.checkLabel}>{label}</Text>
+    </View>
+  );
+}
 
 export function AuctionVacantPdf({ data }: { data: VacantPdfData }) {
   return (
@@ -79,7 +92,11 @@ export function AuctionVacantPdf({ data }: { data: VacantPdfData }) {
               {it.owner_name ?? "-"}{it.inspector_name ? `\n답사:${it.inspector_name}` : ""}
             </Text>
             <Text style={[styles.td, styles.cMemo]}>{it.inspector_comment ?? "-"}</Text>
-            <Text style={[styles.td, styles.cWork]}>☐개문 ☐청소 ☐도배 ☐도어락 ☐사진 ☐관리실 ☐광고 ☐임차완료</Text>
+            <View style={[styles.td, styles.cWork, styles.workList]}>
+              {["개문", "청소", "도배", "도어락", "사진", "관리실", "광고", "임차완료"].map((label) => (
+                <WorkCheck key={label} label={label} />
+              ))}
+            </View>
           </View>
         ))}
 

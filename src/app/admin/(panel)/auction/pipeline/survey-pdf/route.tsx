@@ -3,25 +3,26 @@
  * 선택한 auction_property 들을 지역별로 묶은 현장 체크리스트.
  * 답사 대상(미답사/재방문)만 발급(sheet)에 귀속시키고, 같은 임대인의 이미 답사한
  * 물건은 회색 줄(기존 답사완료)로 함께 인쇄해 재방문을 막는다.
- * 보호: requireAdmin.
+ * 발급 이력을 쓰는 mutation 경로이므로 보호: requireMutableAdmin.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireMutableAdmin } from "@/lib/auth-guard";
 import { AppError } from "@/lib/errors";
 import { AuctionSurveyPdf } from "@/lib/pdf/auction-survey-pdf";
 import { computeSurveySheetRows } from "@/lib/auction/survey-rows";
-import { recordSheetIssue } from "@/lib/auction/issue-sheet";
+import { recordSheetIssue, requireSheetTeamName } from "@/lib/auction/issue-sheet";
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin();
+    await requireMutableAdmin();
     const body = (await req.json().catch(() => ({}))) as { ids?: string[]; team?: string };
     const ids = Array.isArray(body.ids) ? body.ids.filter((x) => typeof x === "string") : [];
     if (ids.length === 0) {
       return NextResponse.json({ error: "선택된 물건이 없습니다." }, { status: 400 });
     }
+    const teamName = requireSheetTeamName(body.team);
 
     // 선택분 + 같은 임대인의 기존 답사완료(회색) 합쳐 지역▸임대인 정렬. 엑셀과 동일 함수.
     const { ordered, todoRows, regionLabel } = await computeSurveySheetRows(ids);
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     const printedAtIso = new Date().toISOString();
     const today = printedAtIso.slice(0, 10);
+    const referenceCount = ordered.length - todoRows.length;
 
     // 파일을 먼저 만든다. 렌더가 실패하면 발급 이력이 남지 않아야 한다
     // (기록이 앞서면 실제로 못 받은 답사지가 "발급됨"으로 쌓여 중복 배포 방지가 무너진다).
@@ -39,6 +41,9 @@ export async function POST(req: NextRequest) {
         data={{
           printedAt: today,
           sheetLabel: regionLabel,
+          teamName,
+          todoCount: todoRows.length,
+          referenceCount,
           items: ordered, // 답사 대상 + 기존 답사완료(회색). PDF 가 지역별로 정렬·표시.
         }}
       />,
@@ -47,7 +52,7 @@ export async function POST(req: NextRequest) {
     const { sheetId } = await recordSheetIssue({
       propertyIds: todoRows.map((it) => it.id),
       regionLabel,
-      teamName: typeof body.team === "string" ? body.team : undefined,
+      teamName: teamName || undefined,
       kind: "pdf",
       printedAtIso,
     });
@@ -64,6 +69,9 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
+        "X-JNP-Todo-Count": String(todoRows.length),
+        "X-JNP-Reference-Count": String(referenceCount),
+        "X-JNP-Total-Count": String(ordered.length),
         "Cache-Control": "private, no-cache, no-store, must-revalidate",
       },
     });

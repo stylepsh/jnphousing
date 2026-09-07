@@ -13,6 +13,7 @@ import {
   type SurveySheetRow,
 } from "@/lib/auction/survey-sheet";
 import { SURVEY_STATUS_OF, JUDGE_STATE_OF, type Occupancy } from "@/lib/auction/occupancy";
+import { shouldSkipSurveyImport } from "@/lib/auction/survey-import-policy";
 
 export interface SurveyImportResult {
   ok: boolean;
@@ -154,13 +155,19 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
           result.skipped++;
           continue;
         }
-        result.total++;
         const surveyStatus = SURVEY_STATUS_OF[n.occupancy as Occupancy] ?? n.occupancy;
         let nextState = JUDGE_STATE_OF[n.occupancy as Occupancy] ?? "Approved";
         if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
         // 사건번호가 있으면 위에서 일괄 조회한 결과에서 매칭한다(왕복 0회).
         const existing = n.caseNumber ? existingByCase.get(n.caseNumber) ?? null : null;
+        // 동일 답사표를 다시 올려도 완료 판정·검사·이벤트를 중복 생성하지 않는다.
+        // 완료값을 정정할 때는 검토 화면의 명시적 상태 변경 기능을 사용한다.
+        if (existing && shouldSkipSurveyImport(existing.survey_status)) {
+          result.skipped++;
+          continue;
+        }
+        result.total++;
 
         let propertyId: string;
         let fromState = "Collected";

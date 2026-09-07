@@ -45,13 +45,29 @@ const styles = StyleSheet.create({
   note: { backgroundColor: "#fef9c3", padding: 6, borderRadius: 4, marginTop: 8, fontSize: 9 },
   section: { marginTop: 12 },
   secTitle: { fontSize: 10, fontWeight: "bold", marginBottom: 4 },
-  check: { fontSize: 10, marginBottom: 4 },
+  checkRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 14, marginBottom: 4 },
+  checkItem: { flexDirection: "row", alignItems: "center" },
+  checkBox: { width: 10, height: 10, borderWidth: 1, borderColor: "#334155", marginRight: 4 },
+  checkLabel: { fontSize: 10 },
   memoLine: { borderBottomWidth: 1, borderColor: "#cbd5e1", height: 16, marginTop: 6 },
   qrWrap: { alignItems: "center", marginLeft: 12 },
   qr: { width: 90, height: 90 },
   qrCaption: { fontSize: 7, color: "#64748b", marginTop: 2, textAlign: "center" },
   footer: { position: "absolute", bottom: 16, left: 36, right: 36, fontSize: 8, color: "#94a3b8", textAlign: "center" },
 });
+
+function CheckOptions({ labels }: { labels: string[] }) {
+  return (
+    <View style={styles.checkRow}>
+      {labels.map((label) => (
+        <View key={label} style={styles.checkItem}>
+          <View style={styles.checkBox} />
+          <Text style={styles.checkLabel}>{label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export function AuctionInspectorPdf({ data }: { data: InspectorPdfData }) {
   return (
@@ -96,17 +112,18 @@ export function AuctionInspectorPdf({ data }: { data: InspectorPdfData }) {
             </View>
           </View>
 
-          {u.managerNote && <Text style={styles.note}>📌 {u.managerNote}</Text>}
+          {u.managerNote && <Text style={styles.note}>관리자 메모 · {u.managerNote}</Text>}
 
           <View style={styles.section}>
             <Text style={styles.secTitle}>① 점유 상태</Text>
-            <Text style={styles.check}>☐ 공실    ☐ 점유중    ☐ 재확인</Text>
+            <CheckOptions labels={["공실", "점유중", "재확인"]} />
             <Text style={styles.secTitle}>② 우편물</Text>
-            <Text style={styles.check}>☐ 없음    ☐ 정상    ☐ 다량 쌓임</Text>
+            <CheckOptions labels={["없음", "정상", "다량 쌓임"]} />
             <Text style={styles.secTitle}>③ 개문 / 도어락</Text>
-            <Text style={styles.check}>☐ 개문 가능    ☐ 개문 불가    ☐ 관리자 확인    ☐ 개문작업 필요   비번: __________</Text>
+            <CheckOptions labels={["개문 가능", "개문 불가", "관리자 확인", "개문작업 필요"]} />
+            <Text style={styles.checkLabel}>비번: __________</Text>
             <Text style={styles.secTitle}>④ 즉시 상품화 가능성</Text>
-            <Text style={styles.check}>☐ 가능    ☐ 보류    ☐ 불가</Text>
+            <CheckOptions labels={["가능", "보류", "불가"]} />
             <Text style={styles.secTitle}>⑤ 현장 메모</Text>
             <View style={styles.memoLine} />
             <View style={styles.memoLine} />

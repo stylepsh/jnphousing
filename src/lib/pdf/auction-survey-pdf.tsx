@@ -6,6 +6,9 @@
 
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 import { ensureKoreanFonts } from "./fonts";
+import { isCompletedSurveyReference, summarizeSurveyPdfItems } from "./auction-survey-summary";
+
+export { summarizeSurveyPdfItems } from "./auction-survey-summary";
 
 ensureKoreanFonts();
 
@@ -28,12 +31,18 @@ export interface SurveyPdfItem {
 export interface SurveyPdfData {
   printedAt: string; // YYYY-MM-DD
   sheetLabel?: string; // 발급 지역 라벨 (어느 답사지인지 종이에서 식별)
+  teamName?: string;
+  todoCount?: number;
+  referenceCount?: number;
   items: SurveyPdfItem[];
 }
 
 const styles = StyleSheet.create({
   page: { paddingTop: 18, paddingBottom: 28, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 8 },
-  groupHeader: { backgroundColor: "#e2e8f0", paddingVertical: 3, paddingHorizontal: 6, marginTop: 10, flexDirection: "row", justifyContent: "space-between" },
+  documentHeader: { borderBottomWidth: 1.5, borderColor: "#1c2b4a", paddingBottom: 5, marginBottom: 4 },
+  documentTitle: { fontSize: 13, fontWeight: "bold", color: "#0f172a" },
+  documentMeta: { fontSize: 7.5, color: "#475569", marginTop: 2 },
+  groupHeader: { backgroundColor: "#e2e8f0", paddingVertical: 3, paddingHorizontal: 6, marginTop: 7, flexDirection: "row", justifyContent: "space-between" },
   groupName: { fontSize: 9, fontWeight: "bold" },
   groupCount: { fontSize: 8, color: "#475569" },
   // 표
@@ -88,11 +97,9 @@ function Check({ label, checked }: { label: string; checked?: boolean }) {
 }
 
 // 재방문(revisit)은 아직 답사 대상이라 회색 처리하지 않는다 (route 의 isDone 과 동일 기준).
-const DONE_STATUSES = new Set(["vacant", "occupied", "skip"]);
-
 function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
   // 기존 답사완료 = pending 이 아닌 결과 상태. 회색 줄 + 결과 자동 체크 + "기존 답사완료" 표기.
-  const done = !!it.survey_status && DONE_STATUSES.has(it.survey_status);
+  const done = isCompletedSurveyReference(it);
   const wasVacant = it.survey_status === "vacant";
   const wasOccupied = it.survey_status === "occupied";
   return (
@@ -130,12 +137,19 @@ function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
 
 export function AuctionSurveyPdf({ data }: { data: SurveyPdfData }) {
   const groups = groupByRegion(data.items);
-  const doneCount = data.items.filter((i) => !!i.survey_status && i.survey_status !== "pending").length;
-  const todoCount = data.items.length - doneCount;
+  const summary = summarizeSurveyPdfItems(data.items);
+  const todoCount = data.todoCount ?? summary.todoCount;
+  const referenceCount = data.referenceCount ?? summary.referenceCount;
 
   return (
     <Document title={`답사지_${data.printedAt}_${todoCount}건`}>
       <Page size="A4" orientation="landscape" style={styles.page}>
+        <View style={styles.documentHeader} wrap={false}>
+          <Text style={styles.documentTitle}>경매 현장 답사지</Text>
+          <Text style={styles.documentMeta}>
+            {`지역 ${data.sheetLabel || "전지역"} · 받는 팀 ${data.teamName || "미기재"} · 발급일 ${data.printedAt} · 신규 ${todoCount}건 · 기존완료 참고 ${referenceCount}건`}
+          </Text>
+        </View>
         {groups.map(([region, list]) => (
           <View key={region}>
             <View style={styles.groupHeader} wrap={false} minPresenceAhead={90}>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { assignInspection } from "../actions";
 import { cn } from "@/lib/utils";
+import { getDownloadItemCount, readValidatedDownload, sanitizeDownloadFilenamePart } from "@/lib/download-response";
 
 export type AssignItem = {
   id: string;
@@ -42,6 +43,11 @@ export function AssignBoard({ items }: { items: AssignItem[] }) {
       toast.error("PDF로 출력할 물건을 선택하세요.");
       return;
     }
+    const teamName = inspectorName.trim();
+    if (!teamName) {
+      toast.error("답사자 이름을 입력하세요.");
+      return;
+    }
     try {
       const res = await fetch("/admin/auction/pipeline/survey-pdf", {
         method: "POST",
@@ -49,8 +55,8 @@ export function AssignBoard({ items }: { items: AssignItem[] }) {
         // 발급 이력에 팀(답사자)을 남긴다 — 비우면 "팀 미기재"로 쌓여 중복배포 경고가 무력해진다
         body: JSON.stringify({
           ids: Array.from(selected),
-          team: inspectorName.trim() || undefined,
-          inspectorName: inspectorName.trim() || undefined,
+          team: teamName,
+          inspectorName: teamName,
         }),
       });
       if (!res.ok) {
@@ -58,12 +64,19 @@ export function AssignBoard({ items }: { items: AssignItem[] }) {
         toast.error(j.error ?? "PDF 생성 실패");
         return;
       }
-      const blob = await res.blob();
+      const fileCount = getDownloadItemCount(res, selected.size);
+      const blob = await readValidatedDownload(res, "pdf");
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `답사지_${sanitizeDownloadFilenamePart(teamName, "답사팀")}_${new Date().toISOString().slice(0, 10)}_${fileCount}건.pdf`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
-      toast.error("PDF 다운로드 실패");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "PDF 다운로드 실패");
     }
   }
 

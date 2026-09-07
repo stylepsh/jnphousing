@@ -1,5 +1,5 @@
 // 공실(답사결과 X = survey_status='vacant') 상세 엑셀 — 단일 탭, 지역→임대인 그룹.
-// 지역별 밴드 헤더 + 접기(outline) + 임대인 정렬 + 전체 상세. admin 전용.
+// 지역별 밴드 헤더 + 임대인 정렬 + 전체 상세. admin 전용.
 import "server-only";
 
 import ExcelJS from "exceljs";
@@ -60,9 +60,6 @@ export async function buildVacancyWorkbook(): Promise<{ buffer: Buffer; count: n
   wb.creator = "전국한마음자산관리";
   wb.created = new Date();
   const ws = wb.addWorksheet("공실 상품화후보");
-  ws.properties.outlineLevelRow = 1;
-  // 접기 요약(지역 밴드)이 데이터 위에 오도록
-  ws.properties.outlineProperties = { summaryBelow: false, summaryRight: false };
 
   const COLS = [
     { header: "임대인", key: "owner", width: 14 },
@@ -83,7 +80,7 @@ export async function buildVacancyWorkbook(): Promise<{ buffer: Buffer; count: n
   // 1행: 제목
   ws.mergeCells(1, 1, 1, NCOL);
   const titleCell = ws.getCell(1, 1);
-  titleCell.value = `전국한마음자산관리 · 경매 공실 상품화후보 (총 ${rows.length}건)  ·  지역▸임대인 그룹 — 지역 왼쪽 [−]로 접기/펼치기`;
+  titleCell.value = `전국한마음자산관리 · 경매 공실 상품화후보 (총 ${rows.length}건) · 지역별·임대인별 정렬`;
   titleCell.font = { bold: true, size: 12, color: { argb: "FF1C2B4A" } };
   ws.getRow(1).height = 24;
 
@@ -112,7 +109,7 @@ export async function buildVacancyWorkbook(): Promise<{ buffer: Buffer; count: n
     rowIdx += 1;
     ws.mergeCells(rowIdx, 1, rowIdx, NCOL);
     const band = ws.getCell(rowIdx, 1);
-    band.value = `📍 ${region}   ·   공실 ${list.length}건   ·   임대인 ${owners}명`;
+    band.value = `${region}   ·   공실 ${list.length}건   ·   임대인 ${owners}명`;
     band.font = { bold: true, size: 11, color: { argb: "FF0B3D2E" } };
     band.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } };
     ws.getRow(rowIdx).height = 20;
@@ -137,13 +134,22 @@ export async function buildVacancyWorkbook(): Promise<{ buffer: Buffer; count: n
         stage: r.pipeline_state ? STATE_LABEL[r.pipeline_state] ?? r.pipeline_state : "",
         date: r.survey_date ?? "",
       } as Record<string, string>;
-      row.outlineLevel = 1; // 지역 밴드로 접힘
+      row.height = 36;
       row.alignment = { vertical: "top", wrapText: true };
       if (!sameOwner) row.getCell("owner").font = { bold: true };
     }
   }
 
   ws.getColumn("memo").alignment = { wrapText: true, vertical: "top" };
+  ws.pageSetup.orientation = "landscape";
+  ws.pageSetup.paperSize = 9;
+  ws.pageSetup.fitToPage = true;
+  ws.pageSetup.fitToWidth = 1;
+  ws.pageSetup.fitToHeight = 0;
+  ws.pageSetup.horizontalCentered = true;
+  ws.pageSetup.margins = { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 };
+  ws.pageSetup.printTitlesRow = "1:2";
+  ws.pageSetup.printArea = `A1:K${ws.rowCount}`;
 
   const out = await wb.xlsx.writeBuffer();
   return { buffer: Buffer.from(out), count: rows.length };
