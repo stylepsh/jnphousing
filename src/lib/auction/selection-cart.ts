@@ -75,3 +75,43 @@ export function writeCart(items: CartItem[]): void {
     /* 사파리 프라이빗 모드 등 저장 실패는 기능을 막지 않는다 */
   }
 }
+
+// ── 화면 전역 공유 저장소 ──
+// 물건 목록(PoolList)과 하단 고정 바(CartBar), 임대인 카드가 같은 바구니를 본다.
+// 리액트 컨텍스트 대신 모듈 전역 + useSyncExternalStore — 트리 구조에 상관없이 붙는다.
+let current: CartItem[] = [];
+let hydrated = false;
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const l of listeners) l();
+}
+
+export function subscribeCart(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function getCart(): CartItem[] {
+  if (!hydrated) {
+    hydrated = true;
+    current = readCart();
+  }
+  return current;
+}
+
+export function getCartServerSnapshot(): CartItem[] {
+  return EMPTY_CART;
+}
+
+const EMPTY_CART: CartItem[] = [];
+
+/** 바구니 갱신 — 저장소에 쓰고 구독자 전부에게 알린다. */
+export function updateCart(next: CartItem[] | ((prev: CartItem[]) => CartItem[])): void {
+  const value = typeof next === "function" ? next(getCart()) : next;
+  if (value === current) return;
+  current = value;
+  hydrated = true;
+  writeCart(value);
+  emit();
+}

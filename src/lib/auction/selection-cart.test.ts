@@ -41,3 +41,21 @@ describe("selection-cart", () => {
     expect(t).toContain("[박영희] 1건");
   });
 });
+
+describe("selection-cart 전역 저장소", () => {
+  it("어느 화면에서 담아도 같은 바구니를 보고, 구독자에게 알린다", async () => {
+    const { getCart, updateCart, subscribeCart } = await import("./selection-cart");
+    let notified = 0;
+    const unsub = subscribeCart(() => {
+      notified += 1;
+    });
+    updateCart([it1]);
+    expect(getCart().map((c) => c.id)).toEqual(["1"]);
+    updateCart((prev) => mergeCart(prev, [it2]));
+    expect(getCart().map((c) => c.id)).toEqual(["1", "2"]);
+    expect(notified).toBe(2);
+    updateCart([]);
+    expect(getCart()).toEqual([]);
+    unsub();
+  });
+});

@@ -19,9 +19,6 @@ import {
   Square,
   User,
   Users2,
-  ClipboardList,
-  ChevronDown,
-  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWon } from "@/lib/money";
@@ -31,15 +28,8 @@ import { cn } from "@/lib/utils";
 import { textMatches } from "@/lib/auction/search";
 import { useIssueSheet } from "./use-issue-sheet";
 import { displayOwnerName } from "@/lib/auction/court-auction";
-import {
-  type CartItem,
-  cartToText,
-  groupCartByOwner,
-  mergeCart,
-  readCart,
-  removeFromCart,
-  writeCart,
-} from "@/lib/auction/selection-cart";
+import { type CartItem, mergeCart } from "@/lib/auction/selection-cart";
+import { useCart } from "@/lib/auction/use-cart";
 
 export interface PoolItem {
   id: string;
@@ -79,11 +69,9 @@ export function PoolList({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // 물건 선택 — 검색 범위를 갈아타도 남는 "취합 장바구니"
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // 물건 선택 — 검색 범위를 갈아타도, 다른 화면으로 나가도 남는 "취합 장바구니"
+  const { cart, setCart } = useCart();
   const selected = useMemo(() => new Set(cart.map((c) => c.id)), [cart]);
-  // 취합 목록 펼침
-  const [cartOpen, setCartOpen] = useState(false);
   // 단일 임대인 상세 필터
   const [filterOwner, setFilterOwner] = useState<string | null>(null);
   // 검색
@@ -196,10 +184,41 @@ export function PoolList({
         return mergeCart(kept, add);
       });
     },
-    [itemById],
+    [itemById, setCart],
   );
+  // ── 단축키 — 대량으로 훑을 때 마우스 왕복을 줄인다 ──
+  //   /  검색창으로, a 표시분 전체선택/해제, Esc 검색 초기화
+  const ownerSearchRef = useRef<HTMLInputElement>(null);
+  // 항상 최신 동작을 가리키게 — 리스너는 한 번만 붙이고 상태는 ref 로 읽는다
+  const actionsRef = useRef({ allSelected: false, clearAll: () => {}, selectAll: () => {} });
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const typing =
+        !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (e.key === "Escape") {
+        if (typing) (el as HTMLInputElement).blur();
+        setOwnerSearch("");
+        setRegionSearch("");
+        return;
+      }
+      if (typing) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        ownerSearchRef.current?.focus();
+      } else if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        if (actionsRef.current.allSelected) actionsRef.current.clearAll();
+        else actionsRef.current.selectAll();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   /** 취합 전체 비우기 — 발급·삭제처럼 장바구니 전체를 소진한 뒤에 쓴다. */
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(() => setCart([]), [setCart]);
 
   function toggle(id: string) {
     setSelected((s) => {
@@ -223,6 +242,7 @@ export function PoolList({
   function selectAll() {
     setSelected(new Set(visibleItems.map((i) => i.id)));
   }
+  actionsRef.current = { allSelected, clearAll, selectAll };
 
   // ===== 탐색답사: N건 샘플링 (임대인별 / 지역별) =====
   function sampleN(arr: PoolItem[], n: number, into: Set<string>) {
@@ -369,23 +389,6 @@ export function PoolList({
     });
   }
 
-  // ── 취합 장바구니 저장 (검색을 바꿔도, 뒤로 갔다 와도 살아 있게) ──
-  const restored = useRef(false);
-  useEffect(() => {
-    if (restored.current) return;
-    restored.current = true;
-    const saved = readCart();
-    if (saved.length > 0) {
-      setCart(saved);
-      toast.success(`이전에 담은 ${saved.length}건을 되살렸습니다`, { duration: 2500 });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!restored.current) return;
-    writeCart(cart);
-  }, [cart]);
-
   // ===== 삭제(후보 풀 제외) =====
   function deleteIds(ids: string[], label: string) {
     if (ids.length === 0) return;
@@ -439,7 +442,6 @@ export function PoolList({
     () => items.filter((i) => selected.has(i.id) && i.last_issued_at),
     [items, selected],
   );
-  const cartGroups = useMemo(() => groupCartByOwner(cart), [cart]);
   const selectedRegions = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of selectedItems) {
@@ -493,111 +495,26 @@ export function PoolList({
     router.refresh();
   }
 
-  /** 취합 장바구니 — 여러 번의 검색에서 담은 것을 임대인별로 정리해 보여준다. */
-  const cartPanel =
-    cart.length === 0 ? null : (
-      <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <ClipboardList className="w-4 h-4 text-emerald-700 shrink-0" />
-          <p className="text-sm font-black text-emerald-900">
-            취합 {cart.length.toLocaleString()}건
-            <span className="font-bold text-emerald-700 ml-1.5">· 임대인 {cartGroups.length}명</span>
-          </p>
-          <span className="text-xs text-emerald-800">
-            검색을 바꿔도 담긴 채로 남습니다 — 여러 명 골라 담은 뒤 아래 발급 버튼으로 한 번에 출력
-          </span>
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              onClick={() => setCartOpen((v) => !v)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-emerald-800 hover:bg-emerald-100"
-            >
-              목록 정리
-              <ChevronDown className={cn("w-3.5 h-3.5 transition", cartOpen && "rotate-180")} />
-            </button>
-            <button
-              onClick={() => {
-                navigator.clipboard
-                  .writeText(cartToText(cart))
-                  .then(() => toast.success("취합본을 복사했습니다"))
-                  .catch(() => toast.error("복사 실패 — 목록을 펼쳐 직접 선택해 주세요"));
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-emerald-800 hover:bg-emerald-100"
-            >
-              <Copy className="w-3.5 h-3.5" /> 취합본 복사
-            </button>
-            <button
-              onClick={() => {
-                if (confirm(`담아둔 ${cart.length}건을 전부 비울까요?`)) clearCart();
-              }}
-              className="px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-muted-foreground hover:bg-emerald-100"
-            >
-              비우기
-            </button>
-          </div>
-        </div>
-
-        {cartOpen && (
-          <div className="mt-2.5 max-h-80 overflow-y-auto rounded-lg border border-emerald-200 bg-white divide-y">
-            {cartGroups.map(({ owner, items: list }) => (
-              <div key={owner} className="p-2.5">
-                <p className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" /> {displayOwnerName(owner)}
-                  <span className="text-emerald-700">{list.length}건</span>
-                  <button
-                    onClick={() => setCart((c) => removeFromCart(c, list.map((i) => i.id)))}
-                    className="ml-auto text-[11px] font-bold text-muted-foreground hover:text-red-600"
-                  >
-                    이 임대인 빼기
-                  </button>
-                </p>
-                <ol className="mt-1 space-y-0.5">
-                  {list.map((c, i) => (
-                    <li key={c.id} className="flex items-center gap-1.5 text-[11px] text-foreground">
-                      <span className="text-muted-foreground tabular-nums w-5 shrink-0">{i + 1}.</span>
-                      <span className="truncate">{c.address}</span>
-                      {c.case_number && (
-                        <span className="text-muted-foreground shrink-0">({c.case_number})</span>
-                      )}
-                      <button
-                        onClick={() => setCart((prev) => removeFromCart(prev, [c.id]))}
-                        className="ml-auto text-muted-foreground hover:text-red-600 shrink-0"
-                        title="빼기"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-
   if (items.length === 0) {
     return (
-      <div className="space-y-3">
-        {cartPanel}
-        <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
-          이 범위에는 미답사 경매 물건이 없습니다. 다른 임대인·지역으로 검색해 보세요.
-        </div>
+      <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
+        이 범위에는 미답사 경매 물건이 없습니다. 다른 임대인·지역으로 검색해 보세요.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {cartPanel}
+    <div className="space-y-3 pb-20">
       {/* ── 검색 바 ── */}
       <div className="rounded-xl border bg-card p-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
+              ref={ownerSearchRef}
               value={ownerSearch}
               onChange={(e) => setOwnerSearch(e.target.value)}
-              placeholder="소유주명 검색 (예: 김민영)"
+              placeholder="소유주명 검색 (예: 김민영)  ( / 키)"
               className="w-full pl-9 pr-8 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {ownerSearch && (
@@ -1133,7 +1050,7 @@ export function PoolList({
                       className={cn("border-b cursor-pointer", selected.has(p.id) ? "bg-blue-50" : "hover:bg-muted/40")}
                     >
                       <td className="px-3 py-2">
-                        <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} onClick={(e) => e.stopPropagation()} className="w-4 h-4" />
+                        <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} onClick={(e) => e.stopPropagation()} className="w-5 h-5 cursor-pointer" />
                       </td>
                       <td className="px-3 py-2 font-mono text-xs text-blue-700">
                         {p.court && <div className="text-[10px] text-muted-foreground">{p.court}</div>}

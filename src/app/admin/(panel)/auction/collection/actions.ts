@@ -579,3 +579,62 @@ export async function idsForRegions(
     return { ok: false, error: "대상 조회 중 오류가 발생했습니다." };
   }
 }
+
+/**
+ * 임대인 한 명의 미답사 물건을 취합 바구니에 담을 형태로 돌려준다.
+ * (임대인 명단에서 카드를 눌러 들어가지 않고 바로 담기 위한 경로)
+ */
+export async function cartItemsForOwner(
+  ownerName: string,
+  limit = 1000,
+): Promise<{
+  ok: boolean;
+  items?: { id: string; owner_name: string; address: string; case_number: string }[];
+  error?: string;
+}> {
+  try {
+    await requireAdmin();
+    const parsed = z.string().trim().min(1).max(120).safeParse(ownerName);
+    if (!parsed.success) return { ok: false, error: "임대인 이름이 비어 있습니다" };
+
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("auction_property")
+      .select("id, address, owner_name, case_number")
+      .eq("survey_status", "pending")
+      .eq("owner_name", parsed.data)
+      .order("address", { ascending: true })
+      .limit(limit);
+    if (error) return { ok: false, error: error.message };
+
+    const rows = (data ?? []) as {
+      id: string;
+      address: string | null;
+      owner_name: string | null;
+      case_number: string | null;
+    }[];
+    const blockedKeys = await fetchBlockedOwnerKeys(supabase);
+    const alive = blockedKeys.size
+      ? rows.filter((r) => !blockedKeys.has(normalizeOwnerName(r.owner_name)))
+      : rows;
+
+    // 완전히 같은 주소는 1건으로 (목록 화면과 동일 규칙)
+    const seen = new Set<string>();
+    const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];
+    for (const r of alive) {
+      const key = (r.address ?? "").trim();
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      items.push({
+        id: r.id,
+        owner_name: r.owner_name ?? "",
+        address: r.address ?? "",
+        case_number: r.case_number ?? "",
+      });
+    }
+    return { ok: true, items };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "임대인 물건 조회 중 오류가 발생했습니다." };
+  }
+}

@@ -12,6 +12,7 @@ import { recentTeamNames } from "@/lib/auction/issue-sheet";
 import { recentIssuesByRegion } from "../sheets/actions";
 import { ScrollMemory } from "./scroll-memory";
 import { OwnerJump } from "./owner-jump";
+import { CartBar } from "./cart-bar";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -241,7 +242,8 @@ export default async function AuctionCollectionPage({
   const min = Math.max(1, parseInt(sp.min ?? "1", 10) || 1);
 
   return (
-    <div className="space-y-6">
+    // 하단 고정 취합 바에 마지막 줄이 가리지 않도록 여백
+    <div className="space-y-6 pb-24">
       <PageHeader
         icon={Gavel}
         title="경매 물건 수집"
@@ -257,6 +259,8 @@ export default async function AuctionCollectionPage({
 
       <AuctionImportForm />
 
+      {/* 취합 바구니는 어느 화면에서든 화면 아래에 붙어 있다 */}
+      <CartBarGate />
       {hasFilter ? (
         <FilteredPool filter={filter} page={page} />
       ) : (
@@ -278,6 +282,11 @@ function batchChipLabel(b: BatchRow): string {
   if (name && !auto) return name.length > 18 ? `${name.slice(0, 18)}…` : name;
   const iso = b.created_at ?? "";
   return `${iso.slice(5, 10)} ${iso.slice(11, 16)}`;
+}
+
+async function CartBarGate() {
+  const recentTeams = await recentTeamNames();
+  return <CartBar recentTeams={recentTeams} />;
 }
 
 async function GateBatches() {
