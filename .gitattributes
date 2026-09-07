@@ -1,0 +1,6 @@
+# 줄바꿈은 저장소·체크아웃 모두 LF 로 고정 — CRLF 로만 다른 가짜 충돌 방지
+* text=auto eol=lf
+*.ttf binary
+*.webp binary
+*.png binary
+*.xlsx binary

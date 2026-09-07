@@ -48,3 +48,6 @@ next-env.d.ts
 _import/
 .omc/
 supabase/migrations/*_excel_data_load.sql
+
+# codex 인수인계 산출물(로컬 전용)
+codex-handoff/
