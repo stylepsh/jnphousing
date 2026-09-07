@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { AdminSidebar } from "../_components/sidebar";
 import { NotConfiguredBanner } from "@/components/shared/NotConfiguredBanner";
+import { SessionTimeout } from "@/components/admin/SessionTimeout";
 import { createClient, createServiceClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
 // admin (panel) 전체를 동적 렌더링 — DB/세션 의존
@@ -60,6 +61,7 @@ export default async function AdminLayout({
   };
   let adminName = "관리자";
   let isSuper = false;
+  let isReadonly = false;
 
   if (configured) {
     try {
@@ -74,6 +76,7 @@ export default async function AdminLayout({
         const adminRow = admin as { name: string; role: string } | null;
         adminName = adminRow?.name ?? "관리자";
         isSuper = adminRow?.role === "super";
+        isReadonly = adminRow?.role === "readonly";
 
         counts = await getSidebarCounts();
       }
@@ -86,7 +89,12 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-slate-50 flex">
       <AdminSidebar counts={counts} adminName={adminName} isSuper={isSuper} />
       <div className="flex-1 lg:ml-64 min-w-0">
-        <main className="mx-auto w-full max-w-[1600px] px-5 sm:px-7 lg:px-10 pt-16 lg:pt-8 pb-12">
+        <main id="main-content" className="mx-auto w-full max-w-[1600px] px-5 sm:px-7 lg:px-10 pt-16 lg:pt-8 pb-12">
+          {isReadonly && (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+              조회 전용 계정입니다. 등록·수정·삭제·상태 변경은 저장되지 않습니다.
+            </div>
+          )}
           {configured ? children : (
             <NotConfiguredBanner
               title="관리자 패널 준비 중"
@@ -95,6 +103,7 @@ export default async function AdminLayout({
           )}
         </main>
       </div>
+      {configured && <SessionTimeout />}
     </div>
   );
 }

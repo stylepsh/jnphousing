@@ -40,6 +40,7 @@ interface PipelineRow {
 
 function emptyDashboard() {
   return {
+    degraded: false,
     received: 0, inProgress: 0, newInquiries: 0, vacant: 0,
     billingTotal: 0, billingPaid: 0, collectionRate: 0,
     overdueOutstanding: 0, overdueCount: 0, awaitingCount: 0, expiringCount: 0,
@@ -108,6 +109,14 @@ async function getDashboardData() {
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(5),
   ]);
+
+  const degraded = [
+    receivedRes, inProgressRes, newInquiriesRes, vacantRes,
+    invThisMonthRes, overdueRes, pendingCommissionsRes,
+    expiringLeasesRes, expiringCountRes, recentComplaintsRes, recentInquiriesRes,
+    trendInvRes, unitsRes, activeLeasesRes, channelStatsRes, channelsRes,
+    pipelineRes, collectInvRes, todosRes,
+  ].some((result) => Boolean(result.error));
 
   const invs = (invThisMonthRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "status">[];
   const billingTotal = invs.reduce((s, i) => s + i.amount_total, 0);
@@ -204,6 +213,7 @@ async function getDashboardData() {
   }
 
   return {
+    degraded,
     received: receivedRes.count ?? 0,
     inProgress: inProgressRes.count ?? 0,
     newInquiries: newInquiriesRes.count ?? 0,
@@ -274,9 +284,11 @@ export default async function DashboardPage() {
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{adminName}님, {getGreeting()} 👋</h1>
             <p className="mt-1.5 text-sm text-blue-100">
-              {todoTotal > 0
-                ? <>오늘 처리할 일이 <span className="font-bold text-white">{todoTotal}건</span> 있습니다.</>
-                : "오늘 급히 처리할 일은 없습니다. 👍"}
+              {d.degraded
+                ? "일부 운영 데이터를 불러오지 못했습니다. 아래 수치를 확정값으로 사용하지 마세요."
+                : todoTotal > 0
+                 ? <>오늘 처리할 일이 <span className="font-bold text-white">{todoTotal}건</span> 있습니다.</>
+                 : "오늘 급히 처리할 일은 없습니다. 👍"}
             </p>
           </div>
           <a
@@ -288,6 +300,16 @@ export default async function DashboardPage() {
           </a>
         </div>
       </div>
+
+      {d.degraded && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">일부 데이터 조회가 실패했습니다.</p>
+            <p className="mt-0.5 text-xs text-red-800">0건으로 표시된 항목도 실제 0건이 아닐 수 있습니다. 새로고침 후 계속되면 데이터베이스 연결을 확인하세요.</p>
+          </div>
+        </div>
+      )}
 
       {/* ⓪ 빠른 입력 — 1인 운영자가 가장 자주 쓰는 입력 동선 모음 */}
       <section className="mb-8">

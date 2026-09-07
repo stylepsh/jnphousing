@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listTemplates } from "@/lib/notify/templates";
 import { formatKoreanDate } from "@/lib/dates";
 import type { NotificationLog } from "@/types/lease";
+import { maskPhone } from "@/lib/pii";
 
 export const metadata = { title: "알림 발송 이력" };
 
@@ -25,6 +26,14 @@ const STATUS_LABEL: Record<string, { l: string; c: string }> = {
   failed: { l: "실패", c: "bg-red-100 text-red-700" },
   skipped: { l: "스킵(콘솔)", c: "bg-amber-100 text-amber-800" },
 };
+
+function maskRecipient(value: string): string {
+  if (value.includes("@")) {
+    const [local, domain] = value.split("@", 2);
+    return `${local.slice(0, 2)}${local.length > 2 ? "***" : "*"}@${domain ?? ""}`;
+  }
+  return maskPhone(value);
+}
 
 export default async function NotificationsPage() {
   const logs = await fetchLogs();
@@ -67,7 +76,7 @@ export default async function NotificationsPage() {
                         <TableRow key={n.id}>
                           <TableCell className="text-xs">{formatKoreanDate(n.created_at.slice(0, 10))} {n.created_at.slice(11, 16)}</TableCell>
                           <TableCell><Badge variant="outline" className="text-xs">{n.channel}</Badge></TableCell>
-                          <TableCell className="text-sm">{n.recipient}</TableCell>
+                          <TableCell className="text-sm">{maskRecipient(n.recipient)}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{n.template_key}</TableCell>
                           <TableCell><Badge className={`${cfg.c} hover:${cfg.c} text-xs`}>{cfg.l}</Badge></TableCell>
                           <TableCell className="text-xs text-red-700 max-w-[200px] truncate">{n.error_message ?? "-"}</TableCell>

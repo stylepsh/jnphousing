@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   MessageSquareWarning,
@@ -153,6 +153,15 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileOpen]);
+
   // super 전용 그룹·항목 필터 (staff 에게는 경매·회원승인 자체가 안 보임)
   const nav = NAV
     .filter((g) => isSuper || !g.superOnly)
@@ -191,6 +200,9 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
       <button
         className="lg:hidden fixed top-4 left-4 z-50 h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center shadow-lg"
         onClick={() => setMobileOpen((v) => !v)}
+        aria-label={mobileOpen ? "관리자 메뉴 닫기" : "관리자 메뉴 열기"}
+        aria-expanded={mobileOpen}
+        aria-controls="admin-sidebar"
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
@@ -203,6 +215,7 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
       )}
 
       <aside
+        id="admin-sidebar"
         className={cn(
           "fixed top-0 left-0 z-40 w-64 h-screen bg-primary text-white flex flex-col",
           "transition-transform lg:translate-x-0",
@@ -234,7 +247,7 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
           {nav.map((g) => {
             const total = groupBadgeTotal(g);
             // pinned 그룹은 항상 펼침(토글 없음). 그 외에는 접힘 토글.
-            const isOpen = g.pinned || openGroups.has(g.group);
+            const isOpen = g.pinned || openGroups.has(g.group) || g.group === activeGroup;
 
             const itemList = (
               <div className={cn("space-y-0.5", g.pinned ? "" : "mt-0.5 mb-2 animate-slide-down")}>
@@ -283,6 +296,7 @@ export function AdminSidebar({ counts, adminName, isSuper }: { counts: BadgeCoun
                   // 티어②③④ — 클릭하여 펴기/접기
                   <button
                     onClick={() => toggleGroup(g.group)}
+                    aria-expanded={isOpen}
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition",
                       isOpen ? "text-blue-200 bg-white/[0.04]" : "text-blue-300 hover:bg-white/[0.04]",
