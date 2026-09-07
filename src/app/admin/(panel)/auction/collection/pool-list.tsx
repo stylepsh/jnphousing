@@ -69,11 +69,11 @@ const OWNER_FALLBACK = "(소유자 미상)";
 export function PoolList({
   items,
   recentTeams = [],
-  initialMin = 3,
+  initialMin = 1,
 }: {
   items: PoolItem[];
   recentTeams?: string[];
-  /** 최소 N건 이상 임대인 필터 초기값 — 지역/회차로 들어오면 1(전부 보임) */
+  /** 최소 N건 이상 임대인 필터 초기값 — 기본 1(수집된 전체). 좁히는 건 화면에서 직접 고른다. */
   initialMin?: number;
 }) {
   const router = useRouter();

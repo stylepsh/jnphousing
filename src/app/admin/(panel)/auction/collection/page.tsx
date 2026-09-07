@@ -237,7 +237,8 @@ export default async function AuctionCollectionPage({
   const page = Math.max(0, parseInt(sp.page ?? "0", 10) || 0);
   const hasFilter = !!(regions.length || filter.owner || filter.batch);
   const ownerView = sp.view === "owner";
-  const min = Math.max(1, parseInt(sp.min ?? "2", 10) || 2);
+  // 기본은 1건 이상 = 수집된 전체를 보여준다. 좁히는 건 아래 칩으로 직접 고른다.
+  const min = Math.max(1, parseInt(sp.min ?? "1", 10) || 1);
 
   return (
     <div className="space-y-6">
@@ -387,9 +388,10 @@ async function OwnerGate({ min }: { min: number }) {
         <p className="text-xs text-muted-foreground">
           보유 <strong>공실 후보가 많은(운용 안 하는) 임대인</strong>을 발굴합니다. 미답사 보유 건수가 많을수록 위로
           정렬됩니다. 임대인을 누르면 전 지역에 흩어진 그 임대인의 <strong>모든 물건</strong>으로 들어갑니다.
+          <br />기본은 <strong>1건 이상(수집된 전체)</strong>이며, 아래에서 최소 보유 건수를 직접 올려 좁힐 수 있습니다.
         </p>
         <div className="mt-3 flex items-center gap-1.5">
-          {[1, 2, 3].map((n) => (
+          {[1, 2, 3, 5, 10].map((n) => (
             <Link
               key={n}
               href={`/admin/auction/collection?view=owner&min=${n}`}
@@ -407,7 +409,7 @@ async function OwnerGate({ min }: { min: number }) {
 
       {owners.length === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center text-sm text-muted-foreground">
-          {min}건 이상 보유한 임대인이 없습니다. 기준을 낮춰보세요.
+          {min}건 이상 보유한 임대인이 없습니다. 위에서 기준을 낮춰보세요.
         </div>
       ) : (
         <OwnerGrid owners={owners} />
@@ -501,7 +503,8 @@ async function FilteredPool({
       )}
       <ScrollMemory scopeKey={scopeKey} />
       <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
-      <PoolList items={items} recentTeams={recentTeams} initialMin={filter.owner ? 3 : 1} />
+      {/* 기본은 1건 이상 = 이 범위 전체. 좁히는 건 목록 안의 "최소 N건 이상만" 선택으로 */}
+      <PoolList items={items} recentTeams={recentTeams} initialMin={1} />
       {/* 페이지 내비게이션 */}
       <div className="flex items-center justify-center gap-3 py-2">
         {page > 0 ? (
