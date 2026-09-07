@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -19,6 +19,9 @@ import {
   Square,
   User,
   Users2,
+  ClipboardList,
+  ChevronDown,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatWon } from "@/lib/money";
@@ -28,6 +31,15 @@ import { cn } from "@/lib/utils";
 import { textMatches } from "@/lib/auction/search";
 import { useIssueSheet } from "./use-issue-sheet";
 import { displayOwnerName } from "@/lib/auction/court-auction";
+import {
+  type CartItem,
+  cartToText,
+  groupCartByOwner,
+  mergeCart,
+  readCart,
+  removeFromCart,
+  writeCart,
+} from "@/lib/auction/selection-cart";
 
 export interface PoolItem {
   id: string;
@@ -57,21 +69,21 @@ const OWNER_FALLBACK = "(소유자 미상)";
 export function PoolList({
   items,
   recentTeams = [],
-  scopeKey = "all",
   initialMin = 3,
 }: {
   items: PoolItem[];
   recentTeams?: string[];
   /** 최소 N건 이상 임대인 필터 초기값 — 지역/회차로 들어오면 1(전부 보임) */
   initialMin?: number;
-  /** 지역/임대인/회차 조합 — 이 범위별로 선택 상태를 기억한다. */
-  scopeKey?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // 물건 선택
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // 물건 선택 — 검색 범위를 갈아타도 남는 "취합 장바구니"
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const selected = useMemo(() => new Set(cart.map((c) => c.id)), [cart]);
+  // 취합 목록 펼침
+  const [cartOpen, setCartOpen] = useState(false);
   // 단일 임대인 상세 필터
   const [filterOwner, setFilterOwner] = useState<string | null>(null);
   // 검색
@@ -102,7 +114,7 @@ export function PoolList({
 
   const ownerKey = (p: PoolItem) => p.owner_name || OWNER_FALLBACK;
   // 지역 키 = 주소 앞 3토큰 (시 구 동)
-  const regionKey = (p: PoolItem) => {
+  const regionKey = (p: { address: string }) => {
     const parts = (p.address || "").trim().split(/\s+/);
     return parts.slice(0, 3).join(" ") || "(지역 미상)";
   };
@@ -160,6 +172,35 @@ export function PoolList({
   const partiallySelected = !allSelected && visibleItems.some((i) => selected.has(i.id));
 
   // ===== 선택 =====
+  // 이 화면(items)에 있는 것만 next 로 맞추고, 다른 검색에서 담아둔 건은 그대로 둔다.
+  // 임대인 A 를 체크한 뒤 임대인 B 를 검색해도 A 가 살아 있어야 한 번에 취합할 수 있다.
+  const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  const setSelected = useCallback(
+    (next: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+      setCart((prevCart) => {
+        const prevIds = new Set(prevCart.map((c) => c.id));
+        const nextIds = typeof next === "function" ? next(prevIds) : next;
+        const kept = prevCart.filter((c) => !itemById.has(c.id) || nextIds.has(c.id));
+        const add: CartItem[] = [];
+        for (const id of nextIds) {
+          if (prevIds.has(id)) continue;
+          const p = itemById.get(id);
+          if (p)
+            add.push({
+              id: p.id,
+              owner_name: p.owner_name,
+              address: p.address,
+              case_number: p.case_number,
+            });
+        }
+        return mergeCart(kept, add);
+      });
+    },
+    [itemById],
+  );
+  /** 취합 전체 비우기 — 발급·삭제처럼 장바구니 전체를 소진한 뒤에 쓴다. */
+  const clearCart = useCallback(() => setCart([]), []);
+
   function toggle(id: string) {
     setSelected((s) => {
       const n = new Set(s);
@@ -323,40 +364,27 @@ export function PoolList({
         return;
       }
       toast.success(`${res.count}건 답사 선정 — 파이프라인 배정 대기로 이동`);
-      setSelected(new Set());
+      clearCart();
       router.refresh();
     });
   }
 
-  // ── 선택 상태 기억 (뒤로 갔다 와도 체크가 살아 있게) ──
-  const storeKey = `auction-pool-sel:${scopeKey}`;
+  // ── 취합 장바구니 저장 (검색을 바꿔도, 뒤로 갔다 와도 살아 있게) ──
   const restored = useRef(false);
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
-    try {
-      const raw = sessionStorage.getItem(storeKey);
-      if (!raw) return;
-      const ids: string[] = JSON.parse(raw);
-      const alive = ids.filter((id) => items.some((i) => i.id === id));
-      if (alive.length > 0) {
-        setSelected(new Set(alive));
-        toast.success(`이전에 고른 ${alive.length}건을 되살렸습니다`, { duration: 2500 });
-      }
-    } catch {
-      /* 저장소 접근 실패는 무시 */
+    const saved = readCart();
+    if (saved.length > 0) {
+      setCart(saved);
+      toast.success(`이전에 담은 ${saved.length}건을 되살렸습니다`, { duration: 2500 });
     }
-  }, [storeKey, items]);
+  }, []);
 
   useEffect(() => {
     if (!restored.current) return;
-    try {
-      if (selected.size === 0) sessionStorage.removeItem(storeKey);
-      else sessionStorage.setItem(storeKey, JSON.stringify(Array.from(selected)));
-    } catch {
-      /* 무시 */
-    }
-  }, [selected, storeKey]);
+    writeCart(cart);
+  }, [cart]);
 
   // ===== 삭제(후보 풀 제외) =====
   function deleteIds(ids: string[], label: string) {
@@ -369,7 +397,7 @@ export function PoolList({
         return;
       }
       toast.success(`${res.rejected}건 제외 완료`);
-      setSelected(new Set());
+      clearCart();
       router.refresh();
     });
   }
@@ -398,21 +426,20 @@ export function PoolList({
         return;
       }
       toast.success(`[${owner}] 차단 완료 — ${res.removed ?? 0}건 보관함으로 이동`);
-      setSelected(new Set());
+      clearCart();
       router.refresh();
     });
   }
 
   /** 발급 전 확인 — 팀 미입력·이미 배포된 건 포함 여부. */
   // ===== 답사지 발급 =====
-  const selectedItems = useMemo(
-    () => items.filter((i) => selected.has(i.id)),
+  const selectedItems = cart;
+  // 이미 배포된 건 경고 — 발급 이력은 지금 화면에 있는 물건에서만 알 수 있다.
+  const alreadyIssued = useMemo(
+    () => items.filter((i) => selected.has(i.id) && i.last_issued_at),
     [items, selected],
   );
-  const alreadyIssued = useMemo(
-    () => selectedItems.filter((i) => i.last_issued_at),
-    [selectedItems],
-  );
+  const cartGroups = useMemo(() => groupCartByOwner(cart), [cart]);
   const selectedRegions = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of selectedItems) {
@@ -461,21 +488,107 @@ export function PoolList({
     });
     if (!ok) return;
     setLastIssue({ team: team.trim(), count: selected.size, kind: kind === "pdf" ? "인쇄" : "엑셀" });
-    setSelected(new Set());
+    clearCart();
     setConfirmKind(null);
     router.refresh();
   }
 
+  /** 취합 장바구니 — 여러 번의 검색에서 담은 것을 임대인별로 정리해 보여준다. */
+  const cartPanel =
+    cart.length === 0 ? null : (
+      <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ClipboardList className="w-4 h-4 text-emerald-700 shrink-0" />
+          <p className="text-sm font-black text-emerald-900">
+            취합 {cart.length.toLocaleString()}건
+            <span className="font-bold text-emerald-700 ml-1.5">· 임대인 {cartGroups.length}명</span>
+          </p>
+          <span className="text-xs text-emerald-800">
+            검색을 바꿔도 담긴 채로 남습니다 — 여러 명 골라 담은 뒤 아래 발급 버튼으로 한 번에 출력
+          </span>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={() => setCartOpen((v) => !v)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+            >
+              목록 정리
+              <ChevronDown className={cn("w-3.5 h-3.5 transition", cartOpen && "rotate-180")} />
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(cartToText(cart))
+                  .then(() => toast.success("취합본을 복사했습니다"))
+                  .catch(() => toast.error("복사 실패 — 목록을 펼쳐 직접 선택해 주세요"));
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+            >
+              <Copy className="w-3.5 h-3.5" /> 취합본 복사
+            </button>
+            <button
+              onClick={() => {
+                if (confirm(`담아둔 ${cart.length}건을 전부 비울까요?`)) clearCart();
+              }}
+              className="px-2.5 py-1 rounded-md border border-emerald-300 bg-white text-xs font-bold text-muted-foreground hover:bg-emerald-100"
+            >
+              비우기
+            </button>
+          </div>
+        </div>
+
+        {cartOpen && (
+          <div className="mt-2.5 max-h-80 overflow-y-auto rounded-lg border border-emerald-200 bg-white divide-y">
+            {cartGroups.map(({ owner, items: list }) => (
+              <div key={owner} className="p-2.5">
+                <p className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" /> {displayOwnerName(owner)}
+                  <span className="text-emerald-700">{list.length}건</span>
+                  <button
+                    onClick={() => setCart((c) => removeFromCart(c, list.map((i) => i.id)))}
+                    className="ml-auto text-[11px] font-bold text-muted-foreground hover:text-red-600"
+                  >
+                    이 임대인 빼기
+                  </button>
+                </p>
+                <ol className="mt-1 space-y-0.5">
+                  {list.map((c, i) => (
+                    <li key={c.id} className="flex items-center gap-1.5 text-[11px] text-foreground">
+                      <span className="text-muted-foreground tabular-nums w-5 shrink-0">{i + 1}.</span>
+                      <span className="truncate">{c.address}</span>
+                      {c.case_number && (
+                        <span className="text-muted-foreground shrink-0">({c.case_number})</span>
+                      )}
+                      <button
+                        onClick={() => setCart((prev) => removeFromCart(prev, [c.id]))}
+                        className="ml-auto text-muted-foreground hover:text-red-600 shrink-0"
+                        title="빼기"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
-        수집된 미답사 경매 물건이 없습니다. 위에서 텍스트를 붙여넣어 수집하세요.
+      <div className="space-y-3">
+        {cartPanel}
+        <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
+          이 범위에는 미답사 경매 물건이 없습니다. 다른 임대인·지역으로 검색해 보세요.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {cartPanel}
       {/* ── 검색 바 ── */}
       <div className="rounded-xl border bg-card p-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

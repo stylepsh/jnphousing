@@ -11,6 +11,7 @@ import { normalizeOwnerName } from "@/lib/auction/court-auction";
 import { recentTeamNames } from "@/lib/auction/issue-sheet";
 import { recentIssuesByRegion } from "../sheets/actions";
 import { ScrollMemory } from "./scroll-memory";
+import { OwnerJump } from "./owner-jump";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -475,6 +476,8 @@ async function FilteredPool({
             <X className="w-3 h-3" /> 범위 변경
           </Link>
         </div>
+        {/* 나갔다 들어오지 않고 다른 임대인으로 갈아타기 — 고른 물건은 취합 장바구니에 남는다 */}
+        <OwnerJump current={filter.owner} exact={filter.ownerExact} />
       </div>
       {(total > pageRows || dedupHidden > 0) && (
         <p className="text-xs text-muted-foreground rounded-lg border bg-muted/40 px-3 py-2">
@@ -498,12 +501,7 @@ async function FilteredPool({
       )}
       <ScrollMemory scopeKey={scopeKey} />
       <BatchFilterBar batches={batches} filter={filter} activeBatch={activeBatch} />
-      <PoolList
-        items={items}
-        recentTeams={recentTeams}
-        scopeKey={scopeKey}
-        initialMin={filter.owner ? 3 : 1}
-      />
+      <PoolList items={items} recentTeams={recentTeams} initialMin={filter.owner ? 3 : 1} />
       {/* 페이지 내비게이션 */}
       <div className="flex items-center justify-center gap-3 py-2">
         {page > 0 ? (
