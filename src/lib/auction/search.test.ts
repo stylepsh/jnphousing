@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { textMatches } from "./search";
+import { textMatches, parseOwnerNames } from "./search";
 import { displayOwnerName } from "./court-auction";
 
 const ADDR = "인천 부평구 부평동 521-22 삼성캐슬 아파트 제101동 202호 [부평대로 33]";
@@ -76,3 +76,44 @@ describe("displayOwnerName", () => {
   });
 });
 
+
+describe("parseOwnerNames — 붙여넣은 명단에서 이름만", () => {
+  it("줄바꿈·쉼표·탭 어떤 구분자로 와도 나눈다", () => {
+    expect(parseOwnerNames("김철수\n박영희, 이민수\t최지훈")).toEqual([
+      "김철수",
+      "박영희",
+      "이민수",
+      "최지훈",
+    ]);
+  });
+
+  it("번호·불릿·따옴표를 떼어낸다", () => {
+    expect(parseOwnerNames("1. 김철수\n2) 박영희\n- 이민수\n\"최지훈\"")).toEqual([
+      "김철수",
+      "박영희",
+      "이민수",
+      "최지훈",
+    ]);
+  });
+
+  it("괄호 꼬리표·'외 2명'·'3건'을 뗀다", () => {
+    expect(parseOwnerNames("김철수(3건)\n박영희 외 2명\n이민수 - 5건\n최지훈[HUG]")).toEqual([
+      "김철수",
+      "박영희",
+      "이민수",
+      "최지훈",
+    ]);
+  });
+
+  it("법인명처럼 공백이 든 이름은 살린다", () => {
+    expect(parseOwnerNames("주식회사 한빛개발\n김철수")).toEqual(["주식회사 한빛개발", "김철수"]);
+  });
+
+  it("중복은 한 번만, 순서는 그대로", () => {
+    expect(parseOwnerNames("김철수\n박영희\n김철수")).toEqual(["김철수", "박영희"]);
+  });
+
+  it("빈 줄만 있으면 빈 배열", () => {
+    expect(parseOwnerNames("\n\n  \n")).toEqual([]);
+  });
+});

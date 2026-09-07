@@ -13,6 +13,7 @@ import { recentIssuesByRegion } from "../sheets/actions";
 import { ScrollMemory } from "./scroll-memory";
 import { OwnerJump } from "./owner-jump";
 import { CartBar } from "./cart-bar";
+import { BulkNameSearch } from "./bulk-name-search";
 
 export const metadata: Metadata = { title: "경매 물건 수집" };
 export const dynamic = "force-dynamic";
@@ -266,6 +267,7 @@ export default async function AuctionCollectionPage({
       ) : (
         <>
           <ScrollMemory scopeKey={ownerView ? "gate-owner" : "gate-region"} />
+          <BulkNameSearch />
           <GateBatches />
           <GateTabs ownerView={ownerView} min={min} />
           {ownerView ? <OwnerGate min={min} /> : <RegionGate />}

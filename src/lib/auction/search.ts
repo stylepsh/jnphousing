@@ -20,3 +20,34 @@ export function textMatches(
   const hay = fields.map((f) => squash(f ?? "")).join("\n");
   return tokens.every((t) => hay.includes(t));
 }
+
+/**
+ * 붙여넣은 이름 명단을 이름 배열로 — "이름 일괄 검색"용.
+ *
+ * 대표님이 넘기는 명단은 형태가 제각각이다:
+ *   줄바꿈/쉼표/탭 구분, "1. 김철수" 같은 번호, "김철수(3건)" 같은 꼬리표,
+ *   "김철수 외 2명" 같은 공동소유 표기, 엑셀에서 복사한 따옴표.
+ * 전부 이름만 남기고, 순서를 지키며 중복은 한 번만 돌려준다.
+ */
+export function parseOwnerNames(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const rawLine of (text ?? "").split(/[\n\r,;\t|]+/)) {
+    let s = rawLine.trim();
+    if (!s) continue;
+    s = s.replace(/^["']|["']$/g, "").trim();
+    // 앞 번호: "1." "1)" "- " "• "
+    s = s.replace(/^[-•*]\s*/, "").replace(/^\d+\s*[.)]\s*/, "");
+    // 꼬리표: "(3건)" "[HUG]" "외 2명" "- 3건"
+    s = s.replace(/[([{][^)\]}]*[)\]}]/g, " ");
+    s = s.replace(/\s*외\s*\d*\s*명?\s*$/u, "");
+    s = s.replace(/\s*[-–—]?\s*\d+\s*건\s*$/u, "");
+    s = s.replace(/\s+/g, " ").trim();
+    if (!s) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out;
+}

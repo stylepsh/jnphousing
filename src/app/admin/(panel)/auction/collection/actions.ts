@@ -638,3 +638,124 @@ export async function cartItemsForOwner(
     return { ok: false, error: "임대인 물건 조회 중 오류가 발생했습니다." };
   }
 }
+
+export interface BulkNameHit {
+  /** 붙여넣은 원본 이름 */
+  name: string;
+  /** 실제로 걸린 소유자명들 — 2개 이상이면 동명이인·공동소유일 수 있다 */
+  owners: string[];
+  count: number;
+}
+
+/**
+ * 이름 여러 개를 한 번에 찾아 취합 바구니에 담을 형태로 돌려준다.
+ *
+ * 매칭 규칙 — DB 의 owner_name 은 "김철수 외 2명" 처럼 꼬리가 붙기도 한다.
+ *   1) 정확히 같은 이름을 먼저 찾고,
+ *   2) 못 찾은 이름만 부분일치로 한 번 더 찾는다.
+ * 부분일치는 동명이인을 같이 잡을 수 있어, 걸린 소유자명을 그대로 돌려주고
+ * 화면에서 "여러 명 일치"로 표시한다(바구니에서 임대인 단위로 뺄 수 있다).
+ */
+export async function cartItemsForOwnerNames(
+  names: string[],
+  limit = 3000,
+): Promise<{
+  ok: boolean;
+  items?: { id: string; owner_name: string; address: string; case_number: string }[];
+  hits?: BulkNameHit[];
+  notFound?: string[];
+  error?: string;
+}> {
+  try {
+    await requireAdmin();
+    const parsed = z
+      .array(z.string().trim().min(1).max(60))
+      .min(1)
+      .max(300)
+      .safeParse(names.map((n) => n.trim()).filter(Boolean));
+    if (!parsed.success) return { ok: false, error: "검색할 이름이 없습니다 (최대 300개)" };
+    const wanted = Array.from(new Set(parsed.data));
+
+    const supabase = createServiceClient();
+    const SELECT = "id, address, owner_name, case_number";
+    type Row = {
+      id: string;
+      address: string | null;
+      owner_name: string | null;
+      case_number: string | null;
+    };
+
+    // 1) 정확히 일치
+    const exact = await supabase
+      .from("auction_property")
+      .select(SELECT)
+      .eq("survey_status", "pending")
+      .in("owner_name", wanted)
+      .limit(limit);
+    if (exact.error) return { ok: false, error: exact.error.message };
+    const rows: Row[] = [...((exact.data ?? []) as Row[])];
+
+    // 2) 못 찾은 이름만 부분일치로 (PostgREST or 필터를 깨는 문자는 제거)
+    const foundExact = new Set(rows.map((r) => (r.owner_name ?? "").trim()));
+    const missing = wanted.filter((n) => !foundExact.has(n));
+    const CHUNK = 40;
+    for (let i = 0; i < missing.length; i += CHUNK) {
+      const chunk = missing
+        .slice(i, i + CHUNK)
+        .map((n) => n.replace(/[,()*%\\]/g, "").trim())
+        .filter(Boolean);
+      if (chunk.length === 0) continue;
+      const or = chunk.map((n) => `owner_name.ilike.%${n}%`).join(",");
+      const partial = await supabase
+        .from("auction_property")
+        .select(SELECT)
+        .eq("survey_status", "pending")
+        .or(or)
+        .limit(limit);
+      if (partial.error) return { ok: false, error: partial.error.message };
+      rows.push(...((partial.data ?? []) as Row[]));
+    }
+
+    // 차단 임대인 제외 + 같은 주소는 1건으로 (목록 화면과 동일 규칙)
+    const blockedKeys = await fetchBlockedOwnerKeys(supabase);
+    const seenId = new Set<string>();
+    const seenAddr = new Set<string>();
+    const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];
+    for (const r of rows) {
+      if (seenId.has(r.id)) continue;
+      seenId.add(r.id);
+      if (blockedKeys.size && blockedKeys.has(normalizeOwnerName(r.owner_name))) continue;
+      const addr = (r.address ?? "").trim();
+      if (addr && seenAddr.has(addr)) continue;
+      if (addr) seenAddr.add(addr);
+      items.push({
+        id: r.id,
+        owner_name: r.owner_name ?? "",
+        address: addr,
+        case_number: r.case_number ?? "",
+      });
+    }
+
+    // 입력 이름별 결과 집계 — 어떤 이름이 몇 건 걸렸는지, 무엇이 안 걸렸는지
+    const hits: BulkNameHit[] = [];
+    const notFound: string[] = [];
+    for (const name of wanted) {
+      const needle = name.toLowerCase();
+      const mine = items.filter((it) => it.owner_name.toLowerCase().includes(needle));
+      if (mine.length === 0) {
+        notFound.push(name);
+        continue;
+      }
+      hits.push({
+        name,
+        owners: Array.from(new Set(mine.map((m) => m.owner_name))),
+        count: mine.length,
+      });
+    }
+
+    return { ok: true, items, hits, notFound };
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, error: e.message };
+    return { ok: false, error: "이름 일괄 검색 중 오류가 발생했습니다." };
+  }
+}
