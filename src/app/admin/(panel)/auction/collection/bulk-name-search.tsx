@@ -466,8 +466,11 @@ function GroupRows({
   const rows = sortRows(group.rows, sort.key, sort.asc);
   return (
     <>
-      <tr className="bg-blue-50/70 border-t">
-        <td colSpan={columns.length + 1} className="px-2 py-1 font-black text-blue-900">
+      <tr className="border-t">
+        <td
+          colSpan={columns.length + 1}
+          className="sticky top-0 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900"
+        >
           {group.field === "address" ? group.name : displayOwnerName(group.name)} (
           {group.rows.length}건)
         </td>
@@ -640,8 +643,9 @@ function GroupCards({
 }) {
   const rows = sortRows(group.rows, sort.key, sort.asc);
   return (
-    <div className="rounded-lg border overflow-hidden">
-      <p className="px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs">
+    <div className="rounded-lg border">
+      {/* 스크롤해도 어느 검색어의 결과를 보고 있는지 놓치지 않게 머리줄을 붙여 둔다 */}
+      <p className="sticky top-0 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b">
         {label} ({group.rows.length}건)
       </p>
       <ul className="divide-y">
