@@ -485,17 +485,104 @@ function GroupRows({
   );
 }
 
-/** 카드에 접어 보여줄 값 — 비어 있으면 아예 그리지 않는다(폰에서 빈 칸이 제일 방해된다). */
-const CARD_FIELDS: SortKey[] = [
-  "category",
-  "creditor_type",
-  "appraisal_value",
-  "minimum_bid",
-  "auction_date",
-  "deposit",
-  "monthly_rent",
-  "case_number",
-];
+/** 주소 끝의 도로명 대괄호 — 답사에 필요 없어 접어 두고, 탭하면 펼친다. */
+function splitRoadName(address: string): { base: string; road: string } {
+  const m = address.match(/\s*\[([^\]]*)\]\s*$/);
+  return m ? { base: address.slice(0, m.index).trim(), road: m[1].trim() } : { base: address, road: "" };
+}
+
+/**
+ * 모바일 카드 한 장 = 물건 1건.
+ *   1줄 주소(최대 2줄, 넘치면 말줄임 / 도로명은 접어둠)
+ *   2줄 소유주 · 임차인 (없는 항목은 생략)
+ *   3줄 감정가 / 최저가
+ *   4줄 매각기일 · 사건번호
+ * 답사상태 배지는 우측 상단 고정.
+ */
+function Card({ row: r }: { row: BulkSearchRow }) {
+  const [openRoad, setOpenRoad] = useState(false);
+  const { base, road } = splitRoadName(r.address || "");
+  const appraisal = cell(r, "appraisal_value");
+  const minimum = cell(r, "minimum_bid");
+  const auctionDate = cell(r, "auction_date");
+
+  return (
+    <li className="p-2.5">
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          {/* 1줄: 주소 */}
+          <p className="text-[13px] font-bold leading-snug line-clamp-2">
+            {base || "주소 미상"}
+            {road && !openRoad && (
+              <button
+                onClick={() => setOpenRoad(true)}
+                className="ml-1 text-[11px] font-bold text-blue-600 align-middle"
+              >
+                [도로명]
+              </button>
+            )}
+          </p>
+          {road && openRoad && (
+            <p className="text-[11px] text-muted-foreground leading-snug">[{road}]</p>
+          )}
+        </div>
+        {/* 우측 상단 고정 배지 */}
+        <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-muted text-muted-foreground">
+          {SURVEY_LABEL[r.survey_status] ?? r.survey_status}
+        </span>
+      </div>
+
+      {/* 2줄: 소유주 · 임차인 */}
+      {(r.owner_name || r.tenant_name) && (
+        <p className="mt-1 text-xs">
+          {r.owner_name && (
+            <span className="font-black">
+              {r.field === "owner" && <span className="text-blue-600">▸ </span>}
+              {r.owner_name}
+            </span>
+          )}
+          {r.owner_name && r.tenant_name && <span className="text-muted-foreground"> · </span>}
+          {r.tenant_name && (
+            <span className="text-violet-800 font-bold">
+              {r.field === "tenant" && <span className="text-blue-600">▸ </span>}
+              임차인 {r.tenant_name}
+            </span>
+          )}
+        </p>
+      )}
+
+      {/* 3줄: 감정가 / 최저가 */}
+      {(appraisal !== "—" || minimum !== "—") && (
+        <p className="mt-0.5 text-xs tabular-nums">
+          {appraisal !== "—" && (
+            <>
+              <span className="text-muted-foreground">감정가 </span>
+              <span className="font-bold">{appraisal}</span>
+            </>
+          )}
+          {appraisal !== "—" && minimum !== "—" && (
+            <span className="text-muted-foreground"> / </span>
+          )}
+          {minimum !== "—" && (
+            <>
+              <span className="text-muted-foreground">최저가 </span>
+              <span className="font-bold text-rose-700">{minimum}</span>
+            </>
+          )}
+        </p>
+      )}
+
+      {/* 4줄: 매각기일 · 사건번호 */}
+      {(auctionDate !== "—" || r.case_number) && (
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {auctionDate !== "—" && <>매각기일 {auctionDate}</>}
+          {auctionDate !== "—" && r.case_number && " · "}
+          {r.case_number}
+        </p>
+      )}
+    </li>
+  );
+}
 
 /** 모바일 카드 — 표 대신. 소유주/임차인·주소를 크게, 나머지는 라벨-값으로 접는다. */
 function GroupCards({
@@ -515,35 +602,7 @@ function GroupCards({
       </p>
       <ul className="divide-y">
         {rows.map((r) => (
-          <li key={r.id} className="p-2.5 space-y-1.5">
-            <div className="flex items-start gap-1.5 flex-wrap">
-              <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${FIELD_STYLE[r.field]}`}>
-                {FIELD_LABEL[r.field]}
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-muted text-muted-foreground">
-                {SURVEY_LABEL[r.survey_status] ?? r.survey_status}
-              </span>
-              <span className="font-black text-sm">{r.owner_name || "소유주 미상"}</span>
-              {r.tenant_name && (
-                <span className="text-xs text-violet-800">임차인 {r.tenant_name}</span>
-              )}
-            </div>
-            <p className="text-xs leading-snug">{r.address || "—"}</p>
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
-              {CARD_FIELDS.map((k) => {
-                const v = cell(r, k);
-                if (v === "—") return null;
-                return (
-                  <div key={k} className="flex justify-between gap-1">
-                    <dt className="text-muted-foreground">
-                      {COLUMNS.find((c) => c.key === k)?.label}
-                    </dt>
-                    <dd className="font-bold tabular-nums">{v}</dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </li>
+          <Card key={r.id} row={r} />
         ))}
       </ul>
     </div>
