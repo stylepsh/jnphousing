@@ -74,6 +74,14 @@ const FIELD_STYLE: Record<string, string> = {
   address: "bg-sky-100 text-sky-800",
 };
 
+/** 정렬 드롭다운에 두는 것만 — 실무에서 쓰는 네 가지. */
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "appraisal_value", label: "감정가순" },
+  { key: "minimum_bid", label: "최저가순" },
+  { key: "auction_date", label: "매각기일순" },
+  { key: "address", label: "주소순" },
+];
+
 const NUM_KEYS = new Set<SortKey>(["deposit", "monthly_rent", "appraisal_value", "minimum_bid"]);
 
 function cell(r: BulkSearchRow, key: SortKey): string {
@@ -335,9 +343,9 @@ export function BulkNameSearch() {
                 className="rounded-md border bg-background px-2 py-1 text-xs font-bold"
               >
                 <option value="">기본(찾은 순서)</option>
-                {columns.map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
                   </option>
                 ))}
               </select>
