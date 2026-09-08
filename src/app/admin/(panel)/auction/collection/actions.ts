@@ -607,7 +607,7 @@ export interface BulkSearchRow {
   category: string;
   deposit: number | null;
   monthly_rent: number | null;
-  move_in_date: string | null;
+  lease_start: string | null;
   lease_end: string | null;
   /** pending(미답사) / vacant(공실) / occupied(거주중) / rejected(거부) / blocked(차단) 등 */
   survey_status: string;
@@ -622,7 +622,7 @@ export interface BulkSearchGroup {
 }
 
 const BULK_SELECT =
-  "id, case_number, address, owner_name, tenant_name, category, deposit, monthly_rent, move_in_date, lease_end, survey_status";
+  "id, case_number, address, owner_name, tenant_name, category, deposit, monthly_rent, lease_start, lease_end, survey_status";
 
 interface PendingRow {
   id: string;
@@ -633,7 +633,7 @@ interface PendingRow {
   category: string | null;
   deposit: number | null;
   monthly_rent: number | null;
-  move_in_date: string | null;
+  lease_start: string | null;
   lease_end: string | null;
   survey_status: string | null;
 }
@@ -669,7 +669,7 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
     category: r.category ?? "",
     deposit: r.deposit,
     monthly_rent: r.monthly_rent,
-    move_in_date: r.move_in_date,
+    lease_start: r.lease_start,
     lease_end: r.lease_end,
     survey_status: r.survey_status ?? "pending",
     field,

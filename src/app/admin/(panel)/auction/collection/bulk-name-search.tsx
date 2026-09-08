@@ -23,7 +23,7 @@ type SortKey =
   | "category"
   | "deposit"
   | "monthly_rent"
-  | "move_in_date"
+  | "lease_start"
   | "lease_end"
   | "case_number"
   | "survey_status";
@@ -35,7 +35,7 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "category", label: "분류" },
   { key: "deposit", label: "보증금", num: true },
   { key: "monthly_rent", label: "월세", num: true },
-  { key: "move_in_date", label: "입주일" },
+  { key: "lease_start", label: "임대시작" },
   { key: "lease_end", label: "만기일" },
   { key: "case_number", label: "사건번호" },
   { key: "survey_status", label: "답사상태" },
