@@ -490,7 +490,7 @@ export function PoolList({
       label: selectedRegions[0]?.[0] ?? "답사지",
     });
     if (!ok) return;
-    setLastIssue({ team: team.trim(), count: selected.size, kind: kind === "pdf" ? "인쇄" : "엑셀" });
+    setLastIssue({ team: team.trim(), count: selected.size, kind: kind === "pdf" ? "PDF" : "엑셀" });
     clearCart();
     setConfirmKind(null);
     router.refresh();
@@ -952,7 +952,7 @@ export function PoolList({
 
       {/* 모바일 하단 발급 바는 없앴다 — 선택 = 취합 바구니라 CartBar(bottom-0)와 항상 겹쳤고,
           나중에 그려지는 이 바가 위를 덮어 CartBar 의 "인쇄(PDF)" 버튼이 사라져 보였다.
-          발급은 CartBar 의 "목록·출력" 한 곳에서만 한다(엑셀·인쇄 둘 다 있다). */}
+          발급은 CartBar 의 "발급·목록" 한 곳에서만 한다(엑셀·PDF 둘 다 있다). */}
 
       {/* ── 소유자별 상세 그룹 ── */}
       {groups.length === 0 && (

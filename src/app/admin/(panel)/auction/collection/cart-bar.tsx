@@ -136,7 +136,7 @@ export function CartBar({ recentTeams = [] }: { recentTeams?: string[] }) {
                 disabled={issuing}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-emerald-600 bg-white text-emerald-700 text-sm font-black disabled:opacity-40 min-h-11"
               >
-                <Printer className="w-4 h-4" /> 인쇄
+                <Printer className="w-4 h-4" /> PDF 발급
               </button>
             </div>
           </div>
