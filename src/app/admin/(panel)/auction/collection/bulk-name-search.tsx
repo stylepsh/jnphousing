@@ -21,10 +21,12 @@ type SortKey =
   | "tenant_name"
   | "address"
   | "category"
+  | "creditor_type"
+  | "appraisal_value"
+  | "minimum_bid"
+  | "auction_date"
   | "deposit"
   | "monthly_rent"
-  | "lease_start"
-  | "lease_end"
   | "case_number"
   | "survey_status";
 
@@ -33,10 +35,12 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "tenant_name", label: "임차인" },
   { key: "address", label: "주소" },
   { key: "category", label: "분류" },
+  { key: "creditor_type", label: "채권자" },
+  { key: "appraisal_value", label: "감정가", num: true },
+  { key: "minimum_bid", label: "최저가", num: true },
+  { key: "auction_date", label: "매각기일" },
   { key: "deposit", label: "보증금", num: true },
   { key: "monthly_rent", label: "월세", num: true },
-  { key: "lease_start", label: "임대시작" },
-  { key: "lease_end", label: "만기일" },
   { key: "case_number", label: "사건번호" },
   { key: "survey_status", label: "답사상태" },
 ];
@@ -58,17 +62,19 @@ const FIELD_STYLE: Record<string, string> = {
   address: "bg-sky-100 text-sky-800",
 };
 
+const NUM_KEYS = new Set<SortKey>(["deposit", "monthly_rent", "appraisal_value", "minimum_bid"]);
+
 function cell(r: BulkSearchRow, key: SortKey): string {
   const v = r[key];
   if (v === null || v === "") return "—";
-  if (key === "deposit" || key === "monthly_rent") return formatWonMan(Number(v));
+  if (NUM_KEYS.has(key)) return formatWonMan(Number(v));
   if (key === "survey_status") return SURVEY_LABEL[String(v)] ?? String(v);
   return String(v);
 }
 
 function sortRows(rows: BulkSearchRow[], key: SortKey | null, asc: boolean): BulkSearchRow[] {
   if (!key) return rows;
-  const num = key === "deposit" || key === "monthly_rent";
+  const num = NUM_KEYS.has(key);
   return [...rows].sort((a, b) => {
     const av = a[key] ?? (num ? -1 : "");
     const bv = b[key] ?? (num ? -1 : "");
@@ -101,8 +107,8 @@ export function BulkNameSearch() {
     const all = Array.from(new Map(rows.map((r) => [r.id, r])).values());
     return {
       total: all.length,
-      rent: all.reduce((s, r) => s + (r.monthly_rent ?? 0), 0),
-      deposit: all.reduce((s, r) => s + (r.deposit ?? 0), 0),
+      appraisal: all.reduce((s, r) => s + (r.appraisal_value ?? 0), 0),
+      minimum: all.reduce((s, r) => s + (r.minimum_bid ?? 0), 0),
       // 답사지 발급 대상은 미답사뿐 — 이미 답사한 건 바구니에 담지 않는다.
       items: all
         .filter((r) => r.survey_status === "pending")
@@ -298,7 +304,8 @@ export function BulkNameSearch() {
               {mode === "address" ? "곳" : "명"} · {summary.total.toLocaleString()}건
             </span>
             <span className="text-muted-foreground">
-              월세 합계 {formatWonMan(summary.rent)} · 보증금 합계 {formatWonMan(summary.deposit)}
+              감정가 합계 {formatWonMan(summary.appraisal)} · 최저가 합계{" "}
+              {formatWonMan(summary.minimum)}
             </span>
             <span className="flex-1" />
             <button
