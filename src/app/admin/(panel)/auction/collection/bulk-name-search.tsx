@@ -101,6 +101,13 @@ export function BulkNameSearch() {
     [text, mode],
   );
 
+  // 전 행이 비어 있는 열은 표에서 숨긴다 — 수집 물건은 임차인·보증금·월세가 통째로 비는 일이 흔하다.
+  const columns = useMemo(() => {
+    const rows = (result?.groups ?? []).flatMap((g) => g.rows);
+    if (rows.length === 0) return COLUMNS;
+    return COLUMNS.filter((c) => rows.some((r) => cell(r, c.key) !== "—"));
+  }, [result]);
+
   const summary = useMemo(() => {
     const rows = (result?.groups ?? []).flatMap((g) => g.rows);
     // 한 물건이 소유주·임차인 양쪽 이름으로 두 번 걸릴 수 있어 합계는 물건 기준으로 센다.
@@ -160,7 +167,7 @@ export function BulkNameSearch() {
         [
           g.name,
           FIELD_LABEL[r.field],
-          ...COLUMNS.map((c) => cell(r, c.key)),
+          ...columns.map((c) => cell(r, c.key)),
         ].join("\t"),
       ),
     );
@@ -369,11 +376,11 @@ export function BulkNameSearch() {
 
           {result.groups.length > 0 && (
             <div className="hidden md:block overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[1080px] text-xs">
+              <table className="w-full text-xs" style={{ minWidth: `${240 + columns.length * 96}px` }}>
                 <thead className="bg-muted/60">
                   <tr>
                     <th className="px-2 py-1.5 text-left font-bold w-14 whitespace-nowrap">칸</th>
-                    {COLUMNS.map((c) => (
+                    {columns.map((c) => (
                       <th
                         key={c.key}
                         onClick={() => toggleSort(c.key)}
@@ -395,7 +402,12 @@ export function BulkNameSearch() {
                 </thead>
                 <tbody>
                   {result.groups.map((g) => (
-                    <GroupRows key={g.name} group={{ ...g, field: g.rows[0]?.field }} sort={sort} />
+                    <GroupRows
+                      key={g.name}
+                      group={{ ...g, field: g.rows[0]?.field }}
+                      columns={columns}
+                      sort={sort}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -432,16 +444,18 @@ export function BulkNameSearch() {
 /** 이름 그룹 하나 — 머리줄 "홍길동 (3건)" + 물건 행들 */
 function GroupRows({
   group,
+  columns,
   sort,
 }: {
   group: BulkSearchGroup & { field?: string };
+  columns: typeof COLUMNS;
   sort: { key: SortKey | null; asc: boolean };
 }) {
   const rows = sortRows(group.rows, sort.key, sort.asc);
   return (
     <>
       <tr className="bg-blue-50/70 border-t">
-        <td colSpan={COLUMNS.length + 1} className="px-2 py-1 font-black text-blue-900">
+        <td colSpan={columns.length + 1} className="px-2 py-1 font-black text-blue-900">
           {group.field === "address" ? group.name : displayOwnerName(group.name)} (
           {group.rows.length}건)
         </td>
@@ -453,7 +467,7 @@ function GroupRows({
               {FIELD_LABEL[r.field]}
             </span>
           </td>
-          {COLUMNS.map((c) => (
+          {columns.map((c) => (
             <td
               key={c.key}
               className={`px-2 py-1.5 ${
