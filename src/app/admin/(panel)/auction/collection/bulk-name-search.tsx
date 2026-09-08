@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Users2, ListPlus, AlertTriangle, Copy, FileSpreadsheet, ArrowUpDown } from "lucide-react";
 import { parseSearchNames, parseSearchAddresses } from "@/lib/auction/bulk-name-match";
@@ -110,6 +110,9 @@ export function BulkNameSearch() {
   const [partial, setPartial] = useState(false);
   const [includeSurveyed, setIncludeSurveyed] = useState(false);
   const [pendingOnly, setPendingOnly] = useState(false);
+  // 요약 바는 폭이 좁으면 2~3줄로 접힌다. 그룹 머리줄을 그 아래에 붙이려면 실제 높이가 필요하다.
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [summaryH, setSummaryH] = useState(44);
   const [pending, startTransition] = useTransition();
   const [sort, setSort] = useState<{ key: SortKey | null; asc: boolean }>({ key: null, asc: true });
   const [result, setResult] = useState<{
@@ -157,6 +160,16 @@ export function BulkNameSearch() {
         })),
     };
   }, [groups]);
+
+  useLayoutEffect(() => {
+    const el = summaryRef.current;
+    if (!el) return;
+    const measure = () => setSummaryH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [result]);
 
   function run() {
     if (names.length === 0) {
@@ -331,7 +344,10 @@ export function BulkNameSearch() {
       {result && (
         <div className="mt-3 space-y-3 text-xs pb-28">
           {/* 요약 + 결과 활용 */}
-          <div className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg border bg-card/95 backdrop-blur p-2 shadow-sm">
+          <div
+            ref={summaryRef}
+            className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg border bg-card/95 backdrop-blur p-2 shadow-sm"
+          >
             <span className="font-black">
               총 {summary.total.toLocaleString()}건
               <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
@@ -409,6 +425,7 @@ export function BulkNameSearch() {
               {groups.map((g) => (
                 <GroupCards
                   key={g.name}
+                  stickyTop={summaryH + 4}
                   group={g}
                   label={g.rows[0]?.field === "address" ? g.name : displayOwnerName(g.name)}
                   sort={sort}
@@ -439,6 +456,7 @@ export function BulkNameSearch() {
                   {groups.map((g) => (
                     <GroupRows
                       key={g.name}
+                      stickyTop={summaryH + 4}
                       group={{ ...g, field: g.rows[0]?.field }}
                       columns={columns}
                       sort={sort}
@@ -480,10 +498,12 @@ export function BulkNameSearch() {
 function GroupRows({
   group,
   columns,
+  stickyTop,
   sort,
 }: {
   group: BulkSearchGroup & { field?: string };
   columns: typeof COLUMNS;
+  stickyTop: number;
   sort: { key: SortKey | null; asc: boolean };
 }) {
   const rows = sortRows(group.rows, sort.key, sort.asc);
@@ -492,7 +512,8 @@ function GroupRows({
       <tr className="border-t">
         <td
           colSpan={columns.length + 1}
-          className="sticky top-11 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900 whitespace-nowrap"
+          style={{ top: stickyTop }}
+          className="sticky z-10 bg-blue-50 px-2 py-1 font-black text-blue-900 whitespace-nowrap"
         >
           {group.field === "address" ? group.name : displayOwnerName(group.name)} (
           {group.rows.length}건)
@@ -658,17 +679,22 @@ function Card({ row: r }: { row: BulkSearchRow }) {
 function GroupCards({
   group,
   label,
+  stickyTop,
   sort,
 }: {
   group: BulkSearchGroup;
   label: string;
+  stickyTop: number;
   sort: { key: SortKey | null; asc: boolean };
 }) {
   const rows = sortRows(group.rows, sort.key, sort.asc);
   return (
     <div className="rounded-lg border">
       {/* 스크롤해도 어느 검색어의 결과를 보고 있는지 놓치지 않게 머리줄을 붙여 둔다 */}
-      <p className="sticky top-11 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b break-keep">
+      <p
+        style={{ top: stickyTop }}
+        className="sticky z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b break-keep"
+      >
         {label} ({group.rows.length}건)
       </p>
       <ul className="divide-y">
