@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Users2, ListPlus, AlertTriangle, Copy, FileSpreadsheet, ArrowUpDown } from "lucide-react";
@@ -517,8 +518,14 @@ function Card({ row: r }: { row: BulkSearchRow }) {
   const minimum = cell(r, "minimum_bid");
   const auctionDate = cell(r, "auction_date");
 
-  return (
-    <li className="p-2.5">
+  // 수집 물건 전용 상세 화면은 없다 — 가장 가까운 건 그 소유주의 물건 목록이다.
+  // 새 창으로 열어 검색 결과를 잃지 않게 한다.
+  const detailHref = r.owner_name
+    ? `/admin/auction/collection?owner=${encodeURIComponent(r.owner_name)}&ownerExact=1`
+    : null;
+
+  const body = (
+    <>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           {/* 1줄: 주소 */}
@@ -526,7 +533,11 @@ function Card({ row: r }: { row: BulkSearchRow }) {
             {base || "주소 미상"}
             {road && !openRoad && (
               <button
-                onClick={() => setOpenRoad(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpenRoad(true);
+                }}
                 className="ml-1 text-[11px] font-bold text-blue-600 align-middle"
               >
                 [도로명]
@@ -594,6 +605,23 @@ function Card({ row: r }: { row: BulkSearchRow }) {
           {auctionDate !== "—" && r.case_number && " · "}
           {r.case_number}
         </p>
+      )}
+    </>
+  );
+
+  return (
+    <li>
+      {detailHref ? (
+        <Link
+          href={detailHref}
+          target="_blank"
+          rel="noopener"
+          className="block p-2.5 active:bg-muted/60"
+        >
+          {body}
+        </Link>
+      ) : (
+        <div className="p-2.5">{body}</div>
       )}
     </li>
   );
