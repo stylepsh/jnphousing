@@ -109,6 +109,7 @@ export function BulkNameSearch() {
   const [mode, setMode] = useState<"name" | "address">("name");
   const [partial, setPartial] = useState(false);
   const [includeSurveyed, setIncludeSurveyed] = useState(false);
+  const [pendingOnly, setPendingOnly] = useState(false);
   const [pending, startTransition] = useTransition();
   const [sort, setSort] = useState<{ key: SortKey | null; asc: boolean }>({ key: null, asc: true });
   const [result, setResult] = useState<{
@@ -121,15 +122,24 @@ export function BulkNameSearch() {
     [text, mode],
   );
 
+  // "미답사만 보기" 는 여기서 한 번 걸러 표·카드·요약·복사가 같은 목록을 보게 한다.
+  const groups = useMemo(() => {
+    const gs = result?.groups ?? [];
+    if (!pendingOnly) return gs;
+    return gs
+      .map((g) => ({ ...g, rows: g.rows.filter((r) => r.survey_status === "pending") }))
+      .filter((g) => g.rows.length > 0);
+  }, [result, pendingOnly]);
+
   // 전 행이 비어 있는 열은 표에서 숨긴다 — 수집 물건은 임차인·보증금·월세가 통째로 비는 일이 흔하다.
   const columns = useMemo(() => {
-    const rows = (result?.groups ?? []).flatMap((g) => g.rows);
+    const rows = groups.flatMap((g) => g.rows);
     if (rows.length === 0) return COLUMNS;
     return COLUMNS.filter((c) => rows.some((r) => cell(r, c.key) !== "—"));
-  }, [result]);
+  }, [groups]);
 
   const summary = useMemo(() => {
-    const rows = (result?.groups ?? []).flatMap((g) => g.rows);
+    const rows = groups.flatMap((g) => g.rows);
     // 한 물건이 소유주·임차인 양쪽 이름으로 두 번 걸릴 수 있어 합계는 물건 기준으로 센다.
     const all = Array.from(new Map(rows.map((r) => [r.id, r])).values());
     return {
@@ -146,7 +156,7 @@ export function BulkNameSearch() {
           case_number: r.case_number,
         })),
     };
-  }, [result]);
+  }, [groups]);
 
   function run() {
     if (names.length === 0) {
@@ -182,7 +192,7 @@ export function BulkNameSearch() {
 
   function copyTsv() {
     const head = [mode === "address" ? "검색주소" : "검색이름", "매칭칸", ...COLUMNS.map((c) => c.label)].join("\t");
-    const body = (result?.groups ?? []).flatMap((g) =>
+    const body = groups.flatMap((g) =>
       g.rows.map((r) =>
         [
           g.name,
@@ -199,7 +209,7 @@ export function BulkNameSearch() {
     const res = await fetch("/admin/auction/collection/bulk-export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ names, partial, mode, includeSurveyed }),
+      body: JSON.stringify({ names, partial, mode, includeSurveyed, pendingOnly }),
     });
     if (!res.ok) {
       toast.error("엑셀 생성 실패");
@@ -327,12 +337,20 @@ export function BulkNameSearch() {
               <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
             </span>
             <span className="text-muted-foreground">
-              {mode === "address" ? "주소" : "임대인"} {result.groups.length}
+              {mode === "address" ? "주소" : "임대인"} {groups.length}
               {mode === "address" ? "곳" : "명"} · 감정가 {formatWonMan(summary.appraisal)} · 최저가{" "}
               {formatWonMan(summary.minimum)}
             </span>
             <span className="flex-1" />
             {/* 정렬은 여기 하나로 — 표 헤더 클릭은 폰에서 쓸 수 없어 없앴다 */}
+            <button
+              onClick={() => setPendingOnly((v) => !v)}
+              className={`px-2 py-1 rounded-md border text-xs font-bold ${
+                pendingOnly ? "bg-blue-600 text-white border-blue-600" : "hover:bg-muted"
+              }`}
+            >
+              미답사만
+            </button>
             <label className="inline-flex items-center gap-1">
               <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
               <select
@@ -386,9 +404,9 @@ export function BulkNameSearch() {
           </div>
 
           {/* 결과 — 좁은 화면은 카드, 넓은 화면은 표 */}
-          {result.groups.length > 0 && (
+          {groups.length > 0 && (
             <div className="md:hidden space-y-2">
-              {result.groups.map((g) => (
+              {groups.map((g) => (
                 <GroupCards
                   key={g.name}
                   group={g}
@@ -399,7 +417,7 @@ export function BulkNameSearch() {
             </div>
           )}
 
-          {result.groups.length > 0 && (
+          {groups.length > 0 && (
             <div className="hidden md:block overflow-x-auto rounded-lg border">
               <table className="w-full text-xs" style={{ minWidth: `${240 + columns.length * 96}px` }}>
                 <thead className="bg-muted/60">
@@ -418,7 +436,7 @@ export function BulkNameSearch() {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.groups.map((g) => (
+                  {groups.map((g) => (
                     <GroupRows
                       key={g.name}
                       group={{ ...g, field: g.rows[0]?.field }}

@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       partial?: unknown;
       mode?: unknown;
       includeSurveyed?: unknown;
+      pendingOnly?: unknown;
     };
     const names = Array.isArray(body.names) ? body.names.map(String) : [];
     const mode = body.mode === "address" ? "address" : "name";
@@ -55,9 +56,12 @@ export async function POST(req: NextRequest) {
     ws.columns = COLUMNS.map((c) => ({ header: c.header, width: c.width }));
     ws.getRow(1).font = { bold: true };
 
+    // 화면에서 "미답사만" 을 켜 두었으면 엑셀도 같은 목록이어야 한다.
+    const pendingOnly = body.pendingOnly === true;
     let count = 0;
     for (const g of res.groups) {
       for (const r of g.rows) {
+        if (pendingOnly && r.survey_status !== "pending") continue;
         ws.addRow([
           g.name,
           r.field === "owner" ? "소유주" : r.field === "tenant" ? "임차인" : "주소",
