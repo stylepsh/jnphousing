@@ -329,9 +329,46 @@ export function BulkNameSearch() {
             </button>
           </div>
 
-          {/* 결과 표 — 이름별 그룹 */}
+          {/* 결과 — 좁은 화면은 카드, 넓은 화면은 표 */}
           {result.groups.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="md:hidden space-y-2">
+              {/* 폰에는 열 제목이 없으니 정렬은 select 로 */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
+                <select
+                  value={sort.key ?? ""}
+                  onChange={(e) =>
+                    setSort({ key: (e.target.value || null) as SortKey | null, asc: sort.asc })
+                  }
+                  className="flex-1 rounded-md border bg-background px-2 py-1.5 text-xs font-bold"
+                >
+                  <option value="">기본(찾은 순서)</option>
+                  {COLUMNS.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setSort((v) => ({ ...v, asc: !v.asc }))}
+                  className="px-2 py-1.5 rounded-md border text-xs font-bold"
+                >
+                  {sort.asc ? "오름차순" : "내림차순"}
+                </button>
+              </div>
+              {result.groups.map((g) => (
+                <GroupCards
+                  key={g.name}
+                  group={g}
+                  label={g.rows[0]?.field === "address" ? g.name : displayOwnerName(g.name)}
+                  sort={sort}
+                />
+              ))}
+            </div>
+          )}
+
+          {result.groups.length > 0 && (
+            <div className="hidden md:block overflow-x-auto rounded-lg border">
               <table className="w-full text-xs">
                 <thead className="bg-muted/60">
                   <tr>
@@ -424,5 +461,70 @@ function GroupRows({
         </tr>
       ))}
     </>
+  );
+}
+
+/** 카드에 접어 보여줄 값 — 비어 있으면 아예 그리지 않는다(폰에서 빈 칸이 제일 방해된다). */
+const CARD_FIELDS: SortKey[] = [
+  "category",
+  "creditor_type",
+  "appraisal_value",
+  "minimum_bid",
+  "auction_date",
+  "deposit",
+  "monthly_rent",
+  "case_number",
+];
+
+/** 모바일 카드 — 표 대신. 소유주/임차인·주소를 크게, 나머지는 라벨-값으로 접는다. */
+function GroupCards({
+  group,
+  label,
+  sort,
+}: {
+  group: BulkSearchGroup;
+  label: string;
+  sort: { key: SortKey | null; asc: boolean };
+}) {
+  const rows = sortRows(group.rows, sort.key, sort.asc);
+  return (
+    <div className="rounded-lg border overflow-hidden">
+      <p className="px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs">
+        {label} ({group.rows.length}건)
+      </p>
+      <ul className="divide-y">
+        {rows.map((r) => (
+          <li key={r.id} className="p-2.5 space-y-1.5">
+            <div className="flex items-start gap-1.5 flex-wrap">
+              <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${FIELD_STYLE[r.field]}`}>
+                {FIELD_LABEL[r.field]}
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-muted text-muted-foreground">
+                {SURVEY_LABEL[r.survey_status] ?? r.survey_status}
+              </span>
+              <span className="font-black text-sm">{r.owner_name || "소유주 미상"}</span>
+              {r.tenant_name && (
+                <span className="text-xs text-violet-800">임차인 {r.tenant_name}</span>
+              )}
+            </div>
+            <p className="text-xs leading-snug">{r.address || "—"}</p>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+              {CARD_FIELDS.map((k) => {
+                const v = cell(r, k);
+                if (v === "—") return null;
+                return (
+                  <div key={k} className="flex justify-between gap-1">
+                    <dt className="text-muted-foreground">
+                      {COLUMNS.find((c) => c.key === k)?.label}
+                    </dt>
+                    <dd className="font-bold tabular-nums">{v}</dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
