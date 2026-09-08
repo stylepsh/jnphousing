@@ -119,15 +119,21 @@ export function suggestSimilar(name: string, pool: string[], max = 3): string[] 
   return out;
 }
 
+/** 시/도 이름 — 주소가 다시 시작하는 지점을 찾는 데 쓴다. */
+const SIDO = "서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주";
+
 /**
  * 붙여넣은 주소 명단 → 검색할 주소 배열.
- * 주소에는 쉼표·괄호가 그대로 들어가므로(",", "(주)" 가 아니라 "222-2, 스위트홈") 줄바꿈으로만 나눈다.
+ * 주소에는 쉼표·괄호가 그대로 들어가므로(",", "(주)" 가 아니라 "222-2, 스위트홈") 줄바꿈으로 나눈다.
+ * 다만 엑셀·메신저에서 옮기면 줄바꿈이 날아가 "…802호인천광역시…" 처럼 이어붙는 일이 흔해서,
+ * 호/층 뒤에 시/도가 바로 오면 거기서도 끊는다.
  * 앞 번호("1.", "- ")만 떼고 나머지는 손대지 않는다.
  */
 export function parseSearchAddresses(text: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const raw of (text ?? "").split(/\r?\n/)) {
+  const split = (text ?? "").replace(new RegExp(`(?<=[호층])\\s*(?=(?:${SIDO}))`, "g"), "\n");
+  for (const raw of split.split(/\r?\n/)) {
     const s = raw
       .trim()
       .replace(/^["']|["']$/g, "")
