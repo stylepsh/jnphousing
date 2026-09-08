@@ -102,3 +102,24 @@ describe("주소 붙여넣기 — 줄바꿈이 날아간 경우", () => {
     ]);
   });
 });
+
+describe("주소 매칭 — 실제 DB 표기 흔들림", () => {
+  const rows = [
+    { id: "d", address: "경기 동두천시 송내동 665-3,665-6 송내주공 415동 13층 1306호 [동두천로 63]" },
+    { id: "e", address: "경기 동두천시 송내동 665-3,665-6 송내주공 415동 5층 502호 [동두천로 63]" },
+  ];
+  it("시/도 표기·지번 병기·중간 층수·도로명 대괄호가 달라도 잡는다", () => {
+    const r = matchAddressRows(["경기도 동두천시 송내동 665-3 송내주공 415동 1306호"], rows);
+    expect(r.byName[0].matches.map((m) => m.row.id)).toEqual(["d"]);
+  });
+  it("도로명 주소를 그대로 붙여넣어도 잡는다", () => {
+    const r = matchAddressRows(["동두천시 송내주공 415동 1306호 [동두천로 63]"], rows);
+    expect(r.byName[0].matches.map((m) => m.row.id)).toEqual(["d"]);
+  });
+  it("동까지만 치면 그 동 물건이 전부", () => {
+    expect(matchAddressRows(["송내주공 415동"], rows).byName[0].matches).toHaveLength(2);
+  });
+  it("호수가 다르면 안 잡는다", () => {
+    expect(matchAddressRows(["송내주공 415동 9999호"], rows).notFound).toHaveLength(1);
+  });
+});

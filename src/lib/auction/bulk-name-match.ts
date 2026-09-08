@@ -157,9 +157,26 @@ export function parseSearchAddresses(text: string): string[] {
  * 답사 명단 규모에선 부딪힐 일이 없지만, 오탐이 보이면 지번을 따로 파싱해야 한다.
  */
 function addressKey(address: string | null | undefined): string {
-  return normalizeAuctionAddress(address)
+  return normalizeAuctionAddress((address ?? "").replace(/\[[^\]]*\]/g, " "))
     .replace(/광역시|특별자치시|특별자치도|특별시/g, "")
+    .replace(/(경기|강원|충북|충남|전북|전남|경북|경남|제주)도/g, "$1")
+    .replace(/(충청|전라|경상)(북|남)도/g, "$1$2")
     .replace(/제(?=\d)/g, "");
+}
+
+/**
+ * 주소를 비교용 토큰으로 쪼갠다 — 순서·중간 생략을 견디려면 통짜 비교로는 안 된다.
+ * DB 실제 값: "경기 동두천시 송내동 665-3,665-6 송내주공 415동 13층 1306호 [동두천로 63]"
+ * 사람이 치는 값: "경기도 동두천시 송내동 665-3 송내주공 415동 1306호"
+ *   → 시/도 표기, 지번 병기, 중간의 "13층", 끝의 도로명이 제각각이라
+ *     "입력 토큰이 전부 들어있으면 같은 물건" 으로 본다.
+ */
+function addressTokens(address: string): string[] {
+  return (address ?? "")
+    .replace(/\[[^\]]*\]/g, " ")
+    .split(/[\s,·]+/)
+    .map((t) => addressKey(t))
+    .filter((t) => t.length > 0);
 }
 
 /**
@@ -180,8 +197,10 @@ export function suggestSimilarAddresses(address: string, pool: string[], max = 3
 }
 
 /**
- * 주소로 맞춰본다. 이름과 달리 표기가 길고 흔들려서(시/도 생략, "제201호" vs "201호")
- * 완전 일치를 기대할 수 없다 — 공백·기호를 지운 키가 한쪽이 다른 쪽을 품으면 같은 물건으로 본다.
+ * 주소로 맞춰본다. 이름과 달리 표기가 길고 흔들려(시/도 생략, "제201호", 지번 병기,
+ * 중간의 "13층", 끝의 도로명 대괄호) 통짜 비교로는 못 잡는다.
+ * 입력의 토큰이 DB 주소에 전부 들어있으면 같은 물건으로 본다.
+ * 건물까지만 치면 그 건물 물건이 전부 걸린다(토큰이 적으니 조건이 느슨해진다).
  */
 export function matchAddressRows<T extends { address: string | null }>(
   addresses: string[],
@@ -191,10 +210,10 @@ export function matchAddressRows<T extends { address: string | null }>(
   const byName: MatchResult<T>["byName"] = [];
   const notFound: string[] = [];
   for (const addr of addresses) {
-    const needle = addressKey(addr);
-    if (!needle) continue;
+    const tokens = addressTokens(addr);
+    if (tokens.length === 0) continue;
     const matches = keyed
-      .filter((k) => k.key && (k.key.includes(needle) || needle.includes(k.key)))
+      .filter((k) => k.key && tokens.every((t) => k.key.includes(t)))
       .map((k) => ({ row: k.row, field: "address" as MatchField }));
     if (matches.length === 0) notFound.push(addr);
     else byName.push({ name: addr, matches });
