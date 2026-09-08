@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       mode?: unknown;
       includeSurveyed?: unknown;
       pendingOnly?: unknown;
+      excludeSimilar?: unknown;
     };
     const names = Array.isArray(body.names) ? body.names.map(String) : [];
     const mode = body.mode === "address" ? "address" : "name";
@@ -56,12 +57,14 @@ export async function POST(req: NextRequest) {
     ws.columns = COLUMNS.map((c) => ({ header: c.header, width: c.width }));
     ws.getRow(1).font = { bold: true };
 
-    // 화면에서 "미답사만" 을 켜 두었으면 엑셀도 같은 목록이어야 한다.
+    // 화면에서 켜 둔 제외 토글은 엑셀에도 그대로 적용한다.
     const pendingOnly = body.pendingOnly === true;
+    const excludeSimilar = body.excludeSimilar === true;
     let count = 0;
     for (const g of res.groups) {
       for (const r of g.rows) {
         if (pendingOnly && r.survey_status !== "pending") continue;
+        if (excludeSimilar && r.similar) continue;
         ws.addRow([
           g.name,
           (r.field === "owner" ? "소유주" : r.field === "tenant" ? "임차인" : "주소") +

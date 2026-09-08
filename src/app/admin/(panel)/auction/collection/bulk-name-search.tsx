@@ -119,6 +119,8 @@ export function BulkNameSearch() {
   const [partial, setPartial] = useState(false);
   // 기본은 "전부" — 이미 답사한 것도 일단 보여 준다. 빼고 싶을 때만 켠다.
   const [excludeSurveyed, setExcludeSurveyed] = useState(false);
+  // 유사 이름은 딴 사람일 수 있으니 빼고 보고 싶을 때가 있다.
+  const [excludeSimilar, setExcludeSimilar] = useState(false);
   // 하단 도구 바가 결과를 가려서 접을 수 있게 한다.
   const [barOpen, setBarOpen] = useState(true);
   // 요약 바는 폭이 좁으면 2~3줄로 접힌다. 그룹 머리줄을 그 아래에 붙이려면 실제 높이가 필요하다.
@@ -136,14 +138,20 @@ export function BulkNameSearch() {
     [text, mode],
   );
 
-  // "답사한 것 제외" 는 여기서 한 번 걸러 표·카드·요약·복사가 같은 목록을 보게 한다.
+  // 제외 토글은 여기서 한 번 걸러 표·카드·요약·복사·엑셀이 같은 목록을 보게 한다.
   const groups = useMemo(() => {
     const gs = result?.groups ?? [];
-    if (!excludeSurveyed) return gs;
+    if (!excludeSurveyed && !excludeSimilar) return gs;
     return gs
-      .map((g) => ({ ...g, rows: g.rows.filter((r) => r.survey_status === "pending") }))
+      .map((g) => ({
+        ...g,
+        rows: g.rows.filter(
+          (r) =>
+            (!excludeSurveyed || r.survey_status === "pending") && (!excludeSimilar || !r.similar),
+        ),
+      }))
       .filter((g) => g.rows.length > 0);
-  }, [result, excludeSurveyed]);
+  }, [result, excludeSurveyed, excludeSimilar]);
 
   // 전 행이 비어 있는 열은 표에서 숨긴다 — 수집 물건은 임차인·보증금·월세가 통째로 비는 일이 흔하다.
   const columns = useMemo(() => {
@@ -236,6 +244,7 @@ export function BulkNameSearch() {
         mode,
         includeSurveyed: true,
         pendingOnly: excludeSurveyed,
+        excludeSimilar,
       }),
     });
     if (!res.ok) {
@@ -377,6 +386,16 @@ export function BulkNameSearch() {
               }`}
             >
               {excludeSurveyed ? "답사한 것 제외됨" : "답사한 것 제외"}
+            </button>
+            <button
+              onClick={() => setExcludeSimilar((v) => !v)}
+              disabled={summary.similar === 0 && !excludeSimilar}
+              className={`px-2 py-1 rounded-md border text-xs font-bold disabled:opacity-40 ${
+                excludeSimilar ? "bg-amber-600 text-white border-amber-600" : "hover:bg-muted"
+              }`}
+              title="오타·꼬리표 차이로 같이 걸린 행을 뺀다 — 이름이 정확히 같은 것만 남는다"
+            >
+              {excludeSimilar ? "유사 제외됨" : "유사 제외"}
             </button>
             <label className="inline-flex items-center gap-1">
               <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
