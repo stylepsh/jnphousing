@@ -949,33 +949,9 @@ export function PoolList({
         </div>
       )}
 
-      {/* 모바일: 하단 고정 발급 바 (컨트롤 바가 화면 밖으로 밀려도 발급 가능) */}
-      {selected.size > 0 && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur p-2 flex items-center gap-2">
-          <span className="text-xs font-black text-blue-900 shrink-0">{selected.size}건</span>
-          <input
-            value={team}
-            onChange={(e) => setTeam(e.target.value)}
-            list="recent-survey-teams"
-            placeholder="받는 팀"
-            className="w-20 px-2 py-2 rounded border text-xs font-bold focus:outline-none"
-          />
-          <button
-            onClick={() => openIssue("xlsx")}
-            disabled={issuing}
-            className="flex-1 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-black disabled:opacity-40"
-          >
-            답사지 엑셀 발급
-          </button>
-          <button
-            onClick={clearAll}
-            className="px-2 py-2 rounded-lg border text-xs font-bold"
-            title="선택 해제"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* 모바일 하단 발급 바는 없앴다 — 선택 = 취합 바구니라 CartBar(bottom-0)와 항상 겹쳤고,
+          나중에 그려지는 이 바가 위를 덮어 CartBar 의 "인쇄(PDF)" 버튼이 사라져 보였다.
+          발급은 CartBar 의 "목록·출력" 한 곳에서만 한다(엑셀·인쇄 둘 다 있다). */}
 
       {/* ── 소유자별 상세 그룹 ── */}
       {groups.length === 0 && (

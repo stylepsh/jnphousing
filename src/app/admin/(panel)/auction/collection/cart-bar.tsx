@@ -147,7 +147,7 @@ export function CartBar({ recentTeams = [] }: { recentTeams?: string[] }) {
             onClick={() => setOpen((v) => !v)}
             className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-black hover:bg-emerald-700 min-h-11"
           >
-            목록·출력
+            발급·목록
             <ChevronDown className={cn("w-3.5 h-3.5 transition", open && "rotate-180")} />
           </button>
         </div>
