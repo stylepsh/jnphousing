@@ -369,15 +369,15 @@ export function BulkNameSearch() {
 
           {result.groups.length > 0 && (
             <div className="hidden md:block overflow-x-auto rounded-lg border">
-              <table className="w-full text-xs">
+              <table className="w-full min-w-[1080px] text-xs">
                 <thead className="bg-muted/60">
                   <tr>
-                    <th className="px-2 py-1.5 text-left font-bold w-14">칸</th>
+                    <th className="px-2 py-1.5 text-left font-bold w-14 whitespace-nowrap">칸</th>
                     {COLUMNS.map((c) => (
                       <th
                         key={c.key}
                         onClick={() => toggleSort(c.key)}
-                        className={`px-2 py-1.5 font-bold cursor-pointer select-none hover:bg-muted ${
+                        className={`px-2 py-1.5 font-bold cursor-pointer select-none whitespace-nowrap hover:bg-muted ${
                           c.num ? "text-right" : "text-left"
                         }`}
                       >
@@ -454,7 +454,14 @@ function GroupRows({
             </span>
           </td>
           {COLUMNS.map((c) => (
-            <td key={c.key} className={`px-2 py-1.5 ${c.num ? "text-right tabular-nums" : ""}`}>
+            <td
+              key={c.key}
+              className={`px-2 py-1.5 ${
+                c.key === "address"
+                  ? "min-w-[260px] leading-snug"
+                  : "whitespace-nowrap"
+              } ${c.num ? "text-right tabular-nums" : ""}`}
+            >
               {cell(r, c.key)}
             </td>
           ))}
