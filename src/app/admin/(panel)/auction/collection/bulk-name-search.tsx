@@ -608,7 +608,7 @@ function Card({ row: r }: { row: BulkSearchRow }) {
 
       {/* 2줄: 소유주 · 임차인 */}
       {(r.owner_name || r.tenant_name) && (
-        <p className="mt-1 text-xs break-keep">
+        <p className="mt-0.5 text-xs break-keep">
           {r.owner_name && (
             <span className="font-black">
               {r.field === "owner" && <span className="text-blue-600">▸ </span>}
@@ -664,12 +664,12 @@ function Card({ row: r }: { row: BulkSearchRow }) {
           href={detailHref}
           target="_blank"
           rel="noopener"
-          className="block p-2.5 active:bg-muted/60"
+          className="block px-2.5 py-2 active:bg-muted/60"
         >
           {body}
         </Link>
       ) : (
-        <div className="p-2.5">{body}</div>
+        <div className="px-2.5 py-2">{body}</div>
       )}
     </li>
   );
