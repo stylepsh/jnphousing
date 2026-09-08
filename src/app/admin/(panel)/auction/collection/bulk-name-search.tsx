@@ -405,7 +405,7 @@ export function BulkNameSearch() {
 
           {/* 결과 — 좁은 화면은 카드, 넓은 화면은 표 */}
           {groups.length > 0 && (
-            <div className="md:hidden space-y-2">
+            <div className="lg:hidden space-y-2">
               {groups.map((g) => (
                 <GroupCards
                   key={g.name}
@@ -418,8 +418,8 @@ export function BulkNameSearch() {
           )}
 
           {groups.length > 0 && (
-            <div className="hidden md:block overflow-x-auto rounded-lg border">
-              <table className="w-full text-xs" style={{ minWidth: `${240 + columns.length * 96}px` }}>
+            <div className="hidden lg:block overflow-x-auto rounded-lg border">
+              <table className="w-full text-xs" style={{ minWidth: `${180 + columns.length * 84}px` }}>
                 <thead className="bg-muted/60">
                   <tr>
                     <th className="px-2 py-1.5 text-left font-bold w-14 whitespace-nowrap">칸</th>
@@ -510,7 +510,7 @@ function GroupRows({
               key={c.key}
               className={`px-2 py-1.5 ${
                 c.key === "address"
-                  ? "min-w-[260px] leading-snug"
+                  ? "min-w-[220px] leading-snug"
                   : "whitespace-nowrap"
               } ${c.num ? "text-right tabular-nums" : ""}`}
             >
