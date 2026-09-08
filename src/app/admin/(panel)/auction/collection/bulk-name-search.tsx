@@ -317,13 +317,14 @@ export function BulkNameSearch() {
       {result && (
         <div className="mt-3 space-y-3 text-xs">
           {/* 요약 + 결과 활용 */}
-          <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/40 p-2">
-            <span className="font-black text-emerald-800">
-              {mode === "address" ? "주소" : "임대인"} {result.groups.length}
-              {mode === "address" ? "곳" : "명"} · {summary.total.toLocaleString()}건
+          <div className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg border bg-card/95 backdrop-blur p-2 shadow-sm">
+            <span className="font-black">
+              총 {summary.total.toLocaleString()}건
+              <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
             </span>
             <span className="text-muted-foreground">
-              감정가 합계 {formatWonMan(summary.appraisal)} · 최저가 합계{" "}
+              {mode === "address" ? "주소" : "임대인"} {result.groups.length}
+              {mode === "address" ? "곳" : "명"} · 감정가 {formatWonMan(summary.appraisal)} · 최저가{" "}
               {formatWonMan(summary.minimum)}
             </span>
             <span className="flex-1" />
@@ -469,7 +470,7 @@ function GroupRows({
       <tr className="border-t">
         <td
           colSpan={columns.length + 1}
-          className="sticky top-0 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900"
+          className="sticky top-11 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900"
         >
           {group.field === "address" ? group.name : displayOwnerName(group.name)} (
           {group.rows.length}건)
@@ -645,7 +646,7 @@ function GroupCards({
   return (
     <div className="rounded-lg border">
       {/* 스크롤해도 어느 검색어의 결과를 보고 있는지 놓치지 않게 머리줄을 붙여 둔다 */}
-      <p className="sticky top-0 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b">
+      <p className="sticky top-11 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b">
         {label} ({group.rows.length}건)
       </p>
       <ul className="divide-y">
