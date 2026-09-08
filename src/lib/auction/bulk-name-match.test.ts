@@ -38,13 +38,24 @@ describe("matchRows", () => {
     expect(r.notFound).toEqual([]);
   });
   it("임차인 칸도 검색하고 어느 칸에서 맞았는지 알려준다", () => {
-    const r = matchRows(["김철수"], rows);
+    const r = matchRows(["김철수"], rows, false, false);
     expect(r.byName[0].matches).toEqual([{ row: rows[1], field: "tenant" }]);
   });
-  it("기본은 완전 일치라 '김철수 외 2명' 은 안 걸리고, 부분 일치를 켜면 걸린다", () => {
-    expect(matchRows(["김철수"], rows).byName[0].matches).toHaveLength(1);
-    const p = matchRows(["김철수"], rows, true).byName[0].matches;
+  it("fuzzy 를 끄면 완전 일치라 '김철수 외 2명' 은 안 걸리고, 부분 일치를 켜면 걸린다", () => {
+    expect(matchRows(["김철수"], rows, false, false).byName[0].matches).toHaveLength(1);
+    const p = matchRows(["김철수"], rows, true, false).byName[0].matches;
     expect(p.map((m) => m.row.id).sort()).toEqual(["2", "3"]);
+  });
+  it("기본은 비슷한 이름도 similar 표시로 같이 취합한다", () => {
+    const m = matchRows(["김철수"], rows).byName[0].matches;
+    expect(m.map((x) => [x.row.id, x.similar === true])).toEqual([
+      ["2", false],
+      ["3", true],
+    ]);
+  });
+  it("한 글자 오타도 similar 로 걸린다", () => {
+    const m = matchRows(["박제석"], rows).byName[0].matches;
+    expect(m).toEqual([{ row: rows[0], field: "owner", similar: true }]);
   });
   it("못 찾은 이름을 따로 돌려준다", () => {
     expect(matchRows(["없는사람"], rows).notFound).toEqual(["없는사람"]);

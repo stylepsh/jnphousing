@@ -616,6 +616,8 @@ export interface BulkSearchRow {
   survey_status: string;
   /** 이 행이 소유주 칸에서 걸렸는지, 임차인 칸인지, 주소로 걸렸는지 */
   field: MatchField;
+  /** 정확히 같은 이름이 아니라 오타·꼬리표 차이로 걸린 행 */
+  similar: boolean;
 }
 
 export interface BulkSearchGroup {
@@ -644,6 +646,32 @@ interface PendingRow {
   survey_status: string | null;
 }
 
+/**
+ * 일괄 검색은 이름을 코드에서 맞춰보므로 후보 행을 전부 받아와야 한다.
+ * PostgREST 는 한 번 요청에 최대 1000행만 준다(Supabase 기본 max-rows) — `.limit(10000)` 을 걸어도
+ * 1000행에서 잘렸다. 그래서 3만 건을 수집해도 앞 1000건만 검색되어
+ * "수집한 물건이 몇 개 없다" 로 보였다. 여기서 끝까지 페이지를 넘겨 받는다.
+ */
+async function fetchBulkCandidates(
+  supabase: ServiceClient,
+  pendingOnly: boolean,
+  cap: number,
+): Promise<{ rows: PendingRow[]; error?: string }> {
+  const CHUNK = 1000;
+  const rows: PendingRow[] = [];
+  for (let from = 0; from < cap; from += CHUNK) {
+    let q = supabase.from("auction_property").select(BULK_SELECT);
+    if (pendingOnly) q = q.eq("survey_status", "pending");
+    // 페이지를 넘기려면 순서가 고정돼야 한다 — 주소는 중복이 많아 id 로 정렬한다.
+    const { data, error } = await q.order("id", { ascending: true }).range(from, from + CHUNK - 1);
+    if (error) return { rows, error: error.message };
+    const page = (data ?? []) as PendingRow[];
+    rows.push(...page);
+    if (page.length < CHUNK) break;
+  }
+  return { rows };
+}
+
 /** 차단 임대인 제외 — 매칭 전에 후보에서 빼 둔다. */
 function aliveRows(rows: PendingRow[], blockedKeys: Set<string>): PendingRow[] {
   if (blockedKeys.size === 0) return rows;
@@ -665,7 +693,7 @@ function dedupeByAddress(rows: BulkSearchRow[]): BulkSearchRow[] {
   });
 }
 
-function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
+function toBulkRow(r: PendingRow, field: MatchField, similar = false): BulkSearchRow {
   return {
     id: r.id,
     case_number: r.case_number ?? "",
@@ -682,6 +710,7 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
     monthly_rent: r.monthly_rent,
     survey_status: r.survey_status ?? "pending",
     field,
+    similar,
   };
 }
 
@@ -695,8 +724,14 @@ function toBulkRow(r: PendingRow, field: MatchField): BulkSearchRow {
  */
 export async function bulkNameSearch(
   names: string[],
-  opts: { partial?: boolean; mode?: "name" | "address"; includeSurveyed?: boolean } = {},
-  limit = 10000,
+  opts: {
+    partial?: boolean;
+    mode?: "name" | "address";
+    includeSurveyed?: boolean;
+    /** 오타·꼬리표 차이까지 같이 취합 (기본 켬). 바로 담기처럼 정확해야 하는 곳만 끈다. */
+    fuzzy?: boolean;
+  } = {},
+  limit = 50000,
 ): Promise<{
   ok: boolean;
   groups?: BulkSearchGroup[];
@@ -720,25 +755,24 @@ export async function bulkNameSearch(
     // 답사지 발급용으로 쓸 땐 미답사만 본다(기본).
     const all = opts.includeSurveyed === true;
     const supabase = createServiceClient();
-    let query = supabase.from("auction_property").select(BULK_SELECT);
-    if (!all) query = query.eq("survey_status", "pending");
-    const [pending, blockedKeys] = await Promise.all([
-      query.order("address", { ascending: true }).limit(limit),
+    const [candidates, blockedKeys] = await Promise.all([
+      fetchBulkCandidates(supabase, !all, limit),
       all ? Promise.resolve(new Set<string>()) : fetchBlockedOwnerKeys(supabase),
     ]);
-    if (pending.error) return { ok: false, error: pending.error.message };
+    if (candidates.error && candidates.rows.length === 0)
+      return { ok: false, error: candidates.error };
 
-    const alive = aliveRows((pending.data ?? []) as PendingRow[], blockedKeys);
+    const alive = aliveRows(candidates.rows, blockedKeys);
     const matched = address
       ? matchAddressRows(wanted, alive)
-      : matchRows(wanted, alive, opts.partial === true);
+      : matchRows(wanted, alive, opts.partial === true, opts.fuzzy !== false);
 
     const groups: BulkSearchGroup[] = matched.byName.map((g) => ({
       name: g.name,
       // 이력 조회(all)에선 접지 않는다 — 같은 주소가 미답사·공실로 여러 번 잡히는 게 곧 이력이다.
       rows: all
-        ? g.matches.map((m) => toBulkRow(m.row, m.field))
-        : dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field))),
+        ? g.matches.map((m) => toBulkRow(m.row, m.field, m.similar === true))
+        : dedupeByAddress(g.matches.map((m) => toBulkRow(m.row, m.field, m.similar === true))),
     }));
 
     // 못 찾은 입력의 추천 후보 — 이름 모드면 소유주·임차인 명단, 주소 모드면 주소 명단에서 뽑는다.
@@ -768,7 +802,8 @@ export async function cartItemsForOwnerNames(
   items?: { id: string; owner_name: string; address: string; case_number: string }[];
   error?: string;
 }> {
-  const res = await bulkNameSearch(names, { ...opts, includeSurveyed: false });
+  // 바구니에 바로 담는 경로 — 딴 사람이 섞이면 안 되니 유사 매칭은 끈다.
+  const res = await bulkNameSearch(names, { ...opts, includeSurveyed: false, fuzzy: false });
   if (!res.ok || !res.groups) return { ok: false, error: res.error };
   const seen = new Set<string>();
   const items: { id: string; owner_name: string; address: string; case_number: string }[] = [];

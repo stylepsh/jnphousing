@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
         if (pendingOnly && r.survey_status !== "pending") continue;
         ws.addRow([
           g.name,
-          r.field === "owner" ? "소유주" : r.field === "tenant" ? "임차인" : "주소",
+          (r.field === "owner" ? "소유주" : r.field === "tenant" ? "임차인" : "주소") +
+            (r.similar ? " (유사)" : ""),
           r.owner_name,
           r.tenant_name,
           r.address,

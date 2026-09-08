@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Users2, ListPlus, AlertTriangle, Copy, FileSpreadsheet, ArrowUpDown } from "lucide-react";
+import {
+  Users2,
+  ListPlus,
+  AlertTriangle,
+  Copy,
+  FileSpreadsheet,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { parseSearchNames, parseSearchAddresses } from "@/lib/auction/bulk-name-match";
 import { mergeCart } from "@/lib/auction/selection-cart";
 import { useCart } from "@/lib/auction/use-cart";
@@ -108,8 +117,10 @@ export function BulkNameSearch() {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"name" | "address">("name");
   const [partial, setPartial] = useState(false);
-  const [includeSurveyed, setIncludeSurveyed] = useState(false);
-  const [pendingOnly, setPendingOnly] = useState(false);
+  // 기본은 "전부" — 이미 답사한 것도 일단 보여 준다. 빼고 싶을 때만 켠다.
+  const [excludeSurveyed, setExcludeSurveyed] = useState(false);
+  // 하단 도구 바가 결과를 가려서 접을 수 있게 한다.
+  const [barOpen, setBarOpen] = useState(true);
   // 요약 바는 폭이 좁으면 2~3줄로 접힌다. 그룹 머리줄을 그 아래에 붙이려면 실제 높이가 필요하다.
   const summaryRef = useRef<HTMLDivElement>(null);
   const [summaryH, setSummaryH] = useState(44);
@@ -125,14 +136,14 @@ export function BulkNameSearch() {
     [text, mode],
   );
 
-  // "미답사만 보기" 는 여기서 한 번 걸러 표·카드·요약·복사가 같은 목록을 보게 한다.
+  // "답사한 것 제외" 는 여기서 한 번 걸러 표·카드·요약·복사가 같은 목록을 보게 한다.
   const groups = useMemo(() => {
     const gs = result?.groups ?? [];
-    if (!pendingOnly) return gs;
+    if (!excludeSurveyed) return gs;
     return gs
       .map((g) => ({ ...g, rows: g.rows.filter((r) => r.survey_status === "pending") }))
       .filter((g) => g.rows.length > 0);
-  }, [result, pendingOnly]);
+  }, [result, excludeSurveyed]);
 
   // 전 행이 비어 있는 열은 표에서 숨긴다 — 수집 물건은 임차인·보증금·월세가 통째로 비는 일이 흔하다.
   const columns = useMemo(() => {
@@ -147,6 +158,7 @@ export function BulkNameSearch() {
     const all = Array.from(new Map(rows.map((r) => [r.id, r])).values());
     return {
       total: all.length,
+      similar: all.filter((r) => r.similar).length,
       appraisal: all.reduce((s, r) => s + (r.appraisal_value ?? 0), 0),
       minimum: all.reduce((s, r) => s + (r.minimum_bid ?? 0), 0),
       // 답사지 발급 대상은 미답사뿐 — 이미 답사한 건 바구니에 담지 않는다.
@@ -177,19 +189,15 @@ export function BulkNameSearch() {
       return;
     }
     startTransition(async () => {
-      const res = await bulkNameSearch(names, { partial, mode, includeSurveyed });
+      // 항상 전체(답사 이력 포함)를 받아 온다 — 빼는 건 화면에서 토글로 한다.
+      const res = await bulkNameSearch(names, { partial, mode, includeSurveyed: true });
       if (!res.ok || !res.groups) {
         toast.error(res.error ?? "검색 실패");
         return;
       }
       setResult({ groups: res.groups, notFound: res.notFound ?? [] });
       const found = res.groups.reduce((s, g) => s + g.rows.length, 0);
-      if (found === 0)
-        toast.error(
-          includeSurveyed
-            ? "수집 이력에 없습니다 (한 번도 습득한 적 없는 물건)"
-            : "미답사 물건이 없습니다 — 이미 답사했을 수 있습니다(‘이미 답사한 것도’ 체크)",
-        );
+      if (found === 0) toast.error("수집 이력에 없습니다 (한 번도 습득한 적 없는 물건)");
       else
         toast.success(
           `${res.groups.length}${mode === "address" ? "곳" : "명"} · ${found}건 찾았습니다`,
@@ -222,7 +230,13 @@ export function BulkNameSearch() {
     const res = await fetch("/admin/auction/collection/bulk-export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ names, partial, mode, includeSurveyed, pendingOnly }),
+      body: JSON.stringify({
+        names,
+        partial,
+        mode,
+        includeSurveyed: true,
+        pendingOnly: excludeSurveyed,
+      }),
     });
     if (!res.ok) {
       toast.error("엑셀 생성 실패");
@@ -271,6 +285,9 @@ export function BulkNameSearch() {
             이름을 <strong>줄바꿈이나 쉼표로 여러 개</strong> 붙여넣으면 미답사 물건을 한 번에
             찾습니다. 소유주·임차인 칸을 모두 보고, 공백과 ㈜·(주) 표기는 무시합니다.
             번호(1.)·&quot;외 2명&quot; 꼬리표는 떼고, <strong>괄호 안 이름도 따로 찾습니다</strong>.
+            한 글자 오타처럼 <strong>비슷한 이름도 &apos;유사&apos; 표시로 같이 취합</strong>합니다.
+            답사를 이미 돈 물건도 일단 전부 나오고, 위쪽 <strong>&apos;답사한 것 제외&apos;</strong> 를
+            누르면 그때 빠집니다.
           </>
         ) : (
           <>
@@ -312,15 +329,6 @@ export function BulkNameSearch() {
             부분 일치 포함
           </label>
         )}
-        <label className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground cursor-pointer">
-          <input
-            type="checkbox"
-            checked={includeSurveyed}
-            onChange={(e) => setIncludeSurveyed(e.target.checked)}
-            className="w-4 h-4"
-          />
-          이미 답사한 것도 (습득 이력 전체)
-        </label>
         {text && (
           <button
             onClick={() => {
@@ -351,6 +359,9 @@ export function BulkNameSearch() {
             <span className="font-black">
               총 {summary.total.toLocaleString()}건
               <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
+              {summary.similar > 0 && (
+                <span className="text-amber-700"> / 유사 {summary.similar.toLocaleString()}건</span>
+              )}
             </span>
             <span className="text-muted-foreground">
               {mode === "address" ? "주소" : "임대인"} {groups.length}
@@ -360,12 +371,12 @@ export function BulkNameSearch() {
             <span className="flex-1" />
             {/* 정렬은 여기 하나로 — 표 헤더 클릭은 폰에서 쓸 수 없어 없앴다 */}
             <button
-              onClick={() => setPendingOnly((v) => !v)}
+              onClick={() => setExcludeSurveyed((v) => !v)}
               className={`px-2 py-1 rounded-md border text-xs font-bold ${
-                pendingOnly ? "bg-blue-600 text-white border-blue-600" : "hover:bg-muted"
+                excludeSurveyed ? "bg-blue-600 text-white border-blue-600" : "hover:bg-muted"
               }`}
             >
-              미답사만
+              {excludeSurveyed ? "답사한 것 제외됨" : "답사한 것 제외"}
             </button>
             <label className="inline-flex items-center gap-1">
               <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
@@ -394,28 +405,47 @@ export function BulkNameSearch() {
             </label>
           </div>
 
-          {/* 결과 활용 버튼 — 하단 고정. 취합 바구니 바(bottom-0) 위에 얹는다. */}
+          {/* 결과 활용 버튼 — 하단 고정. 취합 바구니 바(bottom-0) 위에 얹는다.
+              결과를 가리면 접어서 작은 알약 하나로 줄일 수 있다. */}
           <div className="fixed inset-x-0 bottom-16 z-30 px-2 pointer-events-none">
-            <div className="mx-auto max-w-3xl flex items-stretch gap-1.5 rounded-xl border bg-card/95 backdrop-blur p-1.5 shadow-lg pointer-events-auto">
-              <button
-                onClick={addAll}
-                disabled={summary.items.length === 0}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-emerald-600 text-white font-black disabled:opacity-40 min-h-11 whitespace-nowrap"
-              >
-                <ListPlus className="w-4 h-4 shrink-0" /> 담기 {summary.items.length}
-              </button>
-              <button
-                onClick={copyTsv}
-                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
-              >
-                <Copy className="w-4 h-4 shrink-0" /> 복사
-              </button>
-              <button
-                onClick={exportXlsx}
-                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
-              >
-                <FileSpreadsheet className="w-4 h-4 shrink-0" /> 엑셀
-              </button>
+            <div className="mx-auto max-w-3xl flex justify-end">
+              {barOpen ? (
+                <div className="w-full flex items-stretch gap-1.5 rounded-xl border bg-card/95 backdrop-blur p-1.5 shadow-lg pointer-events-auto">
+                  <button
+                    onClick={addAll}
+                    disabled={summary.items.length === 0}
+                    className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-emerald-600 text-white font-black disabled:opacity-40 min-h-11 whitespace-nowrap"
+                  >
+                    <ListPlus className="w-4 h-4 shrink-0" /> 담기 {summary.items.length}
+                  </button>
+                  <button
+                    onClick={copyTsv}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
+                  >
+                    <Copy className="w-4 h-4 shrink-0" /> 복사
+                  </button>
+                  <button
+                    onClick={exportXlsx}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 shrink-0" /> 엑셀
+                  </button>
+                  <button
+                    onClick={() => setBarOpen(false)}
+                    title="접기 — 가려진 결과 보기"
+                    className="inline-flex items-center justify-center px-2.5 rounded-lg border font-bold text-muted-foreground hover:bg-muted min-h-11"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setBarOpen(true)}
+                  className="pointer-events-auto inline-flex items-center gap-1 px-3 py-2 rounded-full border bg-card/95 backdrop-blur shadow-lg text-xs font-black min-h-11"
+                >
+                  <ChevronUp className="w-4 h-4" /> 담기·복사·엑셀
+                </button>
+              )}
             </div>
           </div>
 
@@ -439,7 +469,7 @@ export function BulkNameSearch() {
               <table className="w-full text-xs" style={{ minWidth: `${180 + columns.length * 84}px` }}>
                 <thead className="bg-muted/60">
                   <tr>
-                    <th className="px-2 py-1.5 text-left font-bold w-14 whitespace-nowrap">칸</th>
+                    <th className="px-2 py-1.5 text-left font-bold w-24 whitespace-nowrap">칸</th>
                     {columns.map((c) => (
                       <th
                         key={c.key}
@@ -473,7 +503,8 @@ export function BulkNameSearch() {
               <p className="font-bold text-amber-800 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" /> 못 찾은 이름 {result.notFound.length}개
                 <span className="font-normal">
-                  — 오타이거나, 이미 답사했거나, 아직 수집 안 된 임대인입니다
+                  — 아직 수집한 적 없는 임대인입니다 (비슷한 이름은 위 결과에 &apos;유사&apos; 로 같이
+                  나옵니다)
                 </span>
               </p>
               <ul className="mt-1 space-y-0.5 text-amber-900">
@@ -521,10 +552,18 @@ function GroupRows({
       </tr>
       {rows.map((r) => (
         <tr key={`${group.name}:${r.id}`} className="border-t hover:bg-muted/40">
-          <td className="px-2 py-1.5">
+          <td className="px-2 py-1.5 whitespace-nowrap">
             <span className={`px-1.5 py-0.5 rounded font-bold ${FIELD_STYLE[r.field]}`}>
               {FIELD_LABEL[r.field]}
             </span>
+            {r.similar && (
+              <span
+                className="ml-1 px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800"
+                title="입력한 이름과 정확히 같지는 않습니다 — 오타·꼬리표 차이로 같이 찾은 것"
+              >
+                유사
+              </span>
+            )}
           </td>
           {columns.map((c) => (
             <td
@@ -597,6 +636,11 @@ function Card({ row: r }: { row: BulkSearchRow }) {
           )}
         </div>
         {/* 우측 상단 고정 배지 */}
+        {r.similar && (
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">
+            유사
+          </span>
+        )}
         <span
           className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold ${
             SURVEY_STYLE[r.survey_status] ?? "bg-muted text-muted-foreground"

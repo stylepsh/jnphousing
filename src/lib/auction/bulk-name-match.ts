@@ -35,6 +35,8 @@ export function parseSearchNames(text: string): string[] {
 export interface NameMatch<T> {
   row: T;
   field: MatchField;
+  /** 정확히 같은 이름이 아니라 오타·꼬리표 차이로 걸린 행 */
+  similar?: boolean;
 }
 
 export interface MatchResult<T> {
@@ -53,6 +55,7 @@ export function matchRows<T extends NameMatchable>(
   names: string[],
   rows: T[],
   partial = false,
+  fuzzy = true,
 ): MatchResult<T> {
   const keyed = rows.map((row) => ({
     row,
@@ -67,11 +70,25 @@ export function matchRows<T extends NameMatchable>(
     const needle = normalizeOwnerName(name);
     if (!needle) continue;
     const matches: NameMatch<T>[] = [];
+    const exact = new Set<T>();
     for (const k of keyed) {
       const hitOwner = k.owner === needle || (partial && k.owner.includes(needle));
       const hitTenant = k.tenant === needle || (partial && !!k.tenant && k.tenant.includes(needle));
       if (hitOwner) matches.push({ row: k.row, field: "owner" });
       else if (hitTenant) matches.push({ row: k.row, field: "tenant" });
+      else continue;
+      exact.add(k.row);
+    }
+    // 정확히 안 맞아도 오타·꼬리표 차이면 같이 취합한다 — "혹시 이 사람?" 으로만 알려주면
+    // 명단을 고쳐 다시 검색해야 해서, 대표님이 한 번에 못 보고 놓치는 물건이 생긴다.
+    if (fuzzy && needle.length >= 2) {
+      for (const k of keyed) {
+        if (exact.has(k.row)) continue;
+        if (isSimilarKey(needle, k.owner))
+          matches.push({ row: k.row, field: "owner", similar: true });
+        else if (k.tenant && isSimilarKey(needle, k.tenant))
+          matches.push({ row: k.row, field: "tenant", similar: true });
+      }
     }
     if (matches.length === 0) notFound.push(name);
     else byName.push({ name, matches });
@@ -99,6 +116,15 @@ function withinDistance(a: string, b: string, max: number): boolean {
 }
 
 /**
+ * 같은 사람으로 볼 만한 흔들림인지 — 한 글자 차이(오타)이거나 한쪽이 다른 쪽을 품는 경우
+ * ("김철수" ⊂ "김철수외2명"). 일괄 검색의 유사 매칭과 "혹시 이 사람?" 추천이 같은 규칙을 쓴다.
+ */
+export function isSimilarKey(needle: string, key: string): boolean {
+  if (!needle || !key || key === needle) return false;
+  return key.includes(needle) || needle.includes(key) || withinDistance(needle, key, 1);
+}
+
+/**
  * 못 찾은 이름에 대해 "혹시 이 사람?" 후보를 고른다.
  * 한 글자 차이(오타)이거나 한쪽이 다른 쪽을 품는 경우("김철수" ⊂ "김철수외2명").
  */
@@ -110,7 +136,7 @@ export function suggestSimilar(name: string, pool: string[], max = 3): string[] 
   for (const cand of pool) {
     const key = normalizeOwnerName(cand);
     if (!key || key === needle || seen.has(key)) continue;
-    if (key.includes(needle) || needle.includes(key) || withinDistance(needle, key, 1)) {
+    if (isSimilarKey(needle, key)) {
       seen.add(key);
       out.push(cand);
       if (out.length >= max) break;
