@@ -57,7 +57,15 @@ async function main() {
   const result = {};
   for (const [name, document] of Object.entries(docs)) {
     const buffer = await renderToBuffer(document);
-    result[name] = { signature: buffer.subarray(0, 5).toString(), bytes: buffer.length };
+    // 어떤 폰트가 실제로 박혔는지 — 가변 폰트를 쓰면 전부 Thin 으로 박혀 인쇄가 흐렸다.
+    const fonts = [
+      ...new Set(
+        (buffer.toString("latin1").match(/\/BaseFont\s*\/[A-Z]{6}\+([A-Za-z0-9-]+)/g) ?? []).map(
+          (m) => m.split("+")[1],
+        ),
+      ),
+    ].sort();
+    result[name] = { signature: buffer.subarray(0, 5).toString(), bytes: buffer.length, fonts };
   }
   process.stdout.write(JSON.stringify(result));
 }

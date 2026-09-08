@@ -181,16 +181,17 @@ export function BulkNameSearch() {
       issued: all.filter((r) => r.last_issued_at).length,
       appraisal: all.reduce((s, r) => s + (r.appraisal_value ?? 0), 0),
       minimum: all.reduce((s, r) => s + (r.minimum_bid ?? 0), 0),
-      // 답사지 발급 대상은 미답사뿐 — 이미 답사한 건 바구니에 담지 않는다.
-      items: all
-        .filter((r) => r.survey_status === "pending")
-        .map((r) => ({
-          id: r.id,
-          owner_name: r.owner_name,
-          address: r.address,
-          case_number: r.case_number,
-          issued: !!r.last_issued_at,
-        })),
+      // 담기 대상은 "지금 화면에 보이는 것" 그대로다 — 답사한 것까지 뽑고 싶어
+      // 제외를 꺼 뒀는데 미답사만 담기면, 켜든 끄든 같은 건수만 인쇄돼 토글이 헛돈다.
+      // 이미 답사한 건이 섞이면 담을 때 경고한다.
+      items: all.map((r) => ({
+        id: r.id,
+        owner_name: r.owner_name,
+        address: r.address,
+        case_number: r.case_number,
+        issued: !!r.last_issued_at,
+        surveyed: r.survey_status !== "pending",
+      })),
     };
   }, [groups]);
 
@@ -230,8 +231,11 @@ export function BulkNameSearch() {
     if (summary.items.length === 0) return;
     setCart((prev) => mergeCart(prev, summary.items));
     toast.success(`${summary.items.length}건을 취합 바구니에 담았습니다`);
-    // 상태는 미답사인데 답사지가 이미 나간 건 — 또 돌면 헛걸음이라 담을 때 한 번 짚어 준다.
-    const reissued = summary.items.filter((i) => i.issued).length;
+    // 헛걸음 신호 둘 — 답사 결과가 이미 들어온 것, 답사지가 이미 나간 것.
+    const surveyed = summary.items.filter((i) => i.surveyed).length;
+    const reissued = summary.items.filter((i) => !i.surveyed && i.issued).length;
+    if (surveyed > 0)
+      toast.warning(`이 중 ${surveyed}건은 이미 답사 결과가 들어온 물건입니다`, { duration: 8000 });
     if (reissued > 0)
       toast.warning(
         `이 중 ${reissued}건은 답사지를 이미 발급한 적이 있습니다 — 답사했는데 결과만 안 들어왔을 수 있습니다`,
@@ -387,7 +391,10 @@ export function BulkNameSearch() {
           >
             <span className="font-black">
               총 {summary.total.toLocaleString()}건
-              <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
+              <span className="text-emerald-700">
+                {" "}
+                / 미답사 {summary.items.filter((i) => !i.surveyed).length.toLocaleString()}건
+              </span>
               {summary.similar > 0 && (
                 <span className="text-amber-700"> / 유사 {summary.similar.toLocaleString()}건</span>
               )}

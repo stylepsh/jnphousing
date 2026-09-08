@@ -38,18 +38,18 @@ export interface SurveyPdfData {
 }
 
 const styles = StyleSheet.create({
-  page: { paddingTop: 18, paddingBottom: 28, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 8 },
+  page: { paddingTop: 18, paddingBottom: 28, paddingHorizontal: 24, fontFamily: "Pretendard", fontSize: 9 },
   documentHeader: { borderBottomWidth: 1.5, borderColor: "#1c2b4a", paddingBottom: 5, marginBottom: 4 },
   documentTitle: { fontSize: 13, fontWeight: "bold", color: "#0f172a" },
-  documentMeta: { fontSize: 7.5, color: "#475569", marginTop: 2 },
+  documentMeta: { fontSize: 8, color: "#1e293b", marginTop: 2 },
   groupHeader: { backgroundColor: "#e2e8f0", paddingVertical: 3, paddingHorizontal: 6, marginTop: 7, flexDirection: "row", justifyContent: "space-between" },
   groupName: { fontSize: 9, fontWeight: "bold" },
-  groupCount: { fontSize: 8, color: "#475569" },
+  groupCount: { fontSize: 9, color: "#1e293b" },
   // 표
   trHead: { flexDirection: "row", backgroundColor: "#f1f5f9", borderBottomWidth: 1, borderColor: "#cbd5e1" },
-  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e2e8f0", minHeight: 40, alignItems: "center" },
-  th: { fontSize: 7.5, fontWeight: "bold", color: "#475569", paddingVertical: 4, paddingHorizontal: 3 },
-  td: { fontSize: 8, paddingVertical: 4, paddingHorizontal: 3 },
+  tr: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#94a3b8", minHeight: 40, alignItems: "center" },
+  th: { fontSize: 8, fontWeight: "bold", color: "#1e293b", paddingVertical: 4, paddingHorizontal: 3 },
+  td: { fontSize: 9, paddingVertical: 4, paddingHorizontal: 3 },
   cNo: { width: 40, textAlign: "center" },
   cAddr: { width: 180 },
   cOwner: { width: 50 },
@@ -59,25 +59,25 @@ const styles = StyleSheet.create({
   cCode: { width: 52, textAlign: "center" },
   cMgmt: { width: 78 },
   cMemo: { flex: 1 },
-  noBig: { fontSize: 11, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
-  caseMono: { fontSize: 7.5, color: "#1d4ed8" },
-  ownerFirst: { fontSize: 8, fontWeight: "bold", color: "#0f172a" }, // 임대인 블록 첫 행 = 굵게
-  ownerRepeat: { fontSize: 8, color: "#cbd5e1" }, // 같은 임대인 반복 행 = 점선 표기(시각적 그룹핑)
+  noBig: { fontSize: 12, fontWeight: "bold", color: "#0f172a", textAlign: "center" },
+  caseMono: { fontSize: 8, color: "#1e40af" },
+  ownerFirst: { fontSize: 9, fontWeight: "bold", color: "#0f172a" }, // 임대인 블록 첫 행 = 굵게
+  ownerRepeat: { fontSize: 9, color: "#64748b" }, // 같은 임대인 반복 행 = 점선 표기(시각적 그룹핑)
   // 체크칸 — ☐ 글자는 폰트에 없어 안 보이므로 사각형을 직접 그린다.
   checkCell: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   checkItem: { flexDirection: "row", alignItems: "center" },
-  box: { width: 10, height: 10, borderWidth: 1, borderColor: "#334155", marginRight: 3, alignItems: "center", justifyContent: "center" },
+  box: { width: 11, height: 11, borderWidth: 1.2, borderColor: "#0f172a", marginRight: 3, alignItems: "center", justifyContent: "center" },
   boxChecked: { backgroundColor: "#0f172a" },     // 채워진 박스 = 체크됨
   boxCheck: { fontSize: 7, fontWeight: "bold", color: "#ffffff", lineHeight: 1 }, // 박스 안 V
-  boxLabel: { fontSize: 8, color: "#0f172a", fontWeight: "bold" },
-  mgmtLabel: { fontSize: 6.5, color: "#94a3b8" },
-  mgmtLine: { borderBottomWidth: 0.7, borderColor: "#cbd5e1", height: 12 },
+  boxLabel: { fontSize: 9, color: "#0f172a", fontWeight: "bold" },
+  mgmtLabel: { fontSize: 7, color: "#64748b" },
+  mgmtLine: { borderBottomWidth: 1, borderColor: "#64748b", height: 12 },
   // 기존 답사완료 행 — 회색 줄
   trDone: { backgroundColor: "#f1f5f9" },
-  doneTag: { fontSize: 7.5, fontWeight: "bold", color: "#b91c1c" },     // "기존 답사완료" 빨강 강조
-  mutedNo: { fontSize: 11, fontWeight: "bold", color: "#94a3b8", textAlign: "center" },
-  footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7, color: "#94a3b8", textAlign: "center" },
-  signature: { marginTop: 12, fontSize: 8, textAlign: "right", color: "#334155" },
+  doneTag: { fontSize: 8, fontWeight: "bold", color: "#b91c1c" },     // "기존 답사완료" 빨강 강조
+  mutedNo: { fontSize: 11, fontWeight: "bold", color: "#475569", textAlign: "center" },
+  footer: { position: "absolute", bottom: 14, left: 24, right: 24, fontSize: 7.5, color: "#475569", textAlign: "center" },
+  signature: { marginTop: 12, fontSize: 9, textAlign: "right", color: "#1e293b" },
 });
 
 // 지역 그룹/정렬은 순수 로직이라 .ts 로 분리(테스트·엑셀 공유). 하위호환 위해 재노출.

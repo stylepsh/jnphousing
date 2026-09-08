@@ -15,6 +15,8 @@ export interface CartItem {
   case_number: string;
   /** 앞전에 답사지가 이미 나간 물건 — 상태가 미답사여도 헛걸음일 수 있어 발급 전에 경고한다. */
   issued?: boolean;
+  /** 답사 결과가 이미 들어온 물건 (공실·거주중·재방문 등) */
+  surveyed?: boolean;
 }
 
 export const CART_STORAGE_KEY = "auction-pool-cart";
