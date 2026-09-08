@@ -488,7 +488,8 @@ function GroupRows({
                   : "whitespace-nowrap"
               } ${c.num ? "text-right tabular-nums" : ""}`}
             >
-              {cell(r, c.key)}
+              {/* 빈 값은 "—" 대신 아무것도 찍지 않는다 — 눈에 걸리는 노이즈만 된다 */}
+              {cell(r, c.key) === "—" ? "" : cell(r, c.key)}
             </td>
           ))}
         </tr>
