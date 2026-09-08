@@ -55,6 +55,17 @@ const SURVEY_LABEL: Record<string, string> = {
   blocked: "차단",
 };
 
+/** 답사상태 배지 색 — 미답사 회색, 답사 끝난 것 초록, 차단·거부 빨강. */
+const SURVEY_STYLE: Record<string, string> = {
+  pending: "bg-slate-200 text-slate-700",
+  vacant: "bg-emerald-100 text-emerald-800",
+  occupied: "bg-emerald-100 text-emerald-800",
+  revisit: "bg-emerald-100 text-emerald-800",
+  skip: "bg-slate-200 text-slate-500",
+  rejected: "bg-red-100 text-red-700",
+  blocked: "bg-red-100 text-red-700",
+};
+
 const FIELD_LABEL: Record<string, string> = { owner: "소유주", tenant: "임차인", address: "주소" };
 const FIELD_STYLE: Record<string, string> = {
   owner: "bg-slate-200 text-slate-700",
@@ -527,7 +538,11 @@ function Card({ row: r }: { row: BulkSearchRow }) {
           )}
         </div>
         {/* 우측 상단 고정 배지 */}
-        <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-muted text-muted-foreground">
+        <span
+          className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold ${
+            SURVEY_STYLE[r.survey_status] ?? "bg-muted text-muted-foreground"
+          }`}
+        >
           {SURVEY_LABEL[r.survey_status] ?? r.survey_status}
         </span>
       </div>
