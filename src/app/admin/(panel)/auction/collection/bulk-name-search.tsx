@@ -315,7 +315,7 @@ export function BulkNameSearch() {
       </div>
 
       {result && (
-        <div className="mt-3 space-y-3 text-xs">
+        <div className="mt-3 space-y-3 text-xs pb-28">
           {/* 요약 + 결과 활용 */}
           <div className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg border bg-card/95 backdrop-blur p-2 shadow-sm">
             <span className="font-black">
@@ -327,26 +327,31 @@ export function BulkNameSearch() {
               {mode === "address" ? "곳" : "명"} · 감정가 {formatWonMan(summary.appraisal)} · 최저가{" "}
               {formatWonMan(summary.minimum)}
             </span>
-            <span className="flex-1" />
-            <button
-              onClick={addAll}
-              disabled={summary.items.length === 0}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-emerald-600 text-white font-bold disabled:opacity-40"
-            >
-              <ListPlus className="w-3.5 h-3.5" /> 미답사 {summary.items.length}건 바구니에 담기
-            </button>
-            <button
-              onClick={copyTsv}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border font-bold hover:bg-muted"
-            >
-              <Copy className="w-3.5 h-3.5" /> 결과 복사
-            </button>
-            <button
-              onClick={exportXlsx}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border font-bold hover:bg-muted"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" /> 엑셀로 내보내기
-            </button>
+          </div>
+
+          {/* 결과 활용 버튼 — 하단 고정. 취합 바구니 바(bottom-0) 위에 얹는다. */}
+          <div className="fixed inset-x-0 bottom-16 z-30 px-2 pointer-events-none">
+            <div className="mx-auto max-w-3xl flex items-stretch gap-1.5 rounded-xl border bg-card/95 backdrop-blur p-1.5 shadow-lg pointer-events-auto">
+              <button
+                onClick={addAll}
+                disabled={summary.items.length === 0}
+                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-emerald-600 text-white font-black disabled:opacity-40 min-h-11 whitespace-nowrap"
+              >
+                <ListPlus className="w-4 h-4 shrink-0" /> 담기 {summary.items.length}
+              </button>
+              <button
+                onClick={copyTsv}
+                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
+              >
+                <Copy className="w-4 h-4 shrink-0" /> 복사
+              </button>
+              <button
+                onClick={exportXlsx}
+                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border font-bold hover:bg-muted min-h-11 whitespace-nowrap"
+              >
+                <FileSpreadsheet className="w-4 h-4 shrink-0" /> 엑셀
+              </button>
+            </div>
           </div>
 
           {/* 결과 — 좁은 화면은 카드, 넓은 화면은 표 */}
