@@ -492,7 +492,7 @@ function GroupRows({
       <tr className="border-t">
         <td
           colSpan={columns.length + 1}
-          className="sticky top-11 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900"
+          className="sticky top-11 z-10 bg-blue-50 px-2 py-1 font-black text-blue-900 whitespace-nowrap"
         >
           {group.field === "address" ? group.name : displayOwnerName(group.name)} (
           {group.rows.length}건)
@@ -556,7 +556,7 @@ function Card({ row: r }: { row: BulkSearchRow }) {
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           {/* 1줄: 주소 */}
-          <p className="text-[13px] font-bold leading-snug line-clamp-2">
+          <p className="text-[13px] font-bold leading-snug line-clamp-2 break-keep">
             {base || "주소 미상"}
             {road && !openRoad && (
               <button
@@ -587,7 +587,7 @@ function Card({ row: r }: { row: BulkSearchRow }) {
 
       {/* 2줄: 소유주 · 임차인 */}
       {(r.owner_name || r.tenant_name) && (
-        <p className="mt-1 text-xs">
+        <p className="mt-1 text-xs break-keep">
           {r.owner_name && (
             <span className="font-black">
               {r.field === "owner" && <span className="text-blue-600">▸ </span>}
@@ -606,7 +606,7 @@ function Card({ row: r }: { row: BulkSearchRow }) {
 
       {/* 3줄: 감정가 / 최저가 */}
       {(appraisal !== "—" || minimum !== "—") && (
-        <p className="mt-0.5 text-xs tabular-nums">
+        <p className="mt-0.5 text-xs tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">
           {appraisal !== "—" && (
             <>
               <span className="text-muted-foreground">감정가 </span>
@@ -627,7 +627,7 @@ function Card({ row: r }: { row: BulkSearchRow }) {
 
       {/* 4줄: 매각기일 · 사건번호 */}
       {(auctionDate !== "—" || r.case_number) && (
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 text-[11px] text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
           {auctionDate !== "—" && <>매각기일 {auctionDate}</>}
           {auctionDate !== "—" && r.case_number && " · "}
           {r.case_number}
@@ -668,7 +668,7 @@ function GroupCards({
   return (
     <div className="rounded-lg border">
       {/* 스크롤해도 어느 검색어의 결과를 보고 있는지 놓치지 않게 머리줄을 붙여 둔다 */}
-      <p className="sticky top-11 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b">
+      <p className="sticky top-11 z-10 px-2.5 py-1.5 bg-blue-50 font-black text-blue-900 text-xs rounded-t-lg border-b break-keep">
         {label} ({group.rows.length}건)
       </p>
       <ul className="divide-y">
