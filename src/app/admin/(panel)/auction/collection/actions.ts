@@ -614,6 +614,9 @@ export interface BulkSearchRow {
   monthly_rent: number | null;
   /** pending(미답사) / vacant(공실) / occupied(거주중) / rejected(거부) / blocked(차단) 등 */
   survey_status: string;
+  /** 앞전에 답사지를 출력해 나간 기록 — 상태가 미답사여도 이미 답사했을 수 있다는 신호 */
+  last_issued_at: string;
+  last_issued_team: string;
   /** 이 행이 소유주 칸에서 걸렸는지, 임차인 칸인지, 주소로 걸렸는지 */
   field: MatchField;
   /** 정확히 같은 이름이 아니라 오타·꼬리표 차이로 걸린 행 */
@@ -627,7 +630,7 @@ export interface BulkSearchGroup {
 }
 
 const BULK_SELECT =
-  "id, case_number, address, owner_name, tenant_name, category, creditor, creditor_type, appraisal_value, minimum_bid, auction_date, deposit, monthly_rent, survey_status";
+  "id, case_number, address, owner_name, tenant_name, category, creditor, creditor_type, appraisal_value, minimum_bid, auction_date, deposit, monthly_rent, survey_status, last_issued_at, last_issued_team";
 
 interface PendingRow {
   id: string;
@@ -644,6 +647,8 @@ interface PendingRow {
   deposit: number | null;
   monthly_rent: number | null;
   survey_status: string | null;
+  last_issued_at: string | null;
+  last_issued_team: string | null;
 }
 
 /**
@@ -709,6 +714,8 @@ function toBulkRow(r: PendingRow, field: MatchField, similar = false): BulkSearc
     deposit: r.deposit,
     monthly_rent: r.monthly_rent,
     survey_status: r.survey_status ?? "pending",
+    last_issued_at: r.last_issued_at ?? "",
+    last_issued_team: r.last_issued_team ?? "",
     field,
     similar,
   };

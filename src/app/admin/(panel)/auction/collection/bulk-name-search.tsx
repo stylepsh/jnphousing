@@ -38,7 +38,8 @@ type SortKey =
   | "deposit"
   | "monthly_rent"
   | "case_number"
-  | "survey_status";
+  | "survey_status"
+  | "last_issued_at";
 
 const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "owner_name", label: "소유주" },
@@ -53,6 +54,7 @@ const COLUMNS: { key: SortKey; label: string; num?: boolean }[] = [
   { key: "monthly_rent", label: "월세", num: true },
   { key: "case_number", label: "사건번호" },
   { key: "survey_status", label: "답사상태" },
+  { key: "last_issued_at", label: "발급이력" },
 ];
 
 const SURVEY_LABEL: Record<string, string> = {
@@ -93,7 +95,15 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 const NUM_KEYS = new Set<SortKey>(["deposit", "monthly_rent", "appraisal_value", "minimum_bid"]);
 
+/** "2026-07-12T…" + "A팀" → "07/12 A팀". 답사지를 이미 들고 나간 기록이라 날짜가 핵심이다. */
+function issuedLabel(r: BulkSearchRow): string {
+  if (!r.last_issued_at) return "";
+  const d = r.last_issued_at.slice(5, 10).replace("-", "/");
+  return r.last_issued_team ? `${d} ${r.last_issued_team}` : d;
+}
+
 function cell(r: BulkSearchRow, key: SortKey): string {
+  if (key === "last_issued_at") return issuedLabel(r) || "—";
   const v = r[key];
   if (v === null || v === "") return "—";
   if (NUM_KEYS.has(key)) return formatWonMan(Number(v));
@@ -167,6 +177,8 @@ export function BulkNameSearch() {
     return {
       total: all.length,
       similar: all.filter((r) => r.similar).length,
+      // 상태는 미답사인데 답사지는 이미 나간 것 — "답사했는데 결과 미입력" 일 가능성이 높다.
+      issued: all.filter((r) => r.last_issued_at).length,
       appraisal: all.reduce((s, r) => s + (r.appraisal_value ?? 0), 0),
       minimum: all.reduce((s, r) => s + (r.minimum_bid ?? 0), 0),
       // 답사지 발급 대상은 미답사뿐 — 이미 답사한 건 바구니에 담지 않는다.
@@ -177,6 +189,7 @@ export function BulkNameSearch() {
           owner_name: r.owner_name,
           address: r.address,
           case_number: r.case_number,
+          issued: !!r.last_issued_at,
         })),
     };
   }, [groups]);
@@ -217,6 +230,13 @@ export function BulkNameSearch() {
     if (summary.items.length === 0) return;
     setCart((prev) => mergeCart(prev, summary.items));
     toast.success(`${summary.items.length}건을 취합 바구니에 담았습니다`);
+    // 상태는 미답사인데 답사지가 이미 나간 건 — 또 돌면 헛걸음이라 담을 때 한 번 짚어 준다.
+    const reissued = summary.items.filter((i) => i.issued).length;
+    if (reissued > 0)
+      toast.warning(
+        `이 중 ${reissued}건은 답사지를 이미 발급한 적이 있습니다 — 답사했는데 결과만 안 들어왔을 수 있습니다`,
+        { duration: 8000 },
+      );
   }
 
   function copyTsv() {
@@ -370,6 +390,9 @@ export function BulkNameSearch() {
               <span className="text-emerald-700"> / 미답사 {summary.items.length.toLocaleString()}건</span>
               {summary.similar > 0 && (
                 <span className="text-amber-700"> / 유사 {summary.similar.toLocaleString()}건</span>
+              )}
+              {summary.issued > 0 && (
+                <span className="text-rose-700"> / 발급이력 {summary.issued.toLocaleString()}건</span>
               )}
             </span>
             <span className="text-muted-foreground">
@@ -620,6 +643,7 @@ function splitRoadName(address: string): { base: string; road: string } {
 function Card({ row: r }: { row: BulkSearchRow }) {
   const [openRoad, setOpenRoad] = useState(false);
   const { base, road } = splitRoadName(r.address || "");
+  const issued = issuedLabel(r);
   const appraisal = cell(r, "appraisal_value");
   const minimum = cell(r, "minimum_bid");
   const auctionDate = cell(r, "auction_date");
@@ -655,6 +679,14 @@ function Card({ row: r }: { row: BulkSearchRow }) {
           )}
         </div>
         {/* 우측 상단 고정 배지 */}
+        {issued && (
+          <span
+            className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800"
+            title="답사지를 이미 발급한 적이 있습니다 — 답사했는데 결과만 안 들어왔을 수 있습니다"
+          >
+            발급 {issued}
+          </span>
+        )}
         {r.similar && (
           <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">
             유사

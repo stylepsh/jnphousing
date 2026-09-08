@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ClipboardList, ChevronDown, Copy, X, User, FileSpreadsheet, Printer } from "lucide-react";
+import {
+  ClipboardList,
+  ChevronDown,
+  Copy,
+  X,
+  User,
+  FileSpreadsheet,
+  Printer,
+  AlertTriangle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/auction/use-cart";
 import { cartToText, groupCartByOwner, removeFromCart } from "@/lib/auction/selection-cart";
@@ -23,6 +32,8 @@ export function CartBar({ recentTeams = [] }: { recentTeams?: string[] }) {
 
   if (cart.length === 0) return null;
   const groups = groupCartByOwner(cart);
+  // 앞전에 답사지가 이미 나간 물건 — 또 돌면 헛걸음이라 발급 직전에 짚어 준다.
+  const reissued = cart.filter((c) => c.issued).length;
 
   async function send(kind: "pdf" | "xlsx") {
     const ok = await issue({
@@ -42,6 +53,15 @@ export function CartBar({ recentTeams = [] }: { recentTeams?: string[] }) {
       <div className="mx-auto max-w-6xl px-2 pb-2 pointer-events-auto">
         {open && (
           <div className="mb-1.5 rounded-xl border-2 border-emerald-300 bg-white shadow-lg">
+            {reissued > 0 && (
+              <p className="flex items-start gap-1.5 border-b bg-rose-50 px-2.5 py-2 text-[11px] font-bold text-rose-800">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                <span>
+                  {reissued}건은 답사지를 <strong>이미 발급한 적</strong>이 있습니다 — 답사했는데
+                  결과만 안 들어왔을 수 있으니 다시 돌리기 전에 확인하세요. (목록에서 🖨 표시)
+                </span>
+              </p>
+            )}
             <div className="max-h-[45vh] overflow-y-auto divide-y">
               {groups.map(({ owner, items }) => (
                 <div key={owner} className="p-2.5">
@@ -59,6 +79,11 @@ export function CartBar({ recentTeams = [] }: { recentTeams?: string[] }) {
                     {items.map((c, i) => (
                       <li key={c.id} className="flex items-center gap-1.5 text-[11px]">
                         <span className="text-muted-foreground tabular-nums w-5 shrink-0">{i + 1}.</span>
+                        {c.issued && (
+                          <span className="shrink-0 text-rose-600" title="답사지 발급 이력 있음">
+                            🖨
+                          </span>
+                        )}
                         <span className="truncate">{c.address}</span>
                         {c.case_number && (
                           <span className="text-muted-foreground shrink-0">({c.case_number})</span>

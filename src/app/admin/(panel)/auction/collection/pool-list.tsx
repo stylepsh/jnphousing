@@ -179,6 +179,7 @@ export function PoolList({
               owner_name: p.owner_name,
               address: p.address,
               case_number: p.case_number,
+              issued: !!p.last_issued_at,
             });
         }
         return mergeCart(kept, add);

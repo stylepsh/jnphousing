@@ -13,6 +13,8 @@ export interface CartItem {
   owner_name: string;
   address: string;
   case_number: string;
+  /** 앞전에 답사지가 이미 나간 물건 — 상태가 미답사여도 헛걸음일 수 있어 발급 전에 경고한다. */
+  issued?: boolean;
 }
 
 export const CART_STORAGE_KEY = "auction-pool-cart";

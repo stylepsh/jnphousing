@@ -19,6 +19,7 @@ const COLUMNS: { header: string; width: number }[] = [
   { header: "월세", width: 10 },
   { header: "사건번호", width: 16 },
   { header: "답사상태", width: 10 },
+  { header: "발급이력", width: 18 },
 ];
 
 const SURVEY_LABEL: Record<string, string> = {
@@ -81,6 +82,10 @@ export async function POST(req: NextRequest) {
           r.monthly_rent ?? "",
           r.case_number,
           SURVEY_LABEL[r.survey_status] ?? r.survey_status,
+          // 답사지가 이미 나간 기록 — 상태가 미답사여도 헛걸음일 수 있다는 경고.
+          r.last_issued_at
+            ? `⚠ 발급됨 ${r.last_issued_at.slice(0, 10)}${r.last_issued_team ? ` (${r.last_issued_team})` : ""}`
+            : "",
         ]);
         count++;
       }
