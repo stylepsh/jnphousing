@@ -206,10 +206,6 @@ export function BulkNameSearch() {
     URL.revokeObjectURL(url);
   }
 
-  function toggleSort(key: SortKey) {
-    setSort((s) => (s.key === key ? { key, asc: !s.asc } : { key, asc: true }));
-  }
-
   return (
     <div className="rounded-xl border bg-card p-4">
       <div className="flex items-center gap-2 flex-wrap">
@@ -327,6 +323,33 @@ export function BulkNameSearch() {
               {mode === "address" ? "곳" : "명"} · 감정가 {formatWonMan(summary.appraisal)} · 최저가{" "}
               {formatWonMan(summary.minimum)}
             </span>
+            <span className="flex-1" />
+            {/* 정렬은 여기 하나로 — 표 헤더 클릭은 폰에서 쓸 수 없어 없앴다 */}
+            <label className="inline-flex items-center gap-1">
+              <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
+              <select
+                value={sort.key ?? ""}
+                onChange={(e) =>
+                  setSort({ key: (e.target.value || null) as SortKey | null, asc: sort.asc })
+                }
+                className="rounded-md border bg-background px-2 py-1 text-xs font-bold"
+              >
+                <option value="">기본(찾은 순서)</option>
+                {columns.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setSort((v) => ({ ...v, asc: !v.asc }))}
+                disabled={!sort.key}
+                className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md border text-xs font-bold disabled:opacity-40"
+              >
+                <ArrowUpDown className="w-3 h-3" />
+                {sort.asc ? "오름" : "내림"}
+              </button>
+            </label>
           </div>
 
           {/* 결과 활용 버튼 — 하단 고정. 취합 바구니 바(bottom-0) 위에 얹는다. */}
@@ -357,30 +380,6 @@ export function BulkNameSearch() {
           {/* 결과 — 좁은 화면은 카드, 넓은 화면은 표 */}
           {result.groups.length > 0 && (
             <div className="md:hidden space-y-2">
-              {/* 폰에는 열 제목이 없으니 정렬은 select 로 */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-muted-foreground font-bold">정렬</span>
-                <select
-                  value={sort.key ?? ""}
-                  onChange={(e) =>
-                    setSort({ key: (e.target.value || null) as SortKey | null, asc: sort.asc })
-                  }
-                  className="flex-1 rounded-md border bg-background px-2 py-1.5 text-xs font-bold"
-                >
-                  <option value="">기본(찾은 순서)</option>
-                  {COLUMNS.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setSort((v) => ({ ...v, asc: !v.asc }))}
-                  className="px-2 py-1.5 rounded-md border text-xs font-bold"
-                >
-                  {sort.asc ? "오름차순" : "내림차순"}
-                </button>
-              </div>
               {result.groups.map((g) => (
                 <GroupCards
                   key={g.name}
@@ -401,19 +400,11 @@ export function BulkNameSearch() {
                     {columns.map((c) => (
                       <th
                         key={c.key}
-                        onClick={() => toggleSort(c.key)}
-                        className={`px-2 py-1.5 font-bold cursor-pointer select-none whitespace-nowrap hover:bg-muted ${
-                          c.num ? "text-right" : "text-left"
-                        }`}
+                        className={`px-2 py-1.5 font-bold whitespace-nowrap ${
+                          sort.key === c.key ? "text-blue-700" : ""
+                        } ${c.num ? "text-right" : "text-left"}`}
                       >
-                        <span className="inline-flex items-center gap-0.5">
-                          {c.label}
-                          <ArrowUpDown
-                            className={`w-3 h-3 ${
-                              sort.key === c.key ? "text-blue-600" : "text-muted-foreground/40"
-                            }`}
-                          />
-                        </span>
+                        {c.label}
                       </th>
                     ))}
                   </tr>
