@@ -5,6 +5,8 @@ import {
   cleanAddress,
   normalizeRow,
   extractRowsFromCsv,
+  rowsFromMatrix,
+  occupancyFromSheetName,
 } from "./survey-sheet";
 
 describe("mapOccupancy", () => {
@@ -104,5 +106,30 @@ describe("extractRowsFromCsv", () => {
     expect(rows[0].ownerCreditor).toBe("박국섭 주택도시보증공사");
     expect(rows[0].addressDetail).toContain("오이도5길 14");
     expect(rows[1].memo).toBe("퇴거 예정이라고 함");
+  });
+});
+
+describe("정리본 탭(점유 칸 없음)", () => {
+  it("탭 이름으로 점유를 읽는다", () => {
+    expect(occupancyFromSheetName("3_공실")).toBe("X");
+    expect(occupancyFromSheetName("4_재방문")).toBe("△");
+    expect(occupancyFromSheetName("5_거주")).toBe("O");
+    expect(occupancyFromSheetName("6_확인필요")).toBeNull();
+    expect(occupancyFromSheetName("1_요약")).toBeNull();
+  });
+
+  it("점유 칸 없는 탭은 fallback 없이는 무시, 있으면 행마다 채운다", () => {
+    const matrix = [
+      ["번호", "지역", "임대인", "상세 주소", "사건번호", "물건종류", "우편", "계량기", "현관비번", "관리실", "비고", "작업 메모"],
+      ["2285", "경기 수원시 권선구", "(미기재)", "경기 수원시 권선구 권선동 999-20 3층 304호 [세지로66번길 7-9]", "2026-51571", "다세대", "X", "O", "1234", "", "이웃 확인", ""],
+    ];
+    expect(rowsFromMatrix(matrix).rows).toHaveLength(0);
+    const { rows } = rowsFromMatrix(matrix, occupancyFromSheetName("3_공실"));
+    expect(rows).toHaveLength(1);
+    const n = normalizeRow(rows[0]);
+    expect(n.occupancy).toBe("vacant");
+    expect(n.propertyNo).toBe(2285);
+    expect(n.caseNumber).toBe("2026-51571");
+    expect(n.doorCode).toBe("1234");
   });
 });

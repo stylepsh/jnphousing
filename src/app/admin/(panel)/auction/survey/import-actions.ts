@@ -10,6 +10,7 @@ import {
   extractRowsFromCsv,
   rowsFromMatrix,
   normalizeRow,
+  occupancyFromSheetName,
   type SurveySheetRow,
 } from "@/lib/auction/survey-sheet";
 import { SURVEY_STATUS_OF, JUDGE_STATE_OF, type Occupancy } from "@/lib/auction/occupancy";
@@ -38,6 +39,8 @@ const EMPTY: SurveyImportResult = {
 interface SheetData {
   region: string | null;
   rows: SurveySheetRow[];
+  /** 탭 이름(공실/거주/재방문)으로 점유를 정한 정리본 탭 — 지역 정보가 없다. */
+  byTabName?: boolean;
 }
 
 // 파일 → 시트별 데이터 (xlsx는 시트=지역, csv는 1개)
@@ -60,8 +63,16 @@ async function extractSheets(file: File): Promise<SheetData[]> {
       });
       matrix.push(cells);
     });
-    const { region, rows } = rowsFromMatrix(matrix);
-    if (rows.length) sheets.push({ region: region ?? ws.name, rows });
+    // 점유 칸이 있는 원본 답사지를 우선, 없으면 탭 이름(공실/거주/재방문)으로 판정.
+    let parsed = rowsFromMatrix(matrix);
+    let byTabName = false;
+    const tabOcc = occupancyFromSheetName(ws.name);
+    if (!parsed.rows.length && tabOcc) {
+      parsed = rowsFromMatrix(matrix, tabOcc);
+      byTabName = parsed.rows.length > 0;
+    }
+    if (!parsed.rows.length) continue;
+    sheets.push({ region: byTabName ? null : parsed.region ?? ws.name, rows: parsed.rows, byTabName });
   }
   return sheets;
 }
@@ -104,7 +115,7 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       const { data: batch } = await supabase
         .from("auction_survey_batch")
         .insert({
-          name: `${region ?? "답사표"} 업로드`,
+          name: `${region ?? file.name.replace(/\.[^.]+$/, "")} 업로드`,
           area: region,
           status: "completed",
           total_count: sheet.rows.length,
@@ -120,7 +131,22 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
       const caseNumbers = [...new Set(
         normalized.map((n) => n.caseNumber).filter((c): c is string => !!c),
       )];
-      const existingByCase = new Map<string, { id: string; pipeline_state: string | null; survey_status: string | null }>();
+      type Existing = { id: string; pipeline_state: string | null; survey_status: string | null };
+      const existingByCase = new Map<string, Existing>();
+      // 답사지 번호(property_no)가 있으면 그게 가장 정확하다(같은 사건번호에 물건 여러 개인 경우).
+      const existingByNo = new Map<number, Existing & { case_number: string }>();
+      const propertyNos = [...new Set(normalized.map((n) => n.propertyNo).filter((v): v is number => v != null))];
+      for (let i = 0; i < propertyNos.length; i += 200) {
+        const { data: noRows, error: noErr } = await supabase
+          .from("auction_property")
+          .select("id, property_no, case_number, pipeline_state, survey_status")
+          .in("property_no", propertyNos.slice(i, i + 200));
+        if (noErr) {
+          console.error("[importSurveySheet] 물건번호 조회 실패", noErr);
+          return { ...EMPTY, error: "기존 물건 조회에 실패했습니다. 다시 시도해 주세요." };
+        }
+        for (const r of (noRows ?? []) as (Existing & { property_no: number; case_number: string })[]) existingByNo.set(r.property_no, r);
+      }
       for (let i = 0; i < caseNumbers.length; i += 200) {
         const { data: matchRows, error: matchErr } = await supabase
           .from("auction_property")
@@ -160,7 +186,10 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
         if (n.occupancy === "vacant" && n.canOpen === "possible") nextState = "WorkPrep";
 
         // 사건번호가 있으면 위에서 일괄 조회한 결과에서 매칭한다(왕복 0회).
-        const existing = n.caseNumber ? existingByCase.get(n.caseNumber) ?? null : null;
+        // 구형 표준용지의 '방문순번'(1,2,3…)이 물건번호로 오인되지 않게, 사건번호가 적혀 있으면 일치할 때만 번호 매칭.
+        const byNo = n.propertyNo != null ? existingByNo.get(n.propertyNo) : undefined;
+        const noTrusted = byNo && (!n.caseNumber || byNo.case_number === n.caseNumber) ? byNo : undefined;
+        const existing = noTrusted ?? (n.caseNumber ? existingByCase.get(n.caseNumber) ?? null : null);
         // 동일 답사표를 다시 올려도 완료 판정·검사·이벤트를 중복 생성하지 않는다.
         // 완료값을 정정할 때는 검토 화면의 명시적 상태 변경 기능을 사용한다.
         if (existing && shouldSkipSurveyImport(existing.survey_status)) {
@@ -180,7 +209,9 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
               door_code: n.doorCode, meter_check: n.meterCheck, survey_memo: n.memo,
               survey_status: surveyStatus, survey_date: today, survey_by: ctx.admin.name,
               address_short: n.addressShort, pipeline_state: nextState, pipeline_entered_at: nowIso,
-              batch_id: batchId, updated_at: nowIso,
+              // 정리본 탭은 지역이 없으니 원래 수집 배치(지역)를 유지한다.
+              ...(sheet.byTabName ? {} : { batch_id: batchId }),
+              updated_at: nowIso,
             })
             .eq("id", propertyId);
           result.matched++;

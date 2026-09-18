@@ -334,13 +334,29 @@ export function mapHeaderToFields(header: string[]): Partial<Record<number, keyo
   return map;
 }
 
-export function rowsFromMatrix(matrix: string[][]): { region: string | null; rows: SurveySheetRow[] } {
+/**
+ * 정리본 엑셀처럼 점유 칸 없이 탭 이름("3_공실"·"4_재방문"·"5_거주")으로 나눠 온 경우,
+ * 탭 이름에서 점유 값을 읽는다. 해당 없으면 null(=점유 칸 필수).
+ */
+export function occupancyFromSheetName(name: string | null | undefined): string | null {
+  const s = String(name ?? "");
+  if (/재방문/.test(s)) return "△";
+  if (/공실/.test(s)) return "X";
+  if (/거주|점유/.test(s)) return "O";
+  return null;
+}
+
+export function rowsFromMatrix(
+  matrix: string[][],
+  fallbackOccupancy: string | null = null,
+): { region: string | null; rows: SurveySheetRow[] } {
   // 헤더 = '점유'(답사시트의 표식) + 주소/임대인/사건번호 중 하나 포함.
   // 안산/수원처럼 사건번호 칸이 없는 시트도 감지되도록 사건번호 필수 조건 제거.
+  // 탭 이름으로 점유를 알 때(fallbackOccupancy)는 '점유' 칸이 없어도 헤더로 인정.
   let headerIdx = -1;
   for (let i = 0; i < matrix.length; i++) {
     const joined = matrix[i].join("").replace(/\s/g, "");
-    if (/점유/.test(joined) && /(상세주소|주소|임대인|사건번호|타경)/.test(joined)) {
+    if ((fallbackOccupancy || /점유/.test(joined)) && /(상세주소|주소|임대인|사건번호|타경)/.test(joined)) {
       headerIdx = i;
       break;
     }
@@ -374,6 +390,7 @@ export function rowsFromMatrix(matrix: string[][]): { region: string | null; row
       r[field] = v != null && String(v).trim() ? String(v) : null;
     }
     if (!r.caseNumber && !r.addressDetail) continue;
+    r.occupancy ??= fallbackOccupancy;
     rows.push(r);
   }
   return { region, rows };

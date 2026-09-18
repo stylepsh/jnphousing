@@ -42,6 +42,7 @@ export function SurveyUpload() {
       <p className="text-[11px] text-muted-foreground">
         점유상태 <b>X→공실</b>(상품화 가능) · <b>O→거주</b>(영구 제외) · <b>△→재방문</b>. 엑셀은 경매 물건 수집에서
         선택 후 <b>‘답사지 엑셀’</b>로 받은 그 파일을 그대로 쓰면 됩니다.
+        공실·거주·재방문을 <b>탭으로 나눠 정리한 엑셀</b>(점유 칸 없음)도 탭 이름으로 판정해 올라갑니다.
       </p>
 
       {res &&
