@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { STATE_LABELS } from "@/lib/auction/pipeline/state-machine";
 import { SurveyUpload } from "../survey/survey-upload";
 import { CopyBox } from "./copy-box";
+import { LeaseUpload } from "./lease-upload";
 import {
-  ALL, CAN_OPEN, COLS, INSP, MERCH, TABS, TAB_KEYS, fetchCounts, fetchMerchLeased, fetchRows, fieldMessage, group,
+  ALL, CAN_OPEN, INSP, MERCH, period, revenueOf, withCols, TABS, TAB_KEYS, fetchCounts, fetchMerchLeased, fetchRows, fieldMessage, group,
   latest, parseTab, regionOf, won, WHY, whyNotMerch, type Row, type Sb, type Tab, type Why,
 } from "./data";
 
@@ -17,13 +18,15 @@ const stateLabel = (s: string | null) => (s ? STATE_LABELS[s as keyof typeof STA
 
 async function fetchDetail(supabase: Sb, id: string) {
   const [p, ev] = await Promise.all([
-    supabase
-      .from("auction_property")
-      .select(
-        `${COLS}, appraisal_value, minimum_bid, auction_date, survey_by, last_issued_at, last_issued_team, auction_inspection(${INSP})`,
-      )
-      .eq("id", id)
-      .maybeSingle(),
+    withCols((c) =>
+      supabase
+        .from("auction_property")
+        .select(
+          `${c}, appraisal_value, minimum_bid, auction_date, survey_by, last_issued_at, last_issued_team, auction_inspection(${INSP})`,
+        )
+        .eq("id", id)
+        .maybeSingle(),
+    ),
     supabase
       .from("auction_pipeline_event")
       .select("created_at, from_state, to_state, performed_by, detail")
@@ -55,15 +58,17 @@ export default async function SurveyResultsPage({
 
   let rows: Row[] = [];
   let merchLeased: Row[] = [];
+  let leasedAll: Row[] = [];
   let counts: Record<Tab, number | null> | null = null;
   let detail: Awaited<ReturnType<typeof fetchDetail>> | null = null;
   let loadError: string | null = null;
   try {
-    [rows, counts, merchLeased, detail] = await Promise.all([
+    [rows, counts, merchLeased, detail, leasedAll] = await Promise.all([
       fetchRows(supabase, tab, q),
       fetchCounts(supabase),
       tab === "merch" ? fetchMerchLeased(supabase) : Promise.resolve([]),
       sp.id ? fetchDetail(supabase, sp.id) : Promise.resolve(null),
+      fetchRows(supabase, "leased"),
     ]);
   } catch (e) {
     loadError = e instanceof Error ? e.message : "불러오기 실패";
@@ -128,8 +133,36 @@ export default async function SurveyResultsPage({
         ))}
       </div>
 
+      {/* 들어올 돈 — 임차중 물건 기준 + 상품화 대기분 예상 */}
+      {(() => {
+        const rv = revenueOf(leasedAll);
+        const waiting = counts?.merch ?? 0;
+        const m = (n: number) => `${Math.round(n / 10_000).toLocaleString("ko-KR")}만원`;
+        const items: [string, string, string][] = [
+          ["임차중", `${rv.count}건`, "현재 임대 나간 물건"],
+          ["월세 합계", m(rv.rent), `연 ${m(rv.rent * 12)}`],
+          ["보증금 합계", m(rv.deposit), "임차인에게 받은 보증금"],
+          ["월 관리수수료", m(rv.fee), `연 ${m(rv.fee * 12)} · 물건별 수수료율 기준`],
+          ["상품화 대기 예상 월세", m(waiting * rv.avgRent), `${waiting}건 × 평균 월세 ${m(rv.avgRent)}`],
+        ];
+        return (
+          <div className="rounded-2xl border bg-card p-3">
+            <div className="mb-2 text-sm font-bold">들어올 예상 금액</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {items.map(([k, v, sub]) => (
+                <div key={k} className="rounded-xl bg-muted/40 p-2.5">
+                  <div className="text-xs text-muted-foreground">{k}</div>
+                  <div className="text-lg font-black tabular-nums">{v}</div>
+                  <div className="text-[11px] text-muted-foreground">{sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 엑셀 주고받기 */}
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-3">
         <div className="rounded-2xl border-2 border-blue-200 bg-blue-50/40 p-5 space-y-2">
           <h3 className="font-black">엑셀 받기 (현장팀에 주기)</h3>
           <p className="text-xs text-muted-foreground">
@@ -144,6 +177,7 @@ export default async function SurveyResultsPage({
           </a>
         </div>
         <SurveyUpload />
+        <LeaseUpload />
       </div>
 
       <form className="flex gap-1" action="/admin/auction/results">
@@ -201,8 +235,12 @@ export default async function SurveyResultsPage({
                 ["감정가", won(d.appraisal_value)],
                 ["최저가", won(d.minimum_bid)],
                 ["매각기일", d.auction_date ?? "-"],
-                ["임차인", d.tenant_name ?? "-"],
+                ["임차인", `${d.tenant_name ?? "-"} ${d.tenant_phone ?? ""}`],
                 ["보증금/월세", `${won(d.deposit)} / ${won(d.monthly_rent)}`],
+                ["임대 기간", period(d)],
+                ["수금일", d.rent_due_day ? `매월 ${d.rent_due_day}일` : "-"],
+                ["중개사", `${d.broker_name ?? "-"} ${d.broker_phone ?? ""}`],
+                ["수수료율", d.management_fee_rate ? `${d.management_fee_rate}%` : "-"],
               ];
               return kv.map(([k, v]) => (
                 <div key={k} className="flex gap-2">
@@ -317,7 +355,7 @@ export default async function SurveyResultsPage({
               <thead className="bg-muted/60 text-xs text-muted-foreground">
                 <tr>
                   {(tab === "leased"
-                    ? ["번호", "임대인", "상세 주소", "사건번호", "임차인", "보증금", "월세", "현관비번", "비고"]
+                    ? ["번호", "임대인", "상세 주소", "사건번호", "임차인", "연락처", "보증금", "월세", "임대 기간", "수금일", "중개사", "중개사 연락처", "월 수수료", "비고"]
                     : ["번호", "임대인", "상세 주소", "사건번호", "종류", "개방", "상품화", "우편", "계량기", "현관비번", "비고(관리실)", "답사일", ...(tab === "vacant" ? ["안 넘어간 이유"] : [])]
                   ).map((h) => (
                     <th key={h} className="whitespace-nowrap px-2 py-2 text-left font-semibold">
@@ -331,7 +369,18 @@ export default async function SurveyResultsPage({
                   const i = latest(r.auction_inspection);
                   const cells =
                     tab === "leased"
-                      ? [r.tenant_name ?? "-", won(r.deposit), won(r.monthly_rent), r.door_code ?? "-", r.survey_memo ?? ""]
+                      ? [
+                          r.tenant_name ?? "-",
+                          r.tenant_phone ?? "-",
+                          won(r.deposit),
+                          won(r.monthly_rent),
+                          period(r),
+                          r.rent_due_day ? `${r.rent_due_day}일` : "-",
+                          r.broker_name ?? "-",
+                          r.broker_phone ?? "-",
+                          won(Math.round((r.monthly_rent ?? 0) * ((r.management_fee_rate ?? 0) / 100))),
+                          r.survey_memo ?? "",
+                        ]
                       : [
                           r.category ?? "-",
                           CAN_OPEN[i?.can_open ?? ""] ?? "-",
@@ -358,7 +407,7 @@ export default async function SurveyResultsPage({
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 font-mono">{r.case_number}</td>
                       {cells.map((c, n) => (
-                        <td key={n} className={`px-2 py-1.5 ${n === (tab === "leased" ? 4 : 6) ? "" : "whitespace-nowrap"} ${tab === "vacant" && n === 8 && whyOf.get(r.id) ? "font-semibold text-red-700" : ""}`}>
+                        <td key={n} className={`px-2 py-1.5 ${n === (tab === "leased" ? 9 : 6) ? "" : "whitespace-nowrap"} ${tab === "vacant" && n === 8 && whyOf.get(r.id) ? "font-semibold text-red-700" : ""}`}>
                           {c}
                         </td>
                       ))}

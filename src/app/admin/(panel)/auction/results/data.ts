@@ -48,11 +48,31 @@ export type Row = {
   tenant_name: string | null;
   deposit: number | null;
   monthly_rent: number | null;
+  lease_start: string | null;
+  lease_end: string | null;
+  rent_due_day: number | null;
+  management_fee_rate: number | null;
+  tenant_phone?: string | null;
+  broker_name?: string | null;
+  broker_phone?: string | null;
   auction_inspection: Inspection[];
 };
 
-export const COLS =
-  "id, property_no, owner_name, address, address_short, case_number, category, creditor, door_code, meter_check, survey_memo, survey_date, survey_status, pipeline_state, tenant_name, deposit, monthly_rent";
+const BASE_COLS =
+  "id, property_no, owner_name, address, address_short, case_number, category, creditor, door_code, meter_check, survey_memo, survey_date, survey_status, pipeline_state, tenant_name, deposit, monthly_rent, lease_start, lease_end, rent_due_day, management_fee_rate";
+// 044 마이그레이션(임차 연락처·중개사) 전에도 화면이 깨지지 않게, 컬럼이 없으면 BASE 로 한 번 더 읽는다.
+const FULL_COLS = `${BASE_COLS}, tenant_phone, broker_name, broker_phone`;
+let hasLeaseContact = true;
+export const cols = () => (hasLeaseContact ? FULL_COLS : BASE_COLS);
+type Res = { data: unknown; error: { code?: string; message: string } | null };
+export async function withCols(run: (c: string) => PromiseLike<Res>): Promise<Res> {
+  const res = await run(cols());
+  if (res.error?.code === "42703" && hasLeaseContact) {
+    hasLeaseContact = false;
+    return run(cols());
+  }
+  return res;
+}
 export const INSP = "can_open, merchandising_ready, mail_status, comment, inspector_name, created_at";
 
 export type Sb = Awaited<ReturnType<typeof createClient>>;
@@ -80,24 +100,28 @@ export async function fetchRows(supabase: Sb, tab: Tab, q = ""): Promise<Row[]> 
   const rows: Row[] = [];
   // PostgREST 기본 상한(1,000행)에 잘리지 않게 끝까지 페이지로 읽는다.
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await tabQuery(supabase, tab, `${COLS}, ${inspSel(tab)}`)
-      .order("property_no", { ascending: true })
-      .range(from, from + 999);
+    const { data, error } = await withCols((c) =>
+      tabQuery(supabase, tab, `${c}, ${inspSel(tab)}`)
+        .order("property_no", { ascending: true })
+        .range(from, from + 999),
+    );
     if (error) throw new Error(error.message);
     rows.push(...((data ?? []) as unknown as Row[]));
-    if (!data || data.length < 1000) break;
+    if (!Array.isArray(data) || data.length < 1000) break;
   }
   return q ? rows.filter((r) => textMatches(q, r.case_number, r.address, r.owner_name)) : rows;
 }
 
 // 상품화 가능으로 답사됐지만 이미 임차가 나가 작업에서 빠진 물건
 export async function fetchMerchLeased(supabase: Sb): Promise<Row[]> {
-  const { data, error } = await supabase
-    .from("auction_property")
-    .select(`${COLS}, auction_inspection!inner(${INSP})`)
-    .eq("auction_inspection.merchandising_ready", "possible")
-    .eq("pipeline_state", "Leased")
-    .order("property_no", { ascending: true });
+  const { data, error } = await withCols((c) =>
+    supabase
+      .from("auction_property")
+      .select(`${c}, auction_inspection!inner(${INSP})`)
+      .eq("auction_inspection.merchandising_ready", "possible")
+      .eq("pipeline_state", "Leased")
+      .order("property_no", { ascending: true }),
+  );
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Row[];
 }
@@ -145,7 +169,10 @@ export function fieldMessage(active: Row[], leasedOut: Row[], scope: string): st
   }
   if (leasedOut.length) {
     out.push("", "✅ 임차 완료 — 작업하지 마세요");
-    for (const r of leasedOut) out.push(`- ${r.property_no ?? "-"} ${r.address}`);
+    for (const r of leasedOut)
+      out.push(
+        `- ${r.property_no ?? "-"} ${r.address}${r.tenant_name ? ` · ${r.tenant_name}` : ""}${r.monthly_rent ? ` · 월세 ${won(r.monthly_rent)}` : ""}`,
+      );
   }
   return out.join("\n");
 }
@@ -170,3 +197,18 @@ export function whyNotMerch(r: Row): Why | null {
   if (i.merchandising_ready === "impossible") return "merch_no";
   return "merch_hold";
 }
+
+/** 임차 중 물건의 들어올 돈 요약. 관리수수료 = 월세 × 수수료율(물건별). */
+export function revenueOf(leased: Row[]) {
+  let rent = 0, deposit = 0, fee = 0;
+  for (const r of leased) {
+    rent += r.monthly_rent ?? 0;
+    deposit += r.deposit ?? 0;
+    fee += Math.round((r.monthly_rent ?? 0) * ((r.management_fee_rate ?? 0) / 100));
+  }
+  const withRent = leased.filter((r) => (r.monthly_rent ?? 0) > 0).length;
+  return { count: leased.length, rent, deposit, fee, avgRent: withRent ? Math.round(rent / withRent) : 0 };
+}
+
+export const period = (r: Row) =>
+  r.lease_start || r.lease_end ? `${r.lease_start ?? "?"} ~ ${r.lease_end ?? "?"}` : "-";
