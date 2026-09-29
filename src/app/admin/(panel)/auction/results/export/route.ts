@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(TABS[tab].label);
   const today = new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
-  ws.addRow([`JNP 답사 결과 · ${TABS[tab].label} · ${region === ALL ? "전체 지역" : region} · ${rows.length}건 · ${today}`]);
+  ws.addRow([`답사 결과 · ${TABS[tab].label} · ${region === ALL ? "전체 지역" : region} · ${rows.length}건 · ${today}`]);
   ws.addRow([
     "번호", "임대인", "상세 주소", "사건번호", "물건종류", "채권자",
     "점유(O거주/X공실/△재방문)", "개방(가능/불가/확인)", "상품화(가능/보류/불가)", "우편(쌓임/깨끗)", "계량기(유/무)",

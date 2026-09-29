@@ -64,7 +64,7 @@ export async function importRentalWorkbook(formData: FormData): Promise<ImportRe
     if (!contractWs) {
       return {
         ok: false,
-        error: `'${CONTRACT_SHEET}' 시트를 찾지 못했습니다. JNP_임대취합.xlsx 양식이 맞는지 확인해 주세요.`,
+        error: `'${CONTRACT_SHEET}' 시트를 찾지 못했습니다. 임대취합.xlsx 양식이 맞는지 확인해 주세요.`,
       };
     }
 

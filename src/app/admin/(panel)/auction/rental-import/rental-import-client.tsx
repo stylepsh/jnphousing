@@ -59,7 +59,7 @@ export function RentalImportClient() {
             {pending ? "읽는 중…" : "엑셀 파일 선택 (.xlsx)"}
           </span>
           <span className="text-xs text-muted-foreground">
-            {fileName || "JNP_임대취합.xlsx 를 올려주세요"}
+            {fileName || "임대취합.xlsx 를 올려주세요"}
           </span>
           <input type="file" accept=".xlsx" className="hidden" onChange={onFile} disabled={pending} />
         </label>

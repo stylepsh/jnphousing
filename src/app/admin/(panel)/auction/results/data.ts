@@ -201,7 +201,7 @@ export const won = (v: number | null) => (v == null ? "-" : `${v.toLocaleString(
 export function fieldMessage(active: Row[], leasedOut: Row[], scope: string): string {
   const today = new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
   const out = [
-    `[JNP 상품화 작업 목록] ${today}${scope === ALL ? "" : ` · ${scope}`}`,
+    `[상품화 작업 목록] ${today}${scope === ALL ? "" : ` · ${scope}`}`,
     `진행 ${active.length}건 (임차 완료 ${leasedOut.length}건 제외)`,
   ];
   for (const [region, list] of group(active)) {

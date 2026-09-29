@@ -56,7 +56,7 @@ function cc(n) {
 
 // ---------------------------------------------------------------- 워크북
 const wb = new ExcelJS.Workbook();
-wb.creator = "JNP주택관리";
+wb.creator = "전국한마음자산관리";
 wb.created = new Date();
 
 /* ============================ 00_설정 ============================ */
@@ -65,7 +65,7 @@ wb.created = new Date();
   ws.getColumn(1).width = 26;
   ws.getColumn(2).width = 78;
 
-  ws.addRow(["JNP 임대 취합 워크북"]).getCell(1).font = { bold: true, size: 16 };
+  ws.addRow(["임대 취합 워크북"]).getCell(1).font = { bold: true, size: 16 };
   ws.addRow([]);
   ws.addRow(["■ 쓰는 순서"]).getCell(1).font = { bold: true, size: 12 };
   [
@@ -368,7 +368,7 @@ const UNION_LAST_ROW = 3 + 20 * ROWS_PER_AGENCY - 1;
 
 /* ---------------------------------------------------------------- 저장 */
 const out = process.argv[2]
-  ?? path.join(os.homedir(), "OneDrive", "Desktop", "JNP_임대취합.xlsx");
+  ?? path.join(os.homedir(), "OneDrive", "Desktop", "임대취합.xlsx");
 await wb.xlsx.writeFile(out);
 console.log("생성 완료:", out);
 console.log("시트:", wb.worksheets.map((w) => w.name).join(" / "));

@@ -4,8 +4,8 @@
  *   node scripts/build-submission-forms.mjs [출력폴더]
  *
  * 만드는 파일 2개
- *   JNP_답사양식.xlsx        현장팀용. 공실/거주 판정을 빠뜨리지 않게.
- *   JNP_부동산제출양식.xlsx  부동산용. 계약 내용을 같은 형식으로 받게.
+ *   답사양식.xlsx        현장팀용. 공실/거주 판정을 빠뜨리지 않게.
+ *   부동산제출양식.xlsx  부동산용. 계약 내용을 같은 형식으로 받게.
  *
  * 실제로 받은 자료에서 났던 문제를 양식 단계에서 막는다.
  *   - 월세를 만원/원 섞어 적어 합계가 망가짐  → "만원" 칸으로 고정하고 원 단위 입력 차단
@@ -13,7 +13,7 @@
  *   - 공실/거주를 안 적음                      → 드롭다운 + 빈칸 강조
  *   - "6개월 자동연장" 을 자유롭게 적음        → 드롭다운으로 통일
  *
- * 부동산제출양식의 열 순서는 JNP_임대취합.xlsx 의 부동산 탭과 같다.
+ * 부동산제출양식의 열 순서는 임대취합.xlsx 의 부동산 탭과 같다.
  * 받은 파일에서 입력 범위를 복사해 취합 워크북 탭에 그대로 붙여넣으면 된다.
  */
 
@@ -74,7 +74,7 @@ function guideSheet(wb, title, lines) {
 /* 1. 답사 양식 (현장팀) */
 async function buildSurveyForm(outDir) {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "JNP주택관리";
+  wb.creator = "전국한마음자산관리";
 
   guideSheet(wb, "답사 결과 작성요령 (현장팀용)", [
     ["■", "이 파일에 답사 결과를 적어 그대로 돌려주시면 됩니다."],
@@ -142,7 +142,7 @@ async function buildSurveyForm(outDir) {
     }],
   });
 
-  const out = path.join(outDir, "JNP_답사양식.xlsx");
+  const out = path.join(outDir, "답사양식.xlsx");
   await wb.xlsx.writeFile(out);
   return out;
 }
@@ -150,7 +150,7 @@ async function buildSurveyForm(outDir) {
 /* 2. 부동산 제출 양식 */
 async function buildAgencyForm(outDir) {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "JNP주택관리";
+  wb.creator = "전국한마음자산관리";
 
   guideSheet(wb, "계약 내용 작성요령 (부동산용)", [
     ["■", "계약이 성사된 물건을 이 파일에 적어 그대로 보내주시면 됩니다."],
@@ -183,7 +183,7 @@ async function buildAgencyForm(outDir) {
   ]);
 
   const ws = wb.addWorksheet("계약입력", { properties: { tabColor: { argb: "FF10B981" } } });
-  // 열 순서는 JNP_임대취합.xlsx 의 부동산 탭과 동일 — 복사·붙여넣기로 취합된다.
+  // 열 순서는 임대취합.xlsx 의 부동산 탭과 동일 — 복사·붙여넣기로 취합된다.
   styleHeader(ws, [
     { label: "사건번호", w: 18 },
     { label: "주소 (동/호수까지)", w: 42, required: true },
@@ -238,16 +238,16 @@ async function buildAgencyForm(outDir) {
   ["B", "D", "G", "H"].forEach((c) => markRequired(ws, c, 3, 2 + ROWS, "B"));
 
   const note = ws.getCell(`A${3 + ROWS + 1}`);
-  note.value = "※ 취합 담당자: 이 시트의 A3:L 범위를 복사해 JNP_임대취합.xlsx 의 해당 부동산 탭 A3 에 붙여넣으면 됩니다.";
+  note.value = "※ 취합 담당자: 이 시트의 A3:L 범위를 복사해 임대취합.xlsx 의 해당 부동산 탭 A3 에 붙여넣으면 됩니다.";
   note.font = { italic: true, size: 9, color: { argb: "FF94A3B8" } };
 
-  const out = path.join(outDir, "JNP_부동산제출양식.xlsx");
+  const out = path.join(outDir, "부동산제출양식.xlsx");
   await wb.xlsx.writeFile(out);
   return out;
 }
 
 /* 실행 */
-const outDir = process.argv[2] ?? path.join(os.homedir(), "OneDrive", "Desktop", "JNP_배포양식");
+const outDir = process.argv[2] ?? path.join(os.homedir(), "OneDrive", "Desktop", "배포양식");
 fs.mkdirSync(outDir, { recursive: true });
 console.log("생성 완료");
 console.log(" -", await buildSurveyForm(outDir));
