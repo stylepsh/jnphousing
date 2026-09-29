@@ -77,53 +77,95 @@ export const INSP = "can_open, merchandising_ready, mail_status, comment, inspec
 
 export type Sb = Awaited<ReturnType<typeof createClient>>;
 
-// ponytail: 상품화 탭은 "상품화=가능"으로 기록된 답사가 하나라도 있으면 포함(최신 답사만 보려면 뷰로 분리)
-function tabQuery(supabase: Sb, tab: Tab, sel: string, head = false) {
+// 상품화 = "상품화=가능"으로 기록된 답사가 하나라도 있는 물건.
+// 예전엔 auction_inspection!inner 조인 필터로 전체 물건(수만 건)을 훑어 탭이 수 초간 멈췄다.
+// → 답사 기록에서 물건 id 를 먼저 뽑고(수백 건), 그 id 로만 물건을 읽는다. 요청 1번에 1회만 조회.
+const merchIdCache = new WeakMap<Sb, Promise<string[]>>();
+function merchIds(supabase: Sb): Promise<string[]> {
+  let p = merchIdCache.get(supabase);
+  if (!p) {
+    p = (async () => {
+      const ids = new Set<string>();
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("auction_inspection")
+          .select("auction_property_id")
+          .eq("merchandising_ready", "possible")
+          .range(from, from + 999);
+        if (error) throw new Error(error.message);
+        for (const r of (data ?? []) as { auction_property_id: string }[]) ids.add(r.auction_property_id);
+        if (!data || data.length < 1000) break;
+      }
+      return [...ids];
+    })();
+    merchIdCache.set(supabase, p);
+  }
+  return p;
+}
+const chunks = <T,>(a: T[], n = 200) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
+
+function tabQuery(supabase: Sb, tab: Tab, sel: string, head = false, ids: string[] = []) {
   const q = supabase.from("auction_property").select(sel, head ? { count: "exact", head: true } : undefined);
   if (tab === "leased") return q.eq("pipeline_state", "Leased");
-  const base =
-    tab === "merch"
-      ? q.eq("auction_inspection.merchandising_ready", "possible").not("survey_status", "in", "(rejected,blocked)")
-      : q.eq("survey_status", tab);
+  const base = tab === "merch" ? q.in("id", ids).not("survey_status", "in", "(rejected,blocked)") : q.eq("survey_status", tab);
   return base.or("pipeline_state.is.null,pipeline_state.neq.Leased");
 }
-const inspSel = (tab: Tab) => `${tab === "merch" ? "auction_inspection!inner" : "auction_inspection"}(${INSP})`;
+const inspSel = `auction_inspection(${INSP})`;
 
 export async function fetchCounts(supabase: Sb): Promise<Record<Tab, number | null>> {
+  const ids = await merchIds(supabase);
   const res = await Promise.all(
-    TAB_KEYS.map((t) => tabQuery(supabase, t, t === "merch" ? `id, ${inspSel(t)}` : "id", true)),
+    TAB_KEYS.map(async (t) => {
+      if (t !== "merch") return (await tabQuery(supabase, t, "id", true)).count ?? null;
+      const parts = await Promise.all(chunks(ids).map((c) => tabQuery(supabase, t, "id", true, c)));
+      return parts.reduce((s, r) => s + (r.count ?? 0), 0);
+    }),
   );
-  return Object.fromEntries(TAB_KEYS.map((t, i) => [t, res[i].count ?? null])) as Record<Tab, number | null>;
+  return Object.fromEntries(TAB_KEYS.map((t, i) => [t, res[i]])) as Record<Tab, number | null>;
 }
 
 export async function fetchRows(supabase: Sb, tab: Tab, q = ""): Promise<Row[]> {
   const rows: Row[] = [];
-  // PostgREST 기본 상한(1,000행)에 잘리지 않게 끝까지 페이지로 읽는다.
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await withCols((c) =>
-      tabQuery(supabase, tab, `${c}, ${inspSel(tab)}`)
-        .order("property_no", { ascending: true })
-        .range(from, from + 999),
+  if (tab === "merch") {
+    const parts = await Promise.all(
+      chunks(await merchIds(supabase)).map((c) => withCols((cl) => tabQuery(supabase, tab, `${cl}, ${inspSel}`, false, c))),
     );
-    if (error) throw new Error(error.message);
-    rows.push(...((data ?? []) as unknown as Row[]));
-    if (!Array.isArray(data) || data.length < 1000) break;
+    for (const { data, error } of parts) {
+      if (error) throw new Error(error.message);
+      rows.push(...((data ?? []) as unknown as Row[]));
+    }
+    rows.sort((a, b) => (a.property_no ?? 0) - (b.property_no ?? 0));
+  } else {
+    // PostgREST 기본 상한(1,000행)에 잘리지 않게 끝까지 페이지로 읽는다.
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await withCols((c) =>
+        tabQuery(supabase, tab, `${c}, ${inspSel}`)
+          .order("property_no", { ascending: true })
+          .range(from, from + 999),
+      );
+      if (error) throw new Error(error.message);
+      rows.push(...((data ?? []) as unknown as Row[]));
+      if (!Array.isArray(data) || data.length < 1000) break;
+    }
   }
   return q ? rows.filter((r) => textMatches(q, r.case_number, r.address, r.owner_name)) : rows;
 }
 
 // 상품화 가능으로 답사됐지만 이미 임차가 나가 작업에서 빠진 물건
 export async function fetchMerchLeased(supabase: Sb): Promise<Row[]> {
-  const { data, error } = await withCols((c) =>
-    supabase
-      .from("auction_property")
-      .select(`${c}, auction_inspection!inner(${INSP})`)
-      .eq("auction_inspection.merchandising_ready", "possible")
-      .eq("pipeline_state", "Leased")
-      .order("property_no", { ascending: true }),
+  const parts = await Promise.all(
+    chunks(await merchIds(supabase)).map((c) =>
+      withCols((cl) =>
+        supabase.from("auction_property").select(`${cl}, ${inspSel}`).in("id", c).eq("pipeline_state", "Leased"),
+      ),
+    ),
   );
-  if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as Row[];
+  const rows: Row[] = [];
+  for (const { data, error } of parts) {
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as unknown as Row[]));
+  }
+  return rows.sort((a, b) => (a.property_no ?? 0) - (b.property_no ?? 0));
 }
 
 // 안산·수원 일부처럼 주소가 "본오동 …"으로 시·도 없이 저장된 물건은 한 칩으로 모은다.
