@@ -275,6 +275,7 @@ export async function importSurveySheet(formData: FormData): Promise<SurveyImpor
     revalidatePath("/admin/auction/survey");
     revalidatePath("/admin/auction/pipeline");
     revalidatePath("/admin/auction/collection");
+    revalidatePath("/admin/auction/results");
     return result;
   } catch (e) {
     if (e instanceof AppError) return { ...EMPTY, error: e.message };
