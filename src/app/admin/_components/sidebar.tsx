@@ -121,6 +121,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/auction/collection", label: "경매 물건 수집", icon: Gavel },
       { href: "/admin/auction/survey", label: "답사 결과 입력", icon: ClipboardList },
+      { href: "/admin/auction/results", label: "답사 결과 보기", icon: ClipboardList },
       { href: "/admin/auction/judgment", label: "임대인 판정·전수", icon: UserCheck },
       { href: "/admin/auction/pipeline", label: "파이프라인", icon: Workflow },
       { href: "/admin/auction/leases", label: "임차 현황판", icon: Building2 },

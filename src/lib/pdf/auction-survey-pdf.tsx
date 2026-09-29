@@ -130,7 +130,13 @@ function Row({ it, ownerFirst }: { it: SurveyPdfItem; ownerFirst: boolean }) {
         <Text style={styles.mgmtLabel}>관리실 번호</Text>
         <View style={styles.mgmtLine} />
       </View>
-      <Text style={[styles.td, styles.cMemo]}>{done ? <Text style={styles.doneTag}>기존 답사완료 · 방문 마세요</Text> : " "}</Text>
+      <Text style={[styles.td, styles.cMemo]}>{done ? (
+          <Text style={styles.doneTag}>기존 답사완료 · 방문 마세요</Text>
+        ) : it.survey_status === "revisit" ? (
+          <Text style={styles.doneTag}>지난 답사: 재방문 · 다시 확인</Text>
+        ) : (
+          " "
+        )}</Text>
     </View>
   );
 }

@@ -253,7 +253,11 @@ export async function buildSurveySheetXlsx(rows: SurveyRow[], meta: string | Sur
         case: r.case_number === "(미상)" ? "" : r.case_number,
         cat: r.category ?? "",
         creditor: r.creditor ?? "",
-        memo: done ? `기존 답사완료(${doneLabel}) · 입력하지 마세요` : "",
+        memo: done
+          ? `기존 답사완료(${doneLabel}) · 입력하지 마세요`
+          : r.survey_status === "revisit"
+            ? "지난 답사: 재방문 · 다시 확인"
+            : "",
       } as Record<string, string | number>;
       row.height = 36;
       row.alignment = { vertical: "top", wrapText: true };
