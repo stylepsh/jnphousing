@@ -29,7 +29,7 @@ export type PipelineAction =
   | "REQUEST_RECHECK" // Reviewing → Recheck
   | "MARK_OCCUPIED" // Reviewing → OccupiedHold
   | "REJECT" // any → Rejected
-  | "RECHECK" // OccupiedHold/Recheck → Recheck
+  | "RECHECK" // Recheck → Recheck (거주중보관에서는 불가)
   | "START_WORK_PREP" // Approved → WorkPrep
   | "START_MERCHANDISING" // WorkPrep → Merchandising
   | "COMPLETE_MERCHANDISING" // Merchandising → Available
@@ -50,7 +50,8 @@ export const VALID_TRANSITIONS: Record<PipelineState, PipelineAction[]> = {
   Merchandising: ["COMPLETE_MERCHANDISING"],
   Available: ["CONTRACT_SIGNED", "WITHDRAW"],
   Leased: ["VACATE", "EXTEND", "VACATED_NATURALLY"],
-  OccupiedHold: ["RECHECK", "REJECT", "VACATED_NATURALLY"],
+  // 거주 확인된 물건은 다시 답사 돌리지 않는다(재확인 전이 없음) — 공실 전환은 VACATED_NATURALLY 로만.
+  OccupiedHold: ["REJECT", "VACATED_NATURALLY"],
   Recheck: ["ASSIGN_INSPECTION", "REJECT", "APPROVE"],
   Rejected: ["RESTORE"],
 };

@@ -7,7 +7,7 @@ import { SurveyUpload } from "../survey/survey-upload";
 import { CopyBox } from "./copy-box";
 import {
   ALL, CAN_OPEN, COLS, INSP, MERCH, TABS, TAB_KEYS, fetchCounts, fetchMerchLeased, fetchRows, fieldMessage, group,
-  latest, parseTab, regionOf, won, type Row, type Sb, type Tab,
+  latest, parseTab, regionOf, won, WHY, whyNotMerch, type Row, type Sb, type Tab, type Why,
 } from "./data";
 
 export const metadata: Metadata = { title: "답사 결과 보기" };
@@ -46,7 +46,7 @@ async function fetchDetail(supabase: Sb, id: string) {
 export default async function SurveyResultsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; region?: string; q?: string; id?: string }>;
+  searchParams: Promise<{ tab?: string; region?: string; q?: string; id?: string; why?: string }>;
 }) {
   const sp = await searchParams;
   const tab: Tab = parseTab(sp.tab);
@@ -71,21 +71,37 @@ export default async function SurveyResultsPage({
 
   const groups = group(rows);
   const region = sp.region && groups.some(([k]) => k === sp.region) ? sp.region : ALL;
-  const list = region === ALL ? groups.flatMap(([, l]) => l) : groups.find(([k]) => k === region)?.[1] ?? [];
+  const regionList = region === ALL ? groups.flatMap(([, l]) => l) : groups.find(([k]) => k === region)?.[1] ?? [];
+  // 공실 탭: 상품화로 안 넘어간 이유별 집계·필터 (why=ok 상품화 가능 / not 전체 미전환 / 개별 사유)
+  const whyOf = new Map(regionList.map((r) => [r.id, whyNotMerch(r)]));
+  const why = tab === "vacant" && sp.why && (sp.why === "ok" || sp.why === "not" || sp.why in WHY) ? sp.why : undefined;
+  const list = !why
+    ? regionList
+    : regionList.filter((r) => {
+        const w = whyOf.get(r.id);
+        return why === "ok" ? w === null : why === "not" ? w !== null : w === why;
+      });
+  const whyCount = (k: string) =>
+    regionList.filter((r) => {
+      const w = whyOf.get(r.id);
+      return k === "ok" ? w === null : k === "not" ? w !== null : w === k;
+    }).length;
   const leasedInScope = region === ALL ? merchLeased : merchLeased.filter((r) => regionOf(r.address) === region);
   const scopeLabel = region === ALL ? "전체 지역" : region;
 
-  const params = (p: { tab?: Tab; region?: string; id?: string }) => {
+  const params = (p: { tab?: Tab; region?: string; id?: string; why?: string | null }) => {
     const u = new URLSearchParams();
     const t = p.tab ?? tab;
     u.set("tab", t);
     const reg = t !== tab ? undefined : p.region ?? region;
     if (reg && reg !== ALL) u.set("region", reg);
     if (q) u.set("q", q);
+    const w = t !== tab ? undefined : p.why === null ? undefined : p.why ?? why;
+    if (w) u.set("why", w);
     if (p.id) u.set("id", p.id);
     return u.toString();
   };
-  const href = (p: { tab?: Tab; region?: string; id?: string }) => `/admin/auction/results?${params(p)}`;
+  const href = (p: { tab?: Tab; region?: string; id?: string; why?: string | null }) => `/admin/auction/results?${params(p)}`;
 
   return (
     <div className="space-y-4">
@@ -262,6 +278,35 @@ export default async function SurveyResultsPage({
             </details>
           )}
 
+          {tab === "vacant" && (
+            <div className="rounded-2xl border bg-card p-3 space-y-2">
+              <div className="text-sm font-bold">상품화로 넘어갔나? — {scopeLabel} 공실 {regionList.length}건</div>
+              <div className="flex flex-wrap gap-1.5 text-xs">
+                {(
+                  [
+                    [null, "전체"],
+                    ["ok", "상품화 가능"],
+                    ["not", "안 넘어감 전체"],
+                    ...(Object.keys(WHY) as Why[]).map((k) => [k, WHY[k]]),
+                  ] as [string | null, string][]
+                ).map(([k, label]) => (
+                  <Link
+                    key={label}
+                    href={href({ why: k })}
+                    className={`rounded-full border px-3 py-1 ${
+                      (why ?? null) === k ? "border-red-600 bg-red-600 text-white" : k && k !== "ok" ? "bg-red-50 hover:bg-red-100" : "bg-card hover:bg-muted"
+                    }`}
+                  >
+                    {label} <strong>{k === null ? regionList.length : whyCount(k)}</strong>
+                  </Link>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                이유는 답사자가 적어 온 개방·상품화 칸으로 판단합니다. 표의 &quot;안 넘어간 이유&quot;와 비고를 같이 보세요.
+              </p>
+            </div>
+          )}
+
           <p className="text-sm">
             <strong>{scopeLabel}</strong> · {TABS[tab].label} {list.length}건 (전체 {rows.length}건 · {groups.length}개 지역) ·
             번호나 주소를 누르면 상세가 위에 열립니다
@@ -273,7 +318,7 @@ export default async function SurveyResultsPage({
                 <tr>
                   {(tab === "leased"
                     ? ["번호", "임대인", "상세 주소", "사건번호", "임차인", "보증금", "월세", "현관비번", "비고"]
-                    : ["번호", "임대인", "상세 주소", "사건번호", "종류", "개방", "상품화", "우편", "계량기", "현관비번", "비고(관리실)", "답사일"]
+                    : ["번호", "임대인", "상세 주소", "사건번호", "종류", "개방", "상품화", "우편", "계량기", "현관비번", "비고(관리실)", "답사일", ...(tab === "vacant" ? ["안 넘어간 이유"] : [])]
                   ).map((h) => (
                     <th key={h} className="whitespace-nowrap px-2 py-2 text-left font-semibold">
                       {h}
@@ -296,6 +341,7 @@ export default async function SurveyResultsPage({
                           r.door_code ?? "-",
                           r.survey_memo ?? "",
                           r.survey_date ?? "-",
+                          ...(tab === "vacant" ? [whyOf.get(r.id) ? WHY[whyOf.get(r.id)!] : "✓ 상품화 가능"] : []),
                         ];
                   return (
                     <tr key={r.id} className={`border-t align-top hover:bg-muted/40 ${r.id === sp.id ? "bg-yellow-50" : ""}`}>
@@ -312,7 +358,7 @@ export default async function SurveyResultsPage({
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 font-mono">{r.case_number}</td>
                       {cells.map((c, n) => (
-                        <td key={n} className={`px-2 py-1.5 ${n === cells.length - (tab === "leased" ? 1 : 2) ? "" : "whitespace-nowrap"}`}>
+                        <td key={n} className={`px-2 py-1.5 ${n === (tab === "leased" ? 4 : 6) ? "" : "whitespace-nowrap"} ${tab === "vacant" && n === 8 && whyOf.get(r.id) ? "font-semibold text-red-700" : ""}`}>
                           {c}
                         </td>
                       ))}

@@ -38,7 +38,7 @@ export default async function OccupiedPage() {
         </Link>
         <h1 className="text-xl font-black mt-2">거주중 보관</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          답사 결과 점유중으로 확인된 물건. 추후 공실 전환되면 재확인으로 돌리거나, 대상에서 제외합니다. 총{" "}
+          답사 결과 점유중으로 확인된 물건. 거주 확인된 물건은 다시 답사하지 않습니다(답사지에서도 회색 제외). 필요 없으면 제외합니다. 총{" "}
           <strong className="text-foreground">{rows.length}</strong>건.
         </p>
       </div>
@@ -59,7 +59,6 @@ export default async function OccupiedPage() {
               <PipelineActions
                 propertyId={r.id}
                 buttons={[
-                  { action: "RECHECK", label: "재확인으로" },
                   { action: "REJECT", label: "제외", danger: true, promptReason: true },
                 ]}
               />

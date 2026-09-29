@@ -100,6 +100,11 @@ export async function updateSurveyResult(input: {
     const { id, ...rest } = parsed.data;
 
     const supabase = createServiceClient();
+    // 거주로 확인된 물건은 미답사/재방문으로 되돌려 다시 답사 돌리지 않는다.
+    const { data: cur } = await supabase.from("auction_property").select("survey_status").eq("id", id).maybeSingle();
+    if (cur?.survey_status === "occupied" && (rest.survey_status === "pending" || rest.survey_status === "revisit")) {
+      return { ok: false, error: "거주로 확인된 물건은 다시 답사 대상(미답사·재방문)으로 바꿀 수 없습니다." };
+    }
     const { error } = await supabase
       .from("auction_property")
       .update({ ...rest, updated_at: new Date().toISOString() })

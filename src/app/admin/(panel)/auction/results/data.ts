@@ -149,3 +149,24 @@ export function fieldMessage(active: Row[], leasedOut: Row[], scope: string): st
   }
   return out.join("\n");
 }
+
+// 공실인데 상품화(가능)로 안 넘어간 이유 — 답사자가 적어 온 개방·상품화 값에서 판단.
+export const WHY = {
+  none: "답사 기록 없음",
+  open_no: "개방 불가",
+  open_check: "개방 확인 필요",
+  merch_no: "상품화 불가",
+  merch_hold: "상품화 보류",
+} as const;
+export type Why = keyof typeof WHY;
+
+/** null = 상품화 가능(문제 없음). 아니면 가장 앞선 원인 1개. */
+export function whyNotMerch(r: Row): Why | null {
+  const i = latest(r.auction_inspection);
+  if (!i) return "none";
+  if (i.merchandising_ready === "possible") return null;
+  if (i.can_open === "impossible") return "open_no";
+  if (i.can_open === "admin_check") return "open_check";
+  if (i.merchandising_ready === "impossible") return "merch_no";
+  return "merch_hold";
+}

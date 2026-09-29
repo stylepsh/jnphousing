@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-guard";
 import {
-  ALL, CAN_OPEN, MERCH, OCC_MARK, TABS, fetchMerchLeased, fetchRows, inRegion, latest, parseTab, regionOf,
+  ALL, CAN_OPEN, MERCH, OCC_MARK, TABS, WHY, fetchMerchLeased, fetchRows, inRegion, latest, parseTab, regionOf, whyNotMerch,
 } from "../data";
 
 // 답사 결과 보기의 현재 탭·지역 목록을 엑셀로 내려받는다.
@@ -15,7 +15,12 @@ export async function GET(req: NextRequest) {
   const tab = parseTab(sp.get("tab") ?? undefined);
   const region = sp.get("region") || ALL;
   const supabase = await createClient();
-  const rows = inRegion(await fetchRows(supabase, tab, (sp.get("q") ?? "").trim()), region);
+  const whyP = tab === "vacant" ? sp.get("why") : null;
+  const rows = inRegion(await fetchRows(supabase, tab, (sp.get("q") ?? "").trim()), region).filter((r) => {
+    if (!whyP) return true;
+    const w = whyNotMerch(r);
+    return whyP === "ok" ? w === null : whyP === "not" ? w !== null : w === whyP;
+  });
   const fresh = tab === "revisit";
 
   const wb = new ExcelJS.Workbook();
@@ -25,7 +30,7 @@ export async function GET(req: NextRequest) {
   ws.addRow([
     "번호", "임대인", "상세 주소", "사건번호", "물건종류", "채권자",
     "점유(O거주/X공실/△재방문)", "개방(가능/불가/확인)", "상품화(가능/보류/불가)", "우편(쌓임/깨끗)", "계량기(유/무)",
-    "현관비번", "관리실(번호)", "비고", "답사일", "임차인", "보증금", "월세",
+    "현관비번", "관리실(번호)", "비고", "답사일", "임차인", "보증금", "월세", "미전환 사유",
   ]).font = { bold: true };
 
   let prevRegion = "";
@@ -55,6 +60,7 @@ export async function GET(req: NextRequest) {
       r.tenant_name ?? "",
       r.deposit ?? "",
       r.monthly_rent ?? "",
+      tab === "vacant" ? (whyNotMerch(r) ? WHY[whyNotMerch(r)!] : "상품화 가능") : "",
     ]);
   }
   [8, 12, 60, 14, 14, 16, 12, 10, 10, 10, 10, 10, 12, 30, 12, 10, 12, 12].forEach(
