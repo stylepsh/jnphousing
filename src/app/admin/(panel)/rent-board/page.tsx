@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 import { loadSheetSnapshot, sheetConfigured, todayKst } from "@/lib/sheet/source";
-import { RentBoardClient, type CallLog } from "./board-client";
+import { RentBoardClient, type Assignment, type CallLog, type Staff } from "./board-client";
 
 export const metadata = { title: "임대 현황" };
 export const dynamic = "force-dynamic";
@@ -25,19 +26,28 @@ export default async function RentBoardPage() {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("rent_call_logs")
-    .select("id, unit_key, outcome, promise_date, memo, author_name, created_at")
-    .order("created_at", { ascending: false })
-    .limit(3000);
+  const [ctx, logsRes, assignRes, staffRes] = await Promise.all([
+    requireAdmin().catch(() => null),
+    supabase
+      .from("rent_call_logs")
+      .select("id, unit_key, outcome, promise_date, memo, author_name, created_by, created_at")
+      .order("created_at", { ascending: false })
+      .limit(3000),
+    supabase.from("rent_assignments").select("unit_key, assignee_id, assignee_name"),
+    supabase.from("admin_users").select("id, name, role").order("name"),
+  ]);
 
   const units = snap.units.map((u) => ({ ...u, months: u.months.slice(-KEEP_MONTHS) }));
 
   return (
     <RentBoardClient
       units={units}
-      logs={(data ?? []) as CallLog[]}
-      logsMissing={error?.code === "42P01"}
+      logs={(logsRes.data ?? []) as CallLog[]}
+      logsMissing={logsRes.error?.code === "42P01"}
+      assignments={(assignRes.data ?? []) as Assignment[]}
+      assignMissing={assignRes.error?.code === "42P01"}
+      staff={((staffRes.data ?? []) as (Staff & { role: string })[]).filter((s) => s.role !== "readonly").map(({ id, name }) => ({ id, name }))}
+      me={ctx ? { id: ctx.admin.id, name: ctx.admin.name } : null}
       today={todayKst()}
       sheetDate={snap.sheetDate}
       fetchedAt={snap.fetchedAt}

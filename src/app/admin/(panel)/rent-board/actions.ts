@@ -14,7 +14,7 @@ const logSchema = z.object({
   tenant_name: z.string().max(200).optional(),
   outcome: z.enum(["called", "no_answer", "promised", "moving_out", "other"]),
   promise_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")).transform((v) => v || null),
-  memo: z.string().max(2000).optional().or(z.literal("")).transform((v) => v || null),
+  memo: z.string().max(5000).optional().or(z.literal("")).transform((v) => v || null),
 });
 
 const fail = (e: unknown) => ({
@@ -48,6 +48,31 @@ export async function deleteCallLog(id: string) {
     await requireMutableAdmin();
     const { error } = await createServiceClient().from("rent_call_logs").delete().eq("id", z.string().uuid().parse(id));
     if (error) return { ok: false as const, error: error.message };
+    revalidatePath("/admin/rent-board");
+    return { ok: true as const };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** 세대 담당 직원 지정. assigneeId 가 빈 값이면 배정 해제. 여러 세대 한꺼번에 가능. */
+export async function assignUnits(unitKeys: string[], assigneeId: string) {
+  try {
+    const ctx = await requireMutableAdmin();
+    const keys = z.array(z.string().min(1).max(300)).min(1).max(500).parse(unitKeys);
+    const db = createServiceClient();
+    if (!assigneeId) {
+      const { error } = await db.from("rent_assignments").delete().in("unit_key", keys);
+      if (error) return { ok: false as const, error: error.message };
+    } else {
+      const { data: a } = await db.from("admin_users").select("id, name").eq("id", z.string().uuid().parse(assigneeId)).maybeSingle();
+      if (!a) return { ok: false as const, error: "직원을 찾을 수 없습니다." };
+      const now = new Date().toISOString();
+      const { error } = await db.from("rent_assignments").upsert(
+        keys.map((unit_key) => ({ unit_key, assignee_id: a.id, assignee_name: a.name, assigned_by: ctx.user.id, updated_at: now })),
+      );
+      if (error) return { ok: false as const, error: error.code === "42P01" ? "046 마이그레이션을 먼저 실행하세요." : error.message };
+    }
     revalidatePath("/admin/rent-board");
     return { ok: true as const };
   } catch (e) {
