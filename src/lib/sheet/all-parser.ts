@@ -87,7 +87,7 @@ function dayOf(s: string): number | null {
 }
 
 function toIso(s: string): string {
-  const m = s.trim().match(/^(\d{2,4})[-./](\d{1,2})[-./](\d{1,2})/);
+  const m = s.trim().match(/^(\d{2,4})[-./]\s*(\d{1,2})[-./]\s*(\d{1,2})/); // "2026. 2. 14" 표시 형식 포함
   if (!m) return "";
   const y = m[1].length === 2 ? `20${m[1]}` : m[1];
   return `${y}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;

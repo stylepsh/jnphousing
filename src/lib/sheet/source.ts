@@ -18,8 +18,10 @@ function devXlsxPath(): string | null {
   return process.env.NODE_ENV !== "production" && process.env.DM_SHEET_XLSX_PATH ? process.env.DM_SHEET_XLSX_PATH : null;
 }
 
+const scriptConfigured = () => !!(process.env.DM_SHEET_SCRIPT_URL && process.env.DM_SHEET_SCRIPT_TOKEN);
+
 export function sheetConfigured(): boolean {
-  return !!(process.env.GOOGLE_SA_EMAIL && process.env.GOOGLE_SA_PRIVATE_KEY && process.env.DM_SHEET_ID) || devXlsxPath() !== null;
+  return scriptConfigured() || !!(process.env.GOOGLE_SA_EMAIL && process.env.GOOGLE_SA_PRIVATE_KEY && process.env.DM_SHEET_ID) || devXlsxPath() !== null;
 }
 
 export function todayKst(): string {
@@ -84,6 +86,20 @@ async function gridFromGoogle(): Promise<Cell[][]> {
   );
 }
 
+async function gridFromScript(): Promise<Cell[][]> {
+  const url = `${process.env.DM_SHEET_SCRIPT_URL}?token=${encodeURIComponent(process.env.DM_SHEET_SCRIPT_TOKEN!)}`;
+  const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+  if (!res.ok) throw new Error(`시트 스크립트 호출 실패 (${res.status}) — 웹앱 배포 주소를 확인하세요.`);
+  const body = (await res.json().catch(() => null)) as { values?: string[][]; bgs?: string[][]; error?: string } | null;
+  if (!body?.values) throw new Error(body?.error === "forbidden" ? "시트 스크립트 토큰이 맞지 않습니다." : "시트 스크립트 응답 형식이 올바르지 않습니다.");
+  return body.values.map((row, i) =>
+    row.map((v, j) => {
+      const bg = (body.bgs?.[i]?.[j] ?? "").replace("#", "").toUpperCase();
+      return { v: String(v ?? ""), bg: bg && bg !== "FFFFFF" ? bg : null };
+    }),
+  );
+}
+
 async function gridFromXlsx(path: string): Promise<Cell[][]> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -109,7 +125,7 @@ async function gridFromXlsx(path: string): Promise<Cell[][]> {
 export const loadSheetSnapshot = unstable_cache(
   async (): Promise<SheetSnapshot & { fetchedAt: string }> => {
     const xlsx = devXlsxPath();
-    const grid = xlsx ? await gridFromXlsx(xlsx) : await gridFromGoogle();
+    const grid = xlsx ? await gridFromXlsx(xlsx) : scriptConfigured() ? await gridFromScript() : await gridFromGoogle();
     return { ...parseAllSheet(grid, todayKst()), fetchedAt: new Date().toISOString() };
   },
   ["dm-sheet-all-v2"],
