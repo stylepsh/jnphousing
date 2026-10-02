@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { MonthCell, SheetUnit } from "@/lib/sheet/all-parser";
 import { addCallLog, assignUnits, deleteCallLog, refreshSheet } from "./actions";
+import { VacancyTab } from "./vacancy-tab";
 
 export interface CallLog {
   id: string;
@@ -39,7 +40,7 @@ const OUTCOME_STYLE: Record<Outcome, string> = {
   other: "bg-muted text-foreground border-border",
 };
 
-type Tab = "call" | "building" | "all";
+type Tab = "call" | "vacancy" | "building" | "all";
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const man = (n: number) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
@@ -231,7 +232,7 @@ export function RentBoardClient({
 
       <div className="flex flex-wrap gap-2 items-center">
         <div className="flex rounded-lg border p-0.5 bg-muted/40">
-          {([["call", `전화할 곳 ${groups.todo.length}`], ["building", "건물별 현황"], ["all", "전체 호실"]] as [Tab, string][]).map(([k, label]) => (
+          {([["call", `전화할 곳 ${groups.todo.length}`], ["vacancy", "공실·문개방·변동"], ["building", "건물별 현황"], ["all", "전체 호실"]] as [Tab, string][]).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
               className={cn("px-3 py-1.5 text-sm rounded-md", tab === k ? "bg-background shadow-sm font-semibold" : "text-muted-foreground")}>
               {label}
@@ -298,6 +299,8 @@ export function RentBoardClient({
           )}
         </div>
       )}
+
+      {tab === "vacancy" && <VacancyTab units={filtered} today={today} />}
 
       {tab === "building" && (
         <BuildingTable units={filtered} curYm={curYm} prevYm={prevYm} onPick={(b) => { setBuilding(b); setTab("all"); }} />
