@@ -1,0 +1,117 @@
+import "server-only";
+import { importPKCS8, SignJWT } from "jose";
+import { unstable_cache } from "next/cache";
+import { parseAllSheet, type Cell, type SheetSnapshot } from "./all-parser";
+
+/**
+ * ALL 탭을 읽어 판정까지 끝낸 스냅샷. 5분 캐시, "지금 새로고침"은 revalidateTag(SHEET_TAG).
+ *
+ * 운영: 구글 서비스 계정(읽기 전용)으로 Sheets API 호출 — 셀 배경색까지 받아야 해서 CSV 내보내기는 못 쓴다.
+ *   GOOGLE_SA_EMAIL, GOOGLE_SA_PRIVATE_KEY(PEM, \n 이스케이프 허용), DM_SHEET_ID
+ * 개발: DM_SHEET_XLSX_PATH 에 내려받은 엑셀 경로를 주면 그 파일을 읽는다(운영에선 무시).
+ */
+
+export const SHEET_TAG = "dm-sheet";
+const RANGE = "'ALL'!A1:DA1500";
+
+function devXlsxPath(): string | null {
+  return process.env.NODE_ENV !== "production" && process.env.DM_SHEET_XLSX_PATH ? process.env.DM_SHEET_XLSX_PATH : null;
+}
+
+export function sheetConfigured(): boolean {
+  return !!(process.env.GOOGLE_SA_EMAIL && process.env.GOOGLE_SA_PRIVATE_KEY && process.env.DM_SHEET_ID) || devXlsxPath() !== null;
+}
+
+export function todayKst(): string {
+  return new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+}
+
+const hex = (n: number | undefined) => Math.round((n ?? 0) * 255).toString(16).padStart(2, "0").toUpperCase();
+
+function toBg(c: { red?: number; green?: number; blue?: number } | undefined): string | null {
+  if (!c) return null;
+  const h = hex(c.red) + hex(c.green) + hex(c.blue);
+  return h === "FFFFFF" ? null : h;
+}
+
+// 시트 날짜 일련번호(1899-12-30 기준) → ISO
+const serialToIso = (n: number) => new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400_000).toISOString().slice(0, 10);
+
+async function googleToken(): Promise<string> {
+  const email = process.env.GOOGLE_SA_EMAIL!;
+  const key = await importPKCS8(process.env.GOOGLE_SA_PRIVATE_KEY!.replace(/\\n/g, "\n"), "RS256");
+  const assertion = await new SignJWT({ scope: "https://www.googleapis.com/auth/spreadsheets.readonly" })
+    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+    .setIssuer(email)
+    .setAudience("https://oauth2.googleapis.com/token")
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(key);
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`구글 인증 실패 (${res.status}) — 서비스 계정 키를 확인하세요.`);
+  return ((await res.json()) as { access_token: string }).access_token;
+}
+
+type GCell = {
+  formattedValue?: string;
+  effectiveValue?: { numberValue?: number };
+  effectiveFormat?: { backgroundColor?: { red?: number; green?: number; blue?: number }; numberFormat?: { type?: string } };
+};
+
+async function gridFromGoogle(): Promise<Cell[][]> {
+  const token = await googleToken();
+  const url =
+    `https://sheets.googleapis.com/v4/spreadsheets/${process.env.DM_SHEET_ID}` +
+    `?ranges=${encodeURIComponent(RANGE)}&includeGridData=true` +
+    `&fields=${encodeURIComponent("sheets.data.rowData.values(formattedValue,effectiveValue.numberValue,effectiveFormat(backgroundColor,numberFormat.type))")}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  if (res.status === 403) throw new Error("시트 접근 권한이 없습니다 — 시트를 서비스 계정 이메일에 '뷰어'로 공유하세요.");
+  if (!res.ok) throw new Error(`시트 읽기 실패 (${res.status})`);
+  const body = (await res.json()) as { sheets?: { data?: { rowData?: { values?: GCell[] }[] }[] }[] };
+  const rows = body.sheets?.[0]?.data?.[0]?.rowData ?? [];
+  return rows.map((r) =>
+    (r.values ?? []).map((c) => {
+      const t = c.effectiveFormat?.numberFormat?.type;
+      const n = c.effectiveValue?.numberValue;
+      const v = (t === "DATE" || t === "DATE_TIME") && n !== undefined ? serialToIso(n) : (c.formattedValue ?? "");
+      return { v, bg: toBg(c.effectiveFormat?.backgroundColor) };
+    }),
+  );
+}
+
+async function gridFromXlsx(path: string): Promise<Cell[][]> {
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(path);
+  const ws = wb.getWorksheet("ALL");
+  if (!ws) throw new Error("엑셀에 ALL 탭이 없습니다.");
+  const grid: Cell[][] = [];
+  ws.eachRow({ includeEmpty: true }, (row, n) => {
+    const cells: Cell[] = [];
+    row.eachCell({ includeEmpty: true }, (c, i) => {
+      let x: unknown = c.value;
+      if (x && typeof x === "object" && "result" in x) x = (x as { result: unknown }).result;
+      if (x && typeof x === "object" && "richText" in x) x = (x as { richText: { text: string }[] }).richText.map((t) => t.text).join("");
+      const v = x instanceof Date ? x.toISOString().slice(0, 10) : x == null || typeof x === "object" ? "" : String(x);
+      const argb = c.fill && c.fill.type === "pattern" && c.fill.pattern === "solid" ? c.fill.fgColor?.argb : undefined;
+      cells[i - 1] = { v, bg: argb && argb.slice(2).toUpperCase() !== "FFFFFF" ? argb.slice(2).toUpperCase() : null };
+    });
+    grid[n - 1] = Array.from(cells, (c) => c ?? { v: "", bg: null });
+  });
+  return Array.from(grid, (r) => r ?? []);
+}
+
+export const loadSheetSnapshot = unstable_cache(
+  async (): Promise<SheetSnapshot & { fetchedAt: string }> => {
+    const xlsx = devXlsxPath();
+    const grid = xlsx ? await gridFromXlsx(xlsx) : await gridFromGoogle();
+    return { ...parseAllSheet(grid, todayKst()), fetchedAt: new Date().toISOString() };
+  },
+  ["dm-sheet-all-v2"],
+  { revalidate: 300, tags: [SHEET_TAG] },
+);
