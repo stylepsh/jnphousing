@@ -35,7 +35,7 @@ export async function addCallLog(formData: FormData) {
       created_by: ctx.user.id,
       author_name: ctx.admin.name,
     });
-    if (error) return { ok: false as const, error: error.code === "42P01" ? "045 마이그레이션을 먼저 실행하세요." : error.message };
+    if (error) return { ok: false as const, error: ["42P01", "PGRST205"].includes(error.code) ? "045 마이그레이션을 먼저 실행하세요." : error.message };
     revalidatePath("/admin/rent-board");
     return { ok: true as const };
   } catch (e) {
@@ -71,7 +71,7 @@ export async function assignUnits(unitKeys: string[], assigneeId: string) {
       const { error } = await db.from("rent_assignments").upsert(
         keys.map((unit_key) => ({ unit_key, assignee_id: a.id, assignee_name: a.name, assigned_by: ctx.user.id, updated_at: now })),
       );
-      if (error) return { ok: false as const, error: error.code === "42P01" ? "046 마이그레이션을 먼저 실행하세요." : error.message };
+      if (error) return { ok: false as const, error: ["42P01", "PGRST205"].includes(error.code) ? "046 마이그레이션을 먼저 실행하세요." : error.message };
     }
     revalidatePath("/admin/rent-board");
     return { ok: true as const };

@@ -43,16 +43,25 @@ export default async function RentBoardPage() {
     <RentBoardClient
       units={units}
       logs={(logsRes.data ?? []) as CallLog[]}
-      logsMissing={logsRes.error?.code === "42P01"}
+      logsMissing={tableMissing(logsRes.error)}
       assignments={(assignRes.data ?? []) as Assignment[]}
-      assignMissing={assignRes.error?.code === "42P01"}
-      staff={((staffRes.data ?? []) as (Staff & { role: string })[]).filter((s) => s.role !== "readonly").map(({ id, name }) => ({ id, name }))}
+      assignMissing={tableMissing(assignRes.error)}
+      staff={uniqueStaff((staffRes.data ?? []) as (Staff & { role: string })[])}
       me={ctx ? { id: ctx.admin.id, name: ctx.admin.name } : null}
       today={todayKst()}
       sheetDate={snap.sheetDate}
       fetchedAt={snap.fetchedAt}
     />
   );
+}
+
+// 테이블이 없을 때 PostgREST 버전에 따라 42P01 또는 PGRST205 가 온다
+const tableMissing = (e: { code?: string } | null) => e?.code === "42P01" || e?.code === "PGRST205";
+
+// 같은 이름으로 관리자 계정이 둘 있는 경우가 있어 이름 기준으로 하나만 보인다
+function uniqueStaff(rows: (Staff & { role: string })[]): Staff[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => r.role !== "readonly" && !seen.has(r.name) && seen.add(r.name)).map(({ id, name }) => ({ id, name }));
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

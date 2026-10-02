@@ -113,15 +113,16 @@ export function RentBoardClient({
     return units.filter((u) => {
       if (landlord && u.landlord !== landlord) return false;
       if (building && u.building !== building) return false;
-      const a = assignByUnit.get(u.key)?.assignee_id;
-      if (who === "mine" && a !== me?.id) return false;
+      // 같은 사람이 계정을 둘 가진 경우가 있어 담당 비교는 이름으로 한다
+      const a = assignByUnit.get(u.key)?.assignee_name;
+      if (who === "mine" && a !== me?.name) return false;
       if (who === "none" && a) return false;
-      if (who !== "all" && who !== "mine" && who !== "none" && a !== who) return false;
+      if (who !== "all" && who !== "mine" && who !== "none" && a !== staff.find((x) => x.id === who)?.name) return false;
       if (!t) return true;
       return [u.building, u.unit, u.tenant, u.landlord, u.address, u.phoneText.replace(/\D/g, "")]
         .some((s) => s.replace(/\s/g, "").toLowerCase().includes(t));
     });
-  }, [units, q, landlord, building, who, assignByUnit, me]);
+  }, [units, q, landlord, building, who, assignByUnit, me, staff]);
 
   const occupied = units.filter((u) => u.status === "입주");
   const arrears = occupied.filter((u) => u.unpaidAmount > 0);
@@ -416,7 +417,7 @@ function UnitRow({ u, ctx }: { u: SheetUnit; ctx: RowCtx }) {
       <div className="px-3 pb-2 -mt-1 flex flex-wrap items-center gap-2 text-xs">
         <label className="inline-flex items-center gap-1 text-muted-foreground">
           <UserRound className="h-3.5 w-3.5" />담당
-          <select value={assignee?.assignee_id ?? ""} onChange={(e) => assign(e.target.value)} disabled={pending}
+          <select value={ctx.staff.find((x) => x.name === assignee?.assignee_name)?.id ?? ""} onChange={(e) => assign(e.target.value)} disabled={pending}
             className={cn("h-7 rounded-md border px-1.5 text-xs", !assignee && "text-muted-foreground")}>
             <option value="">미배정</option>
             {ctx.staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
