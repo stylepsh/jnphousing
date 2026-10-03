@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Phone, RefreshCw, Search, ChevronDown, ChevronUp, Trash2, AlertTriangle, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { MonthCell, SheetUnit } from "@/lib/sheet/all-parser";
 import { addCallLog, assignUnits, deleteCallLog, refreshSheet } from "./actions";
 import { VacancyTab } from "./vacancy-tab";
+import { landlordHref, unitHref } from "@/lib/sheet/links";
 
 export interface CallLog {
   id: string;
@@ -352,7 +354,7 @@ const STATE_LABEL: Record<MonthCell["state"], string> = {
   paid: "입금", unpaid: "미납", review: "확인 필요", upcoming: "예정", event: "기타", none: "",
 };
 
-function MonthChips({ months }: { months: MonthCell[] }) {
+export function MonthChips({ months }: { months: MonthCell[] }) {
   return (
     <div className="flex gap-1">
       {months.slice(-6).map((m) => (
@@ -436,6 +438,10 @@ function UnitRow({ u, ctx }: { u: SheetUnit; ctx: RowCtx }) {
           <span className="rounded-md border border-dashed px-2 py-0.5 text-muted-foreground">아직 아무도 통화 안 함</span>
         )}
         {!open && last?.memo && <span className="text-muted-foreground truncate max-w-[480px]">&ldquo;{last.memo}&rdquo;</span>}
+        <span className="ml-auto flex gap-2">
+          <Link href={unitHref(u.key)} className="text-primary hover:underline">호실 상세 →</Link>
+          <Link href={landlordHref(u.landlord)} className="text-primary hover:underline">{u.landlord} 장부 →</Link>
+        </span>
       </div>
       {!open && u.memo && <div className="px-3 pb-2 -mt-1 text-xs text-muted-foreground">경리 메모: {u.memo}</div>}
       {open && <UnitDetail u={u} logs={logs} today={ctx.today} />}
@@ -443,7 +449,7 @@ function UnitRow({ u, ctx }: { u: SheetUnit; ctx: RowCtx }) {
   );
 }
 
-function UnitDetail({ u, logs, today }: { u: SheetUnit; logs: CallLog[]; today: string }) {
+export function UnitDetail({ u, logs, today }: { u: SheetUnit; logs: CallLog[]; today: string }) {
   const [pending, startTransition] = useTransition();
   const [outcome, setOutcome] = useState<Outcome>("called");
   const formRef = useRef<HTMLFormElement>(null);

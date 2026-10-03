@@ -48,24 +48,21 @@ type NavGroup = {
 };
 
 const NAV: NavGroup[] = [
-  // ───────── ① 매일 (항상 노출) — 업무 흐름 순: 할일 → 소유주(물건) → 수금 ─────────
+  // ───────── ① 매일 — 경리 시트(DM-임대관리현황) 기준으로 이어지는 화면: 임대인 → 건물 → 호실 → 입금 → 정산 ─────────
   {
     group: "매일",
     pinned: true,
     items: [
       { href: "/admin/dashboard", label: "대시보드", icon: LayoutDashboard },
       { href: "/admin/todos", label: "할 일", icon: ListTodo, badgeKey: "openTodos", badgeColor: "blue" },
-      { href: "/admin/rent-board", label: "임대 현황 (시트)", icon: PhoneCall },
-      { href: "/admin/owners", label: "소유주(임대인)", icon: UserSquare },
-      { href: "/admin/rent", label: "수금·청구", icon: Wallet, badgeKey: "overdue", badgeColor: "red" },
+      { href: "/admin/rent-board", label: "임대 현황 (전화·공실)", icon: PhoneCall },
+      { href: "/admin/landlord-board", label: "임대인 · 장부", icon: UserSquare },
     ],
   },
   {
     group: "처리",
     pinned: true,
     items: [
-      { href: "/admin/leases", label: "계약", icon: FileSignature, badgeKey: "expiring", badgeColor: "amber" },
-      { href: "/admin/tenants", label: "임차인", icon: Users },
       { href: "/admin/complaints", label: "민원/AS", icon: MessageSquareWarning, badgeKey: "complaints", badgeColor: "red" },
       { href: "/admin/inquiries", label: "관리문의", icon: FileQuestion, badgeKey: "newInquiries", badgeColor: "blue" },
       { href: "/admin/members", label: "회원 승인", icon: UserCheck, badgeKey: "pendingMembers", badgeColor: "amber", superOnly: true },
@@ -73,31 +70,32 @@ const NAV: NavGroup[] = [
   },
   // ───────── ② 가끔 (그룹·접힘 기본) ─────────
   {
-    group: "현장·매물",
+    group: "매물 광고",
     items: [
-      { href: "/admin/properties", label: "관리현장", icon: Building2 },
-      { href: "/admin/vacancies", label: "공실 매물", icon: Home },
+      { href: "/admin/vacancies", label: "공실 매물 광고", icon: Home },
+      { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
     ],
   },
-  {
-    group: "장부·정산",
-    items: [
-      { href: "/admin/ledger", label: "월별 손익", icon: Wallet },
-      { href: "/admin/dm", label: "JNP 단기임대", icon: LayoutDashboard },
-      { href: "/admin/dm/settlement", label: "월별 정산", icon: Wallet },
-    ],
-  },
-  // ───────── ③ 더보기 — 가끔만 쓰는 화면 전부 (하단·접힘) ─────────
+  // ───────── ③ 더보기 — 가끔만 쓰는 화면 (하단·접힘) ─────────
   {
     group: "더보기",
     items: [
-      { href: "/admin/units/board", label: "호실 현황판", icon: LayoutDashboard },
-      { href: "/admin/channels", label: "광고 채널 통계", icon: Megaphone },
       { href: "/admin/agencies", label: "부동산 회원", icon: Handshake, badgeKey: "pendingAgencies", badgeColor: "amber" },
       { href: "/admin/notifications", label: "알림 이력", icon: Bell },
       { href: "/admin/audit", label: "감사 로그", icon: ShieldCheck },
       { href: "/admin/admin-tools", label: "운영 도구", icon: Settings },
       { href: "/admin/favorites", label: "즐겨찾기", icon: LayoutDashboard },
+    ],
+  },
+  // 예전 DB 사본 화면 — 2단계(차장님 웹 입력)에서 시트 기준으로 다시 살린다. 그 전까지는 숫자가 시트와 다를 수 있다.
+  {
+    group: "이전 화면 (DB 사본)",
+    items: [
+      { href: "/admin/owners", label: "소유주", icon: UserSquare },
+      { href: "/admin/rent", label: "수금·청구", icon: Wallet },
+      { href: "/admin/leases", label: "계약", icon: FileSignature },
+      { href: "/admin/tenants", label: "임차인", icon: Users },
+      { href: "/admin/properties", label: "관리현장", icon: Building2 },
     ],
   },
   // ───────── ④ 홈페이지 관리 (OS와 분리) ─────────
