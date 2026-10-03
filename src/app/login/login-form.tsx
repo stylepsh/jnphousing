@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
 const ID_DOMAIN = "jnphousing.com";
+const SAVED_ID_KEY = "jnp.savedLoginId"; // 아이디 저장 — 이 브라우저에만, 비밀번호는 저장하지 않는다
 
 function normalizeId(raw: string): string {
   const v = raw.trim();
@@ -21,6 +22,21 @@ export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [idValue, setIdValue] = useState("");
+  const [saveId, setSaveId] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_ID_KEY);
+      if (saved) { setIdValue(saved); setSaveId(true); }
+    } catch { /* 저장소를 못 쓰는 브라우저면 그냥 빈칸 */ }
+  }, []);
+
+  function rememberId() {
+    try {
+      if (saveId && idValue.trim()) localStorage.setItem(SAVED_ID_KEY, idValue.trim());
+      else localStorage.removeItem(SAVED_ID_KEY);
+    } catch { /* 무시 */ }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +59,7 @@ export function LoginForm({ next }: { next?: string }) {
       }
       if (!data.user) throw new Error("로그인 실패");
 
+      rememberId();
       const userId = data.user.id;
 
       const [{ data: adminRows }, { data: agencyRows }, { data: landlordRows }] = await Promise.all([
@@ -136,6 +153,11 @@ export function LoginForm({ next }: { next?: string }) {
           />
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+        <input type="checkbox" checked={saveId} onChange={(e) => setSaveId(e.target.checked)} className="h-4 w-4" />
+        아이디 저장
+      </label>
 
       <Button type="submit" className="w-full" size="lg" disabled={pending}>
         {pending ? (
