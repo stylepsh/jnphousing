@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { loadSheetSnapshot, sheetConfigured, todayKst } from "@/lib/sheet/source";
-import { loadLedgers } from "@/lib/sheet/ledgers";
-import { entriesForUnit, landlordHref, won } from "@/lib/sheet/links";
+import { loadLedgers, loadOtherTabs } from "@/lib/sheet/ledgers";
+import { entriesForUnit, findUnitByText, landlordHref, won } from "@/lib/sheet/links";
 import { UnitDetail, type CallLog } from "../../rent-board/board-client";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +18,10 @@ export default async function UnitBoardPage({ params }: { params: Promise<{ key:
   if (!sheetConfigured()) notFound();
   const key = decodeURIComponent((await params).key);
   const supabase = await createClient();
-  const [snap, ledgers, logsRes] = await Promise.all([
+  const [snap, ledgers, other, logsRes] = await Promise.all([
     loadSheetSnapshot(),
     loadLedgers(),
+    loadOtherTabs(),
     supabase
       .from("rent_call_logs")
       .select("id, unit_key, outcome, promise_date, memo, author_name, created_at")
@@ -31,6 +32,7 @@ export default async function UnitBoardPage({ params }: { params: Promise<{ key:
   if (!u) notFound();
   const ledger = ledgers.find((l) => l.landlord === u.landlord)?.ledger;
   const entries = entriesForUnit(u, ledger);
+  const moveOuts = typeof other.moveOuts === "string" ? [] : other.moveOuts.filter((m) => findUnitByText(m.property, snap.units)?.key === u.key);
   const income = entries.reduce((s, e) => s + e.income, 0);
   const expense = entries.reduce((s, e) => s + e.expense, 0);
 
@@ -55,6 +57,21 @@ export default async function UnitBoardPage({ params }: { params: Promise<{ key:
       <div className="rounded-xl border bg-background">
         <UnitDetail u={u} logs={(logsRes.data ?? []) as CallLog[]} today={todayKst()} />
       </div>
+
+      {moveOuts.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold mb-2">퇴실정산 <span className="text-sm font-normal text-muted-foreground">· 이 호실의 지난 퇴실 {moveOuts.length}건</span></h2>
+          <div className="space-y-1.5">
+            {moveOuts.map((m) => (
+              <Link key={m.row} href="/admin/settle-board?tab=moveout" className="flex flex-wrap gap-x-4 rounded-lg border px-3 py-2 text-sm hover:bg-muted/30">
+                {m.pending && <span className="text-amber-700">미정산</span>}
+                <span>{m.tenant}</span><span className="text-muted-foreground">{m.period}</span><span>{m.reason}</span>
+                <span className={m.refund < 0 ? "ml-auto text-red-700" : "ml-auto text-emerald-700"}>{m.refund < 0 ? `더 받을 돈 ${won(-m.refund)}` : `돌려준 돈 ${won(m.refund)}`}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="text-lg font-semibold mb-2">

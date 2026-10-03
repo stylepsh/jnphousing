@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { LEDGER_TABS, parseLedger, type Ledger } from "./ledger-parser";
 import { fetchGrid, SHEET_TAG } from "./source";
+import { parseMoveOuts, parseReports, parseStays, type MoveOut, type ReportBlock } from "./other-tabs";
 
 export type LedgerResult = { tab: string; landlord: string; rule: string } & ({ ledger: Ledger; error?: never } | { ledger?: never; error: string });
 
@@ -20,5 +21,33 @@ export const loadLedgers = unstable_cache(
       }),
     ),
   ["dm-ledgers-v1"],
+  { revalidate: 300, tags: [SHEET_TAG] },
+);
+
+export type OtherTabs = {
+  moveOuts: MoveOut[] | string; // 실패하면 오류 문구
+  stays: ReturnType<typeof parseStays> | string;
+  reports: ReportBlock[] | string;
+};
+
+const safe = async <T>(f: () => Promise<T>): Promise<T | string> => {
+  try {
+    return await f();
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+};
+
+/** 퇴실정산·삼삼엠투·보고서 탭. 5분 캐시. */
+export const loadOtherTabs = unstable_cache(
+  async (): Promise<OtherTabs> => {
+    const [moveOuts, stays, reports] = await Promise.all([
+      safe(async () => parseMoveOuts(await fetchGrid("퇴실정산"))),
+      safe(async () => parseStays(await fetchGrid("삼삼엠투"))),
+      safe(async () => parseReports(await fetchGrid("보고서"))),
+    ]);
+    return { moveOuts, stays, reports };
+  },
+  ["dm-other-tabs-v1"],
   { revalidate: 300, tags: [SHEET_TAG] },
 );

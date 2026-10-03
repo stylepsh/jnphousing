@@ -26,3 +26,21 @@ export function entriesForUnit(u: SheetUnit, ledger: Ledger | undefined): Ledger
 
 export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 export const man = (n: number) => (Math.abs(n) >= 10000 ? `${Math.round(n / 10000).toLocaleString("ko-KR")}만원` : won(n));
+
+/** 퇴실정산 "에트빌 401호" / "박정욱 306호" 같은 글자로 ALL 호실 찾기 */
+export function findUnitByText(text: string, units: SheetUnit[]): SheetUnit | undefined {
+  const num = text.match(/(\d{2,4})\s*호/)?.[1];
+  if (!num) return undefined;
+  const t = text.replace(/\s/g, "");
+  const cands = units.filter((u) => ukey(u.unit) === num);
+  return cands.find((u) => t.includes(bkey(u.building)) || t.includes(u.landlord.replace(/㈜|\(주\)/g, ""))) ?? (cands.length === 1 ? cands[0] : undefined);
+}
+
+/** 보고서의 "김정호 / 후배", "파크엔시티", "황정현/서팀" → 임대인 이름 */
+export function matchLandlord(name: string, landlords: string[]): string | undefined {
+  const n = name.replace(/[\s㈜]|\(주\)/g, "");
+  return landlords.find((l) => {
+    const x = l.replace(/[\s㈜]|\(주\)/g, "");
+    return n.startsWith(x) || x.startsWith(n.slice(0, 3)) || (n.slice(0, 2) === x.slice(0, 2) && n.length > 1);
+  });
+}

@@ -4,158 +4,57 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquareWarning, Home, ArrowRight, Wallet, AlertTriangle, FileSignature,
-  Building2, UserSquare, DoorOpen, Banknote, Download, Plus, BookOpen, Receipt,
+  Building2, UserSquare, DoorOpen, Download, PhoneCall, DoorClosed, FileSpreadsheet, ListTodo,
 } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { formatWonMan } from "@/lib/money";
-import { formatKoreanDate, monthRange } from "@/lib/dates";
 import { BillingTrendChart, type BillingPoint } from "@/components/charts/BillingTrendChart";
 import { OccupancyDonutChart } from "@/components/charts/OccupancyDonutChart";
 import { ChannelBarChart, type ChannelPoint } from "@/components/charts/ChannelBarChart";
 import type { Complaint, Inquiry } from "@/types/database";
-import type { RentInvoice, AgencyCommission, Lease } from "@/types/lease";
-import { CollectChecklist, type CollectRow } from "./collect-checklist";
+import { loadSheetSnapshot, sheetConfigured, todayKst } from "@/lib/sheet/source";
+import { loadOtherTabs } from "@/lib/sheet/ledgers";
+import { unitHref } from "@/lib/sheet/links";
+import type { SheetUnit } from "@/lib/sheet/all-parser";
 import { TodoWidget, type TodoWidgetRow } from "./todo-widget";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  as: "AS", facility: "시설", noise: "소음", complaint: "민원", etc: "기타",
-};
-const STATUS_LABEL: Record<string, string> = {
-  received: "접수", in_progress: "처리중", resolved: "완료", closed: "종결",
-};
+/**
+ * 대시보드 — 임대·수금·공실 숫자는 경리 구글 시트(ALL·퇴실정산 탭)에서, 민원·문의·할 일·광고 채널은 DB에서.
+ * (예전 DB 사본 기준 연체·수금률·점유율은 시트와 달라져서 시트 기준으로 바꿨다)
+ */
 
-interface PipelineRow {
-  owner_id: string;
-  owner_name: string;
-  building_count: number;
-  unit_count: number;
-  vacant_count: number;
-  occupied_count: number;
-  month_invoice_count: number;
-  month_paid_count: number;
-  month_overdue_count: number;
-}
+const CATEGORY_LABEL: Record<string, string> = { as: "AS", facility: "시설", noise: "소음", complaint: "민원", etc: "기타" };
+const STATUS_LABEL: Record<string, string> = { received: "접수", in_progress: "처리중", resolved: "완료", closed: "종결" };
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1PNvD5jTyWqE3N-Y2Fm1oyNGwXBlzmPyBbjjgcWOyMiM/edit";
+const FORCED_RE = /문개방|강제개방|강재개방|강제개문|도어교체|단전단수/;
 
-function emptyDashboard() {
-  return {
-    degraded: false,
-    received: 0, inProgress: 0, newInquiries: 0, vacant: 0,
-    billingTotal: 0, billingPaid: 0, collectionRate: 0,
-    overdueOutstanding: 0, overdueCount: 0, awaitingCount: 0, expiringCount: 0,
-    pendingComm: 0,
-    ownerCount: 0, totalBuildings: 0, totalUnits: 0, totalVacant: 0, totalOccupied: 0,
-    expiringLeases: [] as Pick<Lease, "id" | "end_date" | "lease_type" | "unit_id">[],
-    recentComplaints: [] as Complaint[],
-    recentInquiries: [] as Inquiry[],
-    billingTrend: [] as BillingPoint[],
-    occupancy: { occupied: 0, vacant: 0, expiring: 0 },
-    channelStats: [] as ChannelPoint[],
-    collectRows: [] as CollectRow[],
-    openTodos: [] as TodoWidgetRow[],
-    openTodoCount: 0,
+async function getDbData() {
+  const empty = {
+    degraded: false, received: 0, inProgress: 0, newInquiries: 0,
+    recentComplaints: [] as Complaint[], recentInquiries: [] as Inquiry[],
+    channelStats: [] as ChannelPoint[], openTodos: [] as TodoWidgetRow[], openTodoCount: 0,
   };
-}
-
-async function getDashboardData() {
-  if (!isSupabaseConfigured()) return emptyDashboard();
+  if (!isSupabaseConfigured()) return empty;
   const supabase = await createClient();
-  const now = new Date();
-  const { start, end } = monthRange(now);
-  const startIso = start.toISOString().slice(0, 10);
-  const endIso = end.toISOString().slice(0, 10);
-  const exp60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-  const sixMonthsAgo = startOfMonth(subMonths(now, 5));
-  const trendStartIso = sixMonthsAgo.toISOString().slice(0, 10);
-  const trendEndIso = endOfMonth(now).toISOString().slice(0, 10);
-
-  const [
-    receivedRes, inProgressRes, newInquiriesRes, vacantRes,
-    invThisMonthRes, overdueRes,
-    pendingCommissionsRes,
-    expiringLeasesRes, expiringCountRes,
-    recentComplaintsRes, recentInquiriesRes,
-    trendInvRes, unitsRes, activeLeasesRes,
-    channelStatsRes, channelsRes,
-    pipelineRes,
-    collectInvRes, todosRes,
-  ] = await Promise.all([
+  const [receivedRes, inProgressRes, newInquiriesRes, recentComplaintsRes, recentInquiriesRes, channelStatsRes, channelsRes, todosRes] = await Promise.all([
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "received"),
     supabase.from("complaints").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
     supabase.from("inquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
-    supabase.from("vacancies").select("*", { count: "exact", head: true }).eq("status", "available").eq("is_published", true),
-    supabase.from("rent_invoices").select("amount_total, paid_total, status").gte("due_date", startIso).lte("due_date", endIso),
-    supabase.from("rent_invoices").select("amount_total, paid_total").eq("status", "overdue"),
-    supabase.from("agency_commissions").select("commission_amount").eq("status", "pending"),
-    supabase.from("leases").select("id, end_date, lease_type, unit_id").in("status", ["active", "expiring"]).lte("end_date", exp60).order("end_date").limit(10),
-    supabase.from("leases").select("*", { count: "exact", head: true }).in("status", ["active", "expiring"]).lte("end_date", exp60),
     supabase.from("complaints").select("*").order("created_at", { ascending: false }).limit(5),
     supabase.from("inquiries").select("*").order("created_at", { ascending: false }).limit(5),
-    supabase.from("rent_invoices").select("amount_total, paid_total, due_date").gte("due_date", trendStartIso).lte("due_date", trendEndIso),
-    supabase.from("properties").select("id").eq("unit_type", "unit"),
-    supabase.from("leases").select("unit_id, end_date").in("status", ["active", "expiring"]),
     supabase.from("vacancy_ad_listings").select("channel_id, inquiry_count, status"),
     supabase.from("ad_channels").select("id, name").eq("is_active", true).order("display_order"),
-    supabase.from("v_owner_pipeline").select("*"),
-    supabase.from("rent_invoices").select("id, due_date, amount_total, paid_total, status, lease_id")
-      .lte("due_date", endIso)
-      .in("status", ["unpaid", "partial", "overdue"])
-      .order("due_date").limit(100),
     supabase.from("team_todos").select("id, title, assignee, due_date", { count: "exact" })
-      .in("status", ["todo", "delayed"])
-      .order("due_date", { ascending: true, nullsFirst: false })
-      .limit(5),
+      .in("status", ["todo", "delayed"]).order("due_date", { ascending: true, nullsFirst: false }).limit(5),
   ]);
+  const all = [receivedRes, inProgressRes, newInquiriesRes, recentComplaintsRes, recentInquiriesRes, channelStatsRes, channelsRes, todosRes];
 
-  const degraded = [
-    receivedRes, inProgressRes, newInquiriesRes, vacantRes,
-    invThisMonthRes, overdueRes, pendingCommissionsRes,
-    expiringLeasesRes, expiringCountRes, recentComplaintsRes, recentInquiriesRes,
-    trendInvRes, unitsRes, activeLeasesRes, channelStatsRes, channelsRes,
-    pipelineRes, collectInvRes, todosRes,
-  ].some((result) => Boolean(result.error));
-
-  const invs = (invThisMonthRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "status">[];
-  const billingTotal = invs.reduce((s, i) => s + i.amount_total, 0);
-  const billingPaid = invs.reduce((s, i) => s + i.paid_total, 0);
-  const collectionRate = billingTotal > 0 ? Math.floor((billingPaid * 100) / billingTotal) : 0;
-  const awaitingCount = invs.filter((i) => i.paid_total < i.amount_total).length;
-  const overdues = (overdueRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total">[];
-  const overdueOutstanding = overdues.reduce((s, i) => s + Math.max(0, i.amount_total - i.paid_total), 0);
-  const overdueCount = overdues.length;
-  const pendingComm = ((pendingCommissionsRes.data ?? []) as Pick<AgencyCommission, "commission_amount">[]).reduce((s, c) => s + c.commission_amount, 0);
-
-  // ====== 6개월 트렌드 ======
-  const trendInvs = (trendInvRes.data ?? []) as Pick<RentInvoice, "amount_total" | "paid_total" | "due_date">[];
-  const trendMap = new Map<string, { billing: number; paid: number }>();
-  for (let m = 5; m >= 0; m--) {
-    const dt = subMonths(now, m);
-    trendMap.set(format(dt, "yyyy-MM"), { billing: 0, paid: 0 });
-  }
-  for (const inv of trendInvs) {
-    const entry = trendMap.get(inv.due_date.slice(0, 7));
-    if (entry) { entry.billing += inv.amount_total; entry.paid += inv.paid_total; }
-  }
-  const billingTrend: BillingPoint[] = Array.from(trendMap.entries()).map(([k, v]) => ({
-    label: k.slice(5) + "월", billing: v.billing, paid: v.paid,
-  }));
-
-  // ====== 점유율 ======
-  const units = ((unitsRes.data ?? []) as { id: string }[]).map((u) => u.id);
-  const activeLeases = (activeLeasesRes.data ?? []) as { unit_id: string; end_date: string }[];
-  const occupiedSet = new Set(activeLeases.map((l) => l.unit_id));
-  const expiringSet = new Set(activeLeases.filter((l) => new Date(l.end_date) <= new Date(exp60)).map((l) => l.unit_id));
-  const occupiedCount = units.filter((id) => occupiedSet.has(id) && !expiringSet.has(id)).length;
-  const expiringUnitCount = units.filter((id) => expiringSet.has(id)).length;
-  const vacantCount = units.filter((id) => !occupiedSet.has(id)).length;
-
-  // ====== 채널별 ======
   const channels = (channelsRes.data ?? []) as { id: string; name: string }[];
-  const channelListings = (channelStatsRes.data ?? []) as { channel_id: string; inquiry_count: number; status: string }[];
+  const listings = (channelStatsRes.data ?? []) as { channel_id: string; inquiry_count: number; status: string }[];
   const channelStats: ChannelPoint[] = channels.map((ch) => {
-    const items = channelListings.filter((l) => l.channel_id === ch.id);
+    const items = listings.filter((l) => l.channel_id === ch.id);
     return {
       channel: ch.name.length > 6 ? ch.name.slice(0, 6) : ch.name,
       inquiries: items.reduce((s, i) => s + i.inquiry_count, 0),
@@ -163,76 +62,79 @@ async function getDashboardData() {
     };
   }).filter((c) => c.inquiries > 0 || c.contracted > 0);
 
-  // ====== 임대인 파이프라인 (회사 전체 롤업) ======
-  const pipeline = (pipelineRes.data ?? []) as PipelineRow[];
-  const totalBuildings = pipeline.reduce((s, p) => s + (p.building_count ?? 0), 0);
-  const totalUnits = pipeline.reduce((s, p) => s + (p.unit_count ?? 0), 0);
-  const totalVacant = pipeline.reduce((s, p) => s + (p.vacant_count ?? 0), 0);
-  const totalOccupied = pipeline.reduce((s, p) => s + (p.occupied_count ?? 0), 0);
-
-  // ====== 오늘 수금 체크리스트 — 호실·임차인 라벨 붙이기 ======
-  type CollectInv = Pick<RentInvoice, "id" | "due_date" | "amount_total" | "paid_total" | "status" | "lease_id">;
-  const collectInvs = (collectInvRes.data ?? []) as CollectInv[];
-  let collectRows: CollectRow[] = [];
-  if (collectInvs.length > 0) {
-    const leaseIds = Array.from(new Set(collectInvs.map((i) => i.lease_id)));
-    const { data: leaseRows } = await supabase.from("leases").select("id, unit_id, tenant_id").in("id", leaseIds);
-    const leaseMap = new Map(((leaseRows ?? []) as { id: string; unit_id: string; tenant_id: string }[]).map((l) => [l.id, l]));
-    const unitIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.unit_id)));
-    const tenantIds = Array.from(new Set(Array.from(leaseMap.values()).map((l) => l.tenant_id)));
-    // 신 통합 모델: 호실은 properties(unit_type='unit'), 상위 건물명은 parent_building_id 로 별도 조회
-    const [{ data: unitRows }, { data: tenantRows }] = await Promise.all([
-      supabase.from("properties").select("id, unit_no, parent_building_id").in("id", unitIds),
-      supabase.from("tenants").select("id, name, phone").in("id", tenantIds),
-    ]);
-    const unitArr = (unitRows ?? []) as { id: string; unit_no: string | null; parent_building_id: string | null }[];
-    const buildingIds = Array.from(new Set(unitArr.map((u) => u.parent_building_id).filter(Boolean) as string[]));
-    let buildingNameMap = new Map<string, string>();
-    if (buildingIds.length > 0) {
-      const { data: bRows } = await supabase.from("properties").select("id, name").in("id", buildingIds);
-      buildingNameMap = new Map(((bRows ?? []) as { id: string; name: string | null }[]).map((b) => [b.id, b.name ?? "건물"]));
-    }
-    const unitMap = new Map(unitArr.map((u) => [u.id, u]));
-    const tenantMap = new Map(((tenantRows ?? []) as { id: string; name: string; phone: string | null }[]).map((t) => [t.id, t]));
-    collectRows = collectInvs.map((inv) => {
-      const lease = leaseMap.get(inv.lease_id);
-      const unit = lease ? unitMap.get(lease.unit_id) : null;
-      const bName = unit?.parent_building_id ? (buildingNameMap.get(unit.parent_building_id) ?? "건물") : "단독호실";
-      const tenant = lease ? tenantMap.get(lease.tenant_id) : null;
-      return {
-        invoiceId: inv.id,
-        dueDate: inv.due_date,
-        remaining: Math.max(0, inv.amount_total - inv.paid_total),
-        status: inv.status,
-        unitLabel: unit ? `${bName} · ${unit.unit_no ?? ""}호` : "—",
-        tenantName: tenant?.name || "—",
-        tenantPhone: tenant?.phone || null,
-      };
-    }).filter((r) => r.remaining > 0);
-  }
-
   return {
-    degraded,
+    degraded: all.some((r) => Boolean(r.error)),
     received: receivedRes.count ?? 0,
     inProgress: inProgressRes.count ?? 0,
     newInquiries: newInquiriesRes.count ?? 0,
-    vacant: vacantRes.count ?? 0,
-    billingTotal, billingPaid, collectionRate,
-    overdueOutstanding, overdueCount, awaitingCount,
-    expiringCount: expiringCountRes.count ?? 0,
-    pendingComm,
-    ownerCount: pipeline.length,
-    totalBuildings, totalUnits, totalVacant, totalOccupied,
-    expiringLeases: (expiringLeasesRes.data ?? []) as Pick<Lease, "id" | "end_date" | "lease_type" | "unit_id">[],
     recentComplaints: (recentComplaintsRes.data ?? []) as Complaint[],
     recentInquiries: (recentInquiriesRes.data ?? []) as Inquiry[],
-    billingTrend,
-    occupancy: { occupied: occupiedCount, vacant: vacantCount, expiring: expiringUnitCount },
     channelStats,
-    collectRows,
     openTodos: (todosRes.data ?? []) as TodoWidgetRow[],
     openTodoCount: todosRes.count ?? 0,
   };
+}
+
+const addMonths = (ym: string, n: number) => {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+const daysTo = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86400_000);
+
+async function getSheetData() {
+  if (!sheetConfigured()) return { error: "구글 시트 연결 전입니다." };
+  try {
+    const [snap, other] = await Promise.all([loadSheetSnapshot(), loadOtherTabs()]);
+    const today = todayKst();
+    const curYm = today.slice(0, 7);
+    const units = snap.units;
+    const occ = units.filter((u) => u.status === "입주");
+    const arrears = occ
+      .filter((u) => u.unpaidAmount > 0)
+      .sort((a, b) => b.unpaidMonths.length - a.unpaidMonths.length || b.unpaidAmount - a.unpaidAmount);
+    const forced = occ.filter((u) => u.movedOut || FORCED_RE.test(`${u.memo} ${u.note}`));
+    const expiring = occ
+      .filter((u) => u.expiry && u.expiry >= today && daysTo(today, u.expiry) <= 60)
+      .sort((a, b) => a.expiry.localeCompare(b.expiry));
+    const vacant = units.filter((u) => u.status === "상품");
+    const moveOutPending = typeof other.moveOuts === "string" ? null : other.moveOuts.filter((m) => m.pending).length;
+
+    // 최근 6개월: 받아야 했던 월세(납부일이 지난 입금·미납 칸) vs 실제 입금
+    const trend: BillingPoint[] = [];
+    for (let k = 5; k >= 0; k--) {
+      const ym = addMonths(curYm, -k);
+      let billing = 0, paid = 0;
+      for (const u of occ) {
+        const m = u.months.find((x) => x.ym === ym);
+        if (!m) continue;
+        if (m.state === "paid") { paid += m.amount ?? 0; billing += Math.max(u.rent, m.amount ?? 0); }
+        else if (m.state === "unpaid") billing += u.rent;
+      }
+      trend.push({ label: `${Number(ym.slice(5))}월`, billing, paid });
+    }
+    const prev = trend[trend.length - 2];
+
+    return {
+      sheetDate: snap.sheetDate,
+      landlords: new Set(units.map((u) => u.landlord).filter(Boolean)).size,
+      buildings: new Set(units.filter((u) => u.status !== "종결").map((u) => `${u.landlord}|${u.building}`)).size,
+      liveUnits: units.filter((u) => u.status !== "종결").length,
+      occupied: occ.length,
+      vacant: vacant.length,
+      arrears,
+      arrearsAmount: arrears.reduce((s, u) => s + u.unpaidAmount, 0),
+      forced: forced.length,
+      expiring,
+      moveOutPending,
+      trend,
+      prevRate: prev && prev.billing > 0 ? Math.floor((prev.paid * 100) / prev.billing) : 0,
+      prevLabel: prev?.label ?? "",
+      occupancy: { occupied: occ.length - expiring.length, vacant: vacant.length, expiring: expiring.length },
+    };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 async function getCurrentAdmin() {
@@ -248,13 +150,13 @@ async function getCurrentAdmin() {
 }
 
 const ROLE_LABEL: Record<string, { label: string; color: string }> = {
-  super:    { label: "최고 관리자", color: "bg-purple-100 text-purple-700 border-purple-200" },
-  staff:    { label: "일반 직원",   color: "bg-blue-100 text-blue-700 border-blue-200" },
-  readonly: { label: "조회 전용",   color: "bg-slate-100 text-slate-600 border-slate-200" },
+  super: { label: "최고 관리자", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  staff: { label: "일반 직원", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  readonly: { label: "조회 전용", color: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
 function getGreeting(): string {
-  const h = new Date().getHours();
+  const h = Number(new Date(Date.now() + 9 * 3600_000).toISOString().slice(11, 13));
   if (h < 6) return "늦은 시간 수고 많으십니다";
   if (h < 12) return "좋은 아침입니다";
   if (h < 18) return "수고 많으십니다";
@@ -262,114 +164,126 @@ function getGreeting(): string {
 }
 
 export default async function DashboardPage() {
-  const [d, admin] = await Promise.all([getDashboardData(), getCurrentAdmin()]);
+  const [d, s, admin] = await Promise.all([getDbData(), getSheetData(), getCurrentAdmin()]);
   const adminName = admin?.name ?? "관리자";
   const roleInfo = ROLE_LABEL[admin?.role ?? "staff"] ?? ROLE_LABEL.staff;
-  const today = new Date();
+  const today = todayKst();
   const unhandled = d.received + d.inProgress + d.newInquiries;
-  const todoTotal = d.overdueCount + d.awaitingCount + d.expiringCount + unhandled;
+  const sheet = "error" in s ? null : s;
+  const todoTotal = (sheet ? sheet.arrears.length + (sheet.moveOutPending ?? 0) : 0) + unhandled;
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
-      {/* 환영 헤더 — 플랫 네이비 (1인 운영: 정보만 간결하게) */}
       <div className="rounded-2xl bg-primary text-white p-6 md:p-7 mb-6 animate-fade-in">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Badge variant="outline" className={`text-[10px] ${roleInfo.color} border-0`}>{roleInfo.label}</Badge>
-              <span className="text-xs text-blue-100">
-                {today.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}
-              </span>
+              <span className="text-xs text-blue-100">{format(new Date(`${today}T00:00:00`), "yyyy년 M월 d일 EEEE", { locale: ko })}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{adminName}님, {getGreeting()} 👋</h1>
             <p className="mt-1.5 text-sm text-blue-100">
-              {d.degraded
-                ? "일부 운영 데이터를 불러오지 못했습니다. 아래 수치를 확정값으로 사용하지 마세요."
-                : todoTotal > 0
-                 ? <>오늘 처리할 일이 <span className="font-bold text-white">{todoTotal}건</span> 있습니다.</>
-                 : "오늘 급히 처리할 일은 없습니다. 👍"}
+              {todoTotal > 0 ? <>챙길 일이 <span className="font-bold text-white">{todoTotal}건</span> 있습니다.</> : "오늘 급히 처리할 일은 없습니다. 👍"}
+              {sheet && <> · 경리 시트 기준일 {sheet.sheetDate}</>}
             </p>
           </div>
-          <a
-            href="/api/admin/export/overview"
-            download
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur px-3.5 py-2 text-sm font-semibold border border-white/20 transition"
-          >
-            <Download className="h-4 w-4" /> 현황 엑셀 내보내기
+          <a href={SHEET_URL} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 px-3.5 py-2 text-sm font-semibold border border-white/20 transition">
+            <FileSpreadsheet className="h-4 w-4" /> 경리 시트 열기
           </a>
         </div>
       </div>
 
-      {d.degraded && (
+      {(d.degraded || !sheet) && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-semibold">일부 데이터 조회가 실패했습니다.</p>
-            <p className="mt-0.5 text-xs text-red-800">0건으로 표시된 항목도 실제 0건이 아닐 수 있습니다. 새로고침 후 계속되면 데이터베이스 연결을 확인하세요.</p>
+            {"error" in s && <p className="font-semibold">경리 시트를 읽지 못했습니다: {s.error}</p>}
+            {d.degraded && <p className="font-semibold">민원·문의·할 일 일부를 불러오지 못했습니다.</p>}
           </div>
         </div>
       )}
 
-      {/* ⓪ 빠른 입력 — 1인 운영자가 가장 자주 쓰는 입력 동선 모음 */}
       <section className="mb-8">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">빠른 입력</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">바로 가기</p>
         <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          <QuickInput label="소유주 등록" icon={UserSquare} href="/admin/owners" />
-          <QuickInput label="건물 등록" icon={Building2} href="/admin/buildings-managed/new" />
-          <QuickInput label="계약 등록" icon={FileSignature} href="/admin/leases/new" />
-          <QuickInput label="수금 매칭" icon={Banknote} href="/admin/rent/match" />
-          <QuickInput label="청구 일괄 생성" icon={Receipt} href="/admin/rent/bulk" />
-          <QuickInput label="장부 입력" icon={BookOpen} href="/admin/ledger/new" />
+          <QuickLink label="전화할 곳" icon={PhoneCall} href="/admin/rent-board" />
+          <QuickLink label="공실·문개방" icon={DoorClosed} href="/admin/rent-board" />
+          <QuickLink label="임대인·장부" icon={UserSquare} href="/admin/landlord-board" />
+          <QuickLink label="월 보고서" icon={Wallet} href="/admin/settle-board?tab=report" />
+          <QuickLink label="퇴실정산" icon={FileSignature} href="/admin/settle-board?tab=moveout" />
+          <QuickLink label="할 일" icon={ListTodo} href="/admin/todos" />
         </div>
       </section>
 
-      {/* ① 오늘 처리할 일 — 액션 중심 (0건은 회색) */}
       <section>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">오늘 처리할 일</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          오늘 챙길 일 <span className="normal-case font-normal">· 시트 기준 {today}</span>
+        </p>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <ActionCard label="연체" count={d.overdueCount} sub={d.overdueOutstanding > 0 ? formatWonMan(d.overdueOutstanding) : undefined}
-            icon={AlertTriangle} tone="red" href="/admin/rent?filter=overdue" />
-          <ActionCard label="입금 대기" count={d.awaitingCount}
-            icon={Banknote} tone="blue" href="/admin/rent/match" />
-          <ActionCard label="만료 임박 계약" count={d.expiringCount}
-            icon={FileSignature} tone="amber" href="/admin/leases?status=expiring" />
-          <ActionCard label="미처리 민원·문의" count={unhandled}
-            icon={MessageSquareWarning} tone="rose" href="/admin/complaints" />
+          <ActionCard label="월세 미납 세대" count={sheet?.arrears.length ?? 0} sub={sheet?.arrearsAmount ? formatWonMan(sheet.arrearsAmount) : undefined}
+            icon={AlertTriangle} tone="red" href="/admin/rent-board" />
+          <ActionCard label="퇴실정산 미정산" count={sheet?.moveOutPending ?? 0} icon={FileSignature} tone="amber" href="/admin/settle-board?tab=moveout" />
+          <ActionCard label="60일 안에 만기" count={sheet?.expiring.length ?? 0} icon={DoorOpen} tone="blue" href="/admin/rent-board" />
+          <ActionCard label="미처리 민원·문의" count={unhandled} icon={MessageSquareWarning} tone="rose" href="/admin/complaints" />
         </div>
       </section>
 
-      {/* ①-1 오늘 수금 체크 + 할 일 — 1인 운영의 매일 화면 */}
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
-        <CollectChecklist rows={d.collectRows} todayIso={today.toISOString().slice(0, 10)} />
-        <TodoWidget rows={d.openTodos} totalOpen={d.openTodoCount} todayIso={today.toISOString().slice(0, 10)} />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">📞 전화할 곳 (미납 많은 순)</CardTitle>
+            <Button asChild variant="ghost" size="sm"><Link href="/admin/rent-board">전체 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {!sheet || sheet.arrears.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">미납 세대가 없습니다.</p>
+            ) : (
+              sheet.arrears.slice(0, 8).map((u: SheetUnit) => (
+                <Link key={u.key} href={unitHref(u.key)} className="flex items-center justify-between gap-3 rounded px-2 py-1.5 hover:bg-muted/40 text-sm">
+                  <span className="truncate"><b>{u.building} {u.unit}</b> {u.tenant}</span>
+                  <span className="shrink-0 tabular-nums text-red-700 font-semibold">
+                    {u.unpaidMonths.length ? `${u.unpaidMonths.length}개월` : "차액"} · {formatWonMan(u.unpaidAmount)}
+                  </span>
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+        <TodoWidget rows={d.openTodos} totalOpen={d.openTodoCount} todayIso={today} />
       </div>
 
-      {/* ② 임대인 파이프라인 (회사 전체 롤업) */}
       <section className="mt-8">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">임대인 파이프라인</p>
-          <Button asChild variant="ghost" size="sm"><Link href="/admin/owners">임대인별 보기 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            전체 현황 <span className="normal-case font-normal">· 경리 시트 ALL 탭</span>
+          </p>
+          <Button asChild variant="ghost" size="sm"><Link href="/admin/landlord-board">임대인별 보기 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
         </div>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
-          <StatTile label="임대인" value={String(d.ownerCount)} icon={UserSquare} href="/admin/owners" />
-          <StatTile label="건물" value={String(d.totalBuildings)} icon={Building2} href="/admin/properties" />
-          <StatTile label="호실" value={String(d.totalUnits)} icon={DoorOpen} href="/admin/units/board" />
-          <StatTile label="공실" value={String(d.totalVacant)} icon={Home} href="/admin/vacancies" tone={d.totalVacant > 0 ? "amber" : undefined} />
-          <StatTile label="임차중" value={String(d.totalOccupied)} icon={Home} />
-          <StatTile label="이번달 수금률" value={`${d.collectionRate}%`} icon={Wallet} href="/admin/rent"
-            tone={d.billingTotal > 0 && d.collectionRate < 100 ? "amber" : undefined} />
+          <StatTile label="임대인" value={String(sheet?.landlords ?? "-")} icon={UserSquare} href="/admin/landlord-board" />
+          <StatTile label="건물" value={String(sheet?.buildings ?? "-")} icon={Building2} href="/admin/landlord-board" />
+          <StatTile label="호실 (종결 제외)" value={String(sheet?.liveUnits ?? "-")} icon={DoorOpen} href="/admin/rent-board" />
+          <StatTile label="공실(상품)" value={String(sheet?.vacant ?? "-")} icon={Home} href="/admin/rent-board" tone={sheet?.vacant ? "amber" : undefined} />
+          <StatTile label="입주" value={String(sheet?.occupied ?? "-")} icon={Home} />
+          <StatTile label={`${sheet?.prevLabel ?? ""} 수금률`} value={sheet ? `${sheet.prevRate}%` : "-"} icon={Wallet} href="/admin/rent-board"
+            tone={sheet && sheet.prevRate < 100 ? "amber" : undefined} />
         </div>
+        {sheet && sheet.forced > 0 && (
+          <p className="mt-2 text-xs text-red-700">강제개문·퇴거 진행 {sheet.forced}세대 — 임대 현황 &gt; 공실·문개방 탭에서 확인</p>
+        )}
       </section>
 
-      {/* ③ 통계 (강등) — 6개월 트렌드 + 점유율 */}
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">📈 월별 청구·수금 추이 (최근 6개월)</CardTitle></CardHeader>
-          <CardContent><BillingTrendChart data={d.billingTrend} /></CardContent>
+          <CardHeader><CardTitle className="text-base">📈 월세 받을 돈 · 들어온 돈 (최근 6개월, 시트 기준)</CardTitle></CardHeader>
+          <CardContent><BillingTrendChart data={sheet?.trend ?? []} /></CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">🏘️ 호실 점유율</CardTitle></CardHeader>
-          <CardContent><OccupancyDonutChart occupied={d.occupancy.occupied} vacant={d.occupancy.vacant} expiring={d.occupancy.expiring} /></CardContent>
+          <CardHeader><CardTitle className="text-base">🏘️ 호실 점유 (입주·공실·60일 내 만기)</CardTitle></CardHeader>
+          <CardContent>
+            <OccupancyDonutChart occupied={sheet?.occupancy.occupied ?? 0} vacant={sheet?.occupancy.vacant ?? 0} expiring={sheet?.occupancy.expiring ?? 0} />
+          </CardContent>
         </Card>
       </div>
 
@@ -380,26 +294,17 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* ④ 최근 활동 */}
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">만료 임박 계약 (60일)</CardTitle>
-            <Button asChild variant="ghost" size="sm"><Link href="/admin/leases?status=expiring">전체 <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {d.expiringLeases.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">임박 계약이 없습니다.</p>
+          <CardHeader><CardTitle className="text-base">60일 안에 만기 (시트)</CardTitle></CardHeader>
+          <CardContent className="space-y-1.5">
+            {!sheet || sheet.expiring.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">60일 안에 만기되는 계약이 없습니다.</p>
             ) : (
-              d.expiringLeases.map((l) => (
-                <Link key={l.id} href={`/admin/leases/${l.id}`} className="block p-2.5 rounded hover:bg-muted/40">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium flex items-center gap-2">
-                      <FileSignature className="h-3.5 w-3.5 text-muted-foreground" />
-                      {l.lease_type === "long_term" ? "장기" : "단기"} 계약
-                    </span>
-                    <Badge variant="outline" className="text-xs">{formatKoreanDate(l.end_date)}</Badge>
-                  </div>
+              sheet.expiring.slice(0, 10).map((u: SheetUnit) => (
+                <Link key={u.key} href={unitHref(u.key)} className="flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-muted/40 text-sm">
+                  <span className="truncate"><b>{u.building} {u.unit}</b> {u.tenant}</span>
+                  <Badge variant="outline" className="text-xs shrink-0">{u.expiry} · {daysTo(today, u.expiry)}일</Badge>
                 </Link>
               ))
             )}
@@ -453,36 +358,27 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <p className="mt-8 text-xs text-muted-foreground">
+        <Download className="inline h-3 w-3 mr-1" />
+        예전 DB 기준 엑셀은 <a href="/api/admin/export/overview" className="underline">여기</a> (2단계에서 시트 기준 엑셀로 바뀝니다)
+      </p>
     </div>
   );
 }
 
-// 빠른 입력 타일 — 클릭 한 번으로 입력 화면 진입
-function QuickInput({
-  label, icon: Icon, href,
-}: {
-  label: string; icon: React.ComponentType<{ className?: string }>; href: string;
-}) {
+function QuickLink({ label, icon: Icon, href }: { label: string; icon: React.ComponentType<{ className?: string }>; href: string }) {
   return (
-    <Link
-      href={href}
-      className="group flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/40 hover:shadow-md transition-all"
-    >
-      <span className="h-8 w-8 rounded-lg bg-primary/[0.07] text-primary flex items-center justify-center shrink-0">
-        <Icon className="h-4 w-4" />
-      </span>
+    <Link href={href} className="group flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-3 hover:border-primary/40 hover:shadow-md transition-all">
+      <span className="h-8 w-8 rounded-lg bg-primary/[0.07] text-primary flex items-center justify-center shrink-0"><Icon className="h-4 w-4" /></span>
       <span className="text-sm font-semibold text-foreground/85 group-hover:text-primary transition-colors leading-tight">{label}</span>
-      <Plus className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0 group-hover:text-primary transition-colors" />
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0 group-hover:text-primary transition-colors" />
     </Link>
   );
 }
 
-// 오늘 할 일 — 0건은 회색(비강조), 1건↑는 톤 강조
-function ActionCard({
-  label, count, sub, icon: Icon, tone, href,
-}: {
-  label: string; count: number; sub?: string;
-  icon: React.ComponentType<{ className?: string }>; tone: "red" | "blue" | "amber" | "rose"; href: string;
+function ActionCard({ label, count, sub, icon: Icon, tone, href }: {
+  label: string; count: number; sub?: string; icon: React.ComponentType<{ className?: string }>; tone: "red" | "blue" | "amber" | "rose"; href: string;
 }) {
   const zero = count === 0;
   const toneCls: Record<string, string> = {
@@ -508,10 +404,7 @@ function ActionCard({
   );
 }
 
-// 파이프라인 통계 타일
-function StatTile({
-  label, value, icon: Icon, href, tone,
-}: {
+function StatTile({ label, value, icon: Icon, href, tone }: {
   label: string; value: string; icon: React.ComponentType<{ className?: string }>; href?: string; tone?: "amber";
 }) {
   const inner = (

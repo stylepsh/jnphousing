@@ -57,6 +57,7 @@ const NAV: NavGroup[] = [
       { href: "/admin/todos", label: "할 일", icon: ListTodo, badgeKey: "openTodos", badgeColor: "blue" },
       { href: "/admin/rent-board", label: "임대 현황 (전화·공실)", icon: PhoneCall },
       { href: "/admin/landlord-board", label: "임대인 · 장부", icon: UserSquare },
+      { href: "/admin/settle-board", label: "정산 · 보고 · 퇴실정산", icon: Wallet },
     ],
   },
   {
